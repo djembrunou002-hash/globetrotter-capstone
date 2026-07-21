@@ -19,3 +19,32 @@ pip install -r requirements.txt
 python app.py
 
 The API runs on http://localhost:5000
+
+## REST API
+
+| Method | Endpoint            | Auth required | Description                              |
+|--------|---------------------|---------------|------------------------------------------|
+| POST   | `/register`         | No            | Register a new user                      |
+| POST   | `/login`            | No            | Authenticate and receive a JWT token     |
+
+
+## Request example
+
+curl -X POST http://localhost:5000/register ^
+  -H "Content-Type: application/json" ^
+  -d "{\"name\": \"Jane Doe\", \"email\": \"jane@example.com\", \"number\": \"1234567890\", \"password\": \"supersecret\"}"
+
+ curl -X POST http://localhost:5000/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\": \"jane@example.com\", \"password\": \"supersecret\"}"
+
+  
+
+## data storage
+
+| File                    | Purpose                              |
+|-------------------------|--------------------------------------|
+| `data/destinations.json`| Static catalogue of travel destinations  |
+| `data/users.json`       | Registered users  |
+| `data/itineraries.json` | User itineraries  |
+

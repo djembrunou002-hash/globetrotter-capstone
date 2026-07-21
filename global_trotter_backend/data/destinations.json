@@ -1,0 +1,142 @@
+{
+  "destinations": [
+    {
+      "id": "dest_001",
+      "name": "Marche Central",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Centre-ville",
+      "type": "market",
+      "tags": [
+        "food",
+        "shopping",
+        "local"
+      ],
+      "budget_level": "low",
+      "location": {
+        "lat": 3.8667,
+        "lng": 11.5167,
+        "address": "Centre-ville, Yaounde"
+      },
+      "rating": {
+        "average": 4.3,
+        "count": 56
+      },
+      "images": [
+        "https://cdn.globetrotter.com/dest_001/main.jpg"
+      ],
+      "last_updated": "2026-07-10T09:00:00Z",
+      "description": "Bustling central market known for local produce and crafts."
+    },
+    {
+      "id": "dest_002",
+      "name": "Le Bantoo Village",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Bastos",
+      "type": "restaurant",
+      "tags": [
+        "food",
+        "culture"
+      ],
+      "budget_level": "medium",
+      "location": {
+        "lat": 3.8933,
+        "lng": 11.5183,
+        "address": "Bastos, Yaounde"
+      },
+      "rating": {
+        "average": 4.5,
+        "count": 97
+      },
+      "images": [
+        "https://cdn.globetrotter.com/dest_002/main.jpg"
+      ],
+      "last_updated": "2026-07-12T09:00:00Z",
+      "description": "Traditional Cameroonian restaurant with live music evenings."
+    },
+    {
+      "id": "dest_003",
+      "name": "Mont Febe",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Bastos",
+      "type": "nature",
+      "tags": [
+        "nature",
+        "hiking",
+        "viewpoint"
+      ],
+      "budget_level": "low",
+      "location": {
+        "lat": 3.9022,
+        "lng": 11.5236,
+        "address": "Mont Febe, Yaounde"
+      },
+      "rating": {
+        "average": 4.4,
+        "count": 63
+      },
+      "images": [
+        "https://cdn.globetrotter.com/dest_003/main.jpg"
+      ],
+      "last_updated": "2026-07-09T09:00:00Z",
+      "description": "Hill with panoramic views over the city, popular for morning walks."
+    },
+    {
+      "id": "dest_004",
+      "name": "Restaurant Le Sultan",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Mvog-Mbi",
+      "type": "restaurant",
+      "tags": [
+        "food",
+        "urban"
+      ],
+      "budget_level": "medium",
+      "location": {
+        "lat": 3.859,
+        "lng": 11.5085,
+        "address": "Mvog-Mbi, Yaounde"
+      },
+      "rating": {
+        "average": 4.1,
+        "count": 41
+      },
+      "images": [
+        "https://cdn.globetrotter.com/dest_004/main.jpg"
+      ],
+      "last_updated": "2026-07-11T09:00:00Z",
+      "description": "Popular neighborhood spot known for grilled fish and local dishes."
+    },
+    {
+      "id": "dest_005",
+      "name": "Parc National de Mefou",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Peripherie",
+      "type": "park",
+      "tags": [
+        "nature",
+        "wildlife",
+        "family"
+      ],
+      "budget_level": "low",
+      "location": {
+        "lat": 3.6167,
+        "lng": 11.5,
+        "address": "Route de Mfou, near Yaounde"
+      },
+      "rating": {
+        "average": 4.6,
+        "count": 88
+      },
+      "images": [
+        "https://cdn.globetrotter.com/dest_005/main.jpg"
+      ],
+      "last_updated": "2026-07-08T09:00:00Z",
+      "description": "Primate sanctuary and nature reserve just outside the city."
+    }
+  ]
+}

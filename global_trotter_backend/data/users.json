@@ -1,0 +1,40 @@
+{
+  "users": [
+    {
+      "id": "usr_10507aef",
+      "name": "Jane ",
+      "email": "jane@example.com",
+      "number": null,
+      "password_hash": "scrypt:32768:8:1$2U9wK0KNTA8E2dpl$0a8492a2fa822b7c2fba893b9b024db45a2c1a2bea3b9ff576e244f8f10647407594d79ded3f820b15b5a5097a48baeb98947bd79b8b52ab149357f699743298",
+      "created_at": "2026-07-18T12:25:45.891397+00:00",
+      "favorites": []
+    },
+    {
+      "id": "usr_610212f1",
+      "name": "Paul Biya Jr",
+      "email": null,
+      "number": "+237600000000",
+      "password_hash": "scrypt:32768:8:1$RC9H6tfw73RVhM5C$fa15cf8df46717374bc28c8b7ddaebd08fd3819c4bc714d86f7b495ca03f1c9e4a8fee73eb1b0f4d7b11165b6baccc1e1028772014773fdbe822ab70700f3367",
+      "created_at": "2026-07-18T12:26:03.324662+00:00",
+      "favorites": []
+    },
+    {
+      "id": "usr_48f97346",
+      "name": "Bruno",
+      "email": "bruno@gmail.com",
+      "number": null,
+      "password_hash": "scrypt:32768:8:1$PWKWHH9mNB3gRbjr$9748f100929a3a3bb5478b6f1e92ad5bae37b3b019b505bb6ac8ecb60ee29688cde4cc608830fe7cd1dd2a6c498611907f803b228cefb9cd6bcaa90a33762699",
+      "created_at": "2026-07-20T15:18:59.176948+00:00",
+      "favorites": []
+    },
+    {
+      "id": "usr_35af5c5d",
+      "name": "Doe",
+      "email": "doe@example.com",
+      "number": "1234567890",
+      "password_hash": "scrypt:32768:8:1$x377z1WMByG4OvGO$62e8530f30a1cac12f6a2071e8992fe6d5dcc73c50cb533dd074fb29c42c7b6a47d0666f08b7ea3e0ea85c84e685df79bf5f8f4b53e358427b3f5adf40fd566d",
+      "favorites": [],
+      "created_at": "2026-07-21T20:58:49.633023+00:00"
+    }
+  ]
+}

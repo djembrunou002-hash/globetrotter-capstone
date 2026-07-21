@@ -1,0 +1,71 @@
+{
+  "itineraries": [
+    {
+      "id": "itin_c5f5f2a9",
+      "user_id": "usr_10507aef",
+      "title": "Yaounde Nature Trip",
+      "destinations": [
+        "dest_005"
+      ],
+      "tags": [
+        "family",
+        "nature",
+        "wildlife"
+      ],
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-02",
+      "shared_with": [],
+      "created_at": "2026-07-18T12:27:20.818099+00:00",
+      "updated_at": "2026-07-18T12:27:20.818099+00:00"
+    },
+    {
+      "id": "itin_aeb13d9b",
+      "user_id": "usr_10507aef",
+      "title": "Yaounde Full Day Tour",
+      "destinations": [
+        "dest_001",
+        "dest_002",
+        "dest_003"
+      ],
+      "tags": [
+        "culture",
+        "food",
+        "hiking",
+        "local",
+        "nature",
+        "shopping",
+        "viewpoint"
+      ],
+      "start_date": "2026-08-01",
+      "end_date": "2026-08-01",
+      "shared_with": [],
+      "created_at": "2026-07-18T12:28:35.340662+00:00",
+      "updated_at": "2026-07-18T12:28:35.340662+00:00"
+    },
+    {
+      "id": "itin_a9d1beb7",
+      "user_id": "usr_48f97346",
+      "title": "Yaounde trip",
+      "destinations": [
+        "dest_001",
+        "dest_002",
+        "dest_003"
+      ],
+      "destination_times": {},
+      "tags": [
+        "culture",
+        "food",
+        "hiking",
+        "local",
+        "nature",
+        "shopping",
+        "viewpoint"
+      ],
+      "start_date": "2026-07-21",
+      "end_date": "2026-07-22",
+      "shared_with": [],
+      "created_at": "2026-07-21T06:00:04.173674+00:00",
+      "updated_at": "2026-07-21T06:00:04.173674+00:00"
+    }
+  ]
+}
