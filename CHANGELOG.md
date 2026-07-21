@@ -1,3 +1,6 @@
 ## [21-07-2026]
 
-### Flask app and config
+## ADD ##
+
+*** Flask app and config ***
+*** JSON storage helper functions ***
