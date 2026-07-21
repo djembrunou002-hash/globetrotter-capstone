@@ -37,6 +37,15 @@
         "dest_001"
       ],
       "created_at": "2026-07-21T20:58:49.633023+00:00"
+    },
+    {
+      "id": "usr_edfe3f7b",
+      "name": "Jones",
+      "email": "jones@example.com",
+      "number": "2234567890",
+      "password_hash": "scrypt:32768:8:1$99UXmdd7pam5V6sV$e70d7c7425ddd43b69f9d6847451bfa4a1ab8cca2b2cf4654970d7a8fd220ad51039d0970c0ee04b4130a1e781a647d10517515e5a470b69879be1fea785d86f",
+      "favorites": [],
+      "created_at": "2026-07-21T22:14:21.854734+00:00"
     }
   ]
 }

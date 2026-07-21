@@ -27,3 +27,9 @@ Include the token as `Authorization: Bearer <token>` on protected routes.
 - `GET /recommendations` *(auth required)* — destinations ranked for you based
   on travel style, budget, preferred area, and past itineraries
 
+*** Itineraries ***
+
+- `POST /itineraries` *(auth required)* — save a titled itinerary 
+- `GET /itineraries` *(auth required)* — return titled itinerary 
+
+

@@ -66,6 +66,27 @@
       "shared_with": [],
       "created_at": "2026-07-21T06:00:04.173674+00:00",
       "updated_at": "2026-07-21T06:00:04.173674+00:00"
+    },
+    {
+      "id": "itin_20b60a83",
+      "user_id": "usr_edfe3f7b",
+      "title": "Weekend Trip",
+      "destinations": [
+        "dest_001",
+        "dest_002"
+      ],
+      "destination_times": {},
+      "tags": [
+        "culture",
+        "food",
+        "local",
+        "shopping"
+      ],
+      "start_date": null,
+      "end_date": null,
+      "shared_with": [],
+      "created_at": "2026-07-21T22:18:02.732958+00:00",
+      "updated_at": "2026-07-21T22:18:02.732958+00:00"
     }
   ]
 }
