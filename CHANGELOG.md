@@ -12,11 +12,13 @@
 
 Include the token as `Authorization: Bearer <token>` on protected routes.
 
-*** Destinations ***
+*** Destinations and dedicated testing file***
 
 - `GET /destinations` — list/search destinations. Filter with `tag`, `budget`, `country`, `region`, `area`, `type`, `q`
 - `POST /destinations/<id>/rating` — rate a destination 1–5 stars *(auth required)*
 - `POST /destinations/<id>/favorite` — add to favorites *(auth required)*
 - `DELETE /destinations/<id>/favorite` — remove from favorites *(auth required)*
 - `GET /favorites` — list your favorite destinations *(auth required)*
+
+*** Recommendation Scoring logic and dedicated testing file ***
 
