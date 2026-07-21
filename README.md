@@ -31,6 +31,7 @@ The API runs on http://localhost:5000
 | POST    | `/destinations/<id>/favorite`| Yes  | Add a destination to favorite            |
 | DELETE   | `/destinations/<id>/favorite`| Yes | Remove a destination from favorite         |
 | GET    | `/favorites`| Yes  | list your favorite destinations         |
+| GET    | `/recommendations`| Yes  | get personalized recommendations          |
 
 ## Request example
 
@@ -41,7 +42,7 @@ curl -X POST http://localhost:5000/register ^
 ### login
  curl -X POST http://localhost:5000/login ^
   -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\", \"password\": \"supersecret\"}"
+  -d "{\"email\": \"doe@example.com\", \"password\": \"supersecret\"}"
 ### get destinations
 curl -X GET "http://localhost:5000/destinations"
 
@@ -59,6 +60,8 @@ curl -X DELETE http://localhost:5000/destinations/dest_001/favorite -H "Authoriz
 ### get favs
 curl -X GET http://localhost:5000/favorites -H "Authorization: Bearer %TOKEN%"
 
+### get recommendations
+curl -X GET http://localhost:5000/recommendations -H "Authorization: Bearer %TOKEN%"
 
 
 

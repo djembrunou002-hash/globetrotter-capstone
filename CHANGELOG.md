@@ -22,3 +22,8 @@ Include the token as `Authorization: Bearer <token>` on protected routes.
 
 *** Recommendation Scoring logic and dedicated testing file ***
 
+*** Recommendations nd dedicated test file(requires itinerary route) ***
+
+- `GET /recommendations` *(auth required)* — destinations ranked for you based
+  on travel style, budget, preferred area, and past itineraries
+
