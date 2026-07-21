@@ -3,6 +3,7 @@ app/__init__.py
 
 Flask application factory.
 """
+import os
 from flask import Flask
 
 
@@ -10,8 +11,12 @@ def create_app():
     """Create and configure the Flask application."""
     app = Flask(__name__)
 
-    # Secret key used for JWT signing – override via environment variable in production.
-    app.config["SECRET_KEY"] = "globetrotter-secret-change-in-prod"
+    # Secret key used for JWT signing.  Set the SECRET_KEY environment variable
+    # in production.  The fallback is intentionally weak and must never be used
+    # outside of local development.
+    app.config["SECRET_KEY"] = os.environ.get(
+        "SECRET_KEY", "globetrotter-secret-change-in-prod"
+    )
 
     # Register all route blueprints
     from app.auth import auth_bp

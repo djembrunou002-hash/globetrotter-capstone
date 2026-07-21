@@ -128,7 +128,8 @@ All data is persisted in plain JSON files inside the `data/` directory:
 
 | Environment Variable | Default                              | Description           |
 |----------------------|--------------------------------------|-----------------------|
-| `SECRET_KEY`         | `globetrotter-secret-change-in-prod` | JWT signing key       |
+| `SECRET_KEY`         | `globetrotter-secret-change-in-prod` | JWT signing key – **must be overridden in production** |
+| `FLASK_DEBUG`        | `0`                                  | Set to `1` to enable Flask debug mode (development only) |
 | `PORT`               | `5000`                               | Port the app listens on |
 
-> **Important:** Always override `SECRET_KEY` with a strong random value in production.
+> **Important:** Always set `SECRET_KEY` to a long, random value in production (e.g. `python -c "import secrets; print(secrets.token_hex(32))"`).

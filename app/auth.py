@@ -85,7 +85,7 @@ def register():
     user = {
         "id": str(uuid.uuid4()),
         "username": username,
-        # Store a bcrypt hash – never store plain-text passwords.
+        # Store a Werkzeug password hash – never store plain-text passwords.
         "password_hash": generate_password_hash(password),
         "preferences": preferences,
     }

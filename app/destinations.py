@@ -62,9 +62,11 @@ def search_destinations():
         if continent and continent != dest.get("continent", "").lower():
             continue
 
-        # Cost filter
-        if max_cost is not None and dest.get("avg_cost_per_day", 0) > max_cost:
-            continue
+        # Cost filter – skip destinations that have no cost information or exceed the limit
+        if max_cost is not None:
+            cost = dest.get("avg_cost_per_day")
+            if cost is None or cost > max_cost:
+                continue
 
         results.append(dest)
 

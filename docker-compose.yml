@@ -10,5 +10,4 @@ services:
     volumes:
       - .:/globetrotter
     environment:
-      - FLASK_ENV=development
       - PORT=5000
