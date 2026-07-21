@@ -9,3 +9,13 @@ The project starts as a **monolithic Flask application** that serves as the foun
 - Docker
 - Kubernetes
 - Cloud-native tooling
+
+## Setup
+
+pip install -r requirements.txt
+
+## Running
+
+python app.py
+
+The API runs on http://localhost:5000
