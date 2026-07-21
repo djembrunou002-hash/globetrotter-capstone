@@ -33,7 +33,9 @@
       "email": "doe@example.com",
       "number": "1234567890",
       "password_hash": "scrypt:32768:8:1$x377z1WMByG4OvGO$62e8530f30a1cac12f6a2071e8992fe6d5dcc73c50cb533dd074fb29c42c7b6a47d0666f08b7ea3e0ea85c84e685df79bf5f8f4b53e358427b3f5adf40fd566d",
-      "favorites": [],
+      "favorites": [
+        "dest_001"
+      ],
       "created_at": "2026-07-21T20:58:49.633023+00:00"
     }
   ]

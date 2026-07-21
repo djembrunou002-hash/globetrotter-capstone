@@ -3,7 +3,7 @@ from flask_jwt_extended import JWTManager
 
 from config import Config
 from routes.auth import auth_bp
-
+from routes.destinations import destinations_bp
 
 
 def create_app():
@@ -13,6 +13,7 @@ def create_app():
     JWTManager(app)
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(destinations_bp)
 
 
 
