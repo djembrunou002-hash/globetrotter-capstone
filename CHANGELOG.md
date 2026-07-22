@@ -33,3 +33,7 @@ Include the token as `Authorization: Bearer <token>` on protected routes.
 - `GET /itineraries` *(auth required)* — return titled itinerary 
 
 
+## [22-07-2026]
+
+*** React(Vite + JS) project setup ***
+

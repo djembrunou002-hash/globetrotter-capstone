@@ -10,37 +10,56 @@ The project starts as a **monolithic Flask application** that serves as the foun
 - Kubernetes
 - Cloud-native tooling
 
+# BACKEND
+
 ## Project Structure
 
 .
+├── .git/
+├── global_trotter_backend/
+│   ├── .gitignore
+│   ├── app.py
+│   ├── config.py
+│   ├── requirements.txt
+│   ├── data/
+│   │   ├── destinations.json
+│   │   ├── itineraries.json
+│   │   └── users.json
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── destinations.py
+│   │   ├── itineraries.py
+│   │   └── recommendations.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── scoring.py
+│   │   └── storage.py
+│   └── tests/
+│       ├── conftest.py
+│       ├── test_auth.py
+│       ├── test_destinations.py
+│       ├── test_itineraries.py
+│       ├── test_recommendations.py
+│       └── test_scoring.py
+├── global_trotter_web/
+│   ├── .gitignore
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── vite.config.js
+│   ├── eslint.config.js
+│   ├── public/
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── App.css
+│       ├── index.css
+│       └── assets/
 ├── CHANGELOG.md
-├── README.md
-└── global_trotter_backend/
-    ├── .gitignore
-    ├── app.py
-    ├── config.py
-    ├── requirements.txt
-    ├── data/
-    │   ├── destinations.json    # Static destination catalogue (seed data)
-    │   ├── itineraries.json     # Updated at runtime
-    │   └── users.json           # Updated at runtime
-    ├── routes/
-    │   ├── __init__.py
-    │   ├── auth.py               # Registration, login, JWT handling
-    │   ├── destinations.py       # Search, rating, favorites endpoints
-    │   ├── itineraries.py        # Create / list / update itineraries
-    │   └── recommendations.py    # Personalised recommendations endpoint
-    ├── services/
-    │   ├── __init__.py
-    │   ├── scoring.py            # Recommendation scoring logic
-    │   └── storage.py            # JSON file I/O (load_json / save_json)
-    └── tests/
-        ├── conftest.py           # Shared fixtures (test client, auth helpers)
-        ├── test_auth.py
-        ├── test_destinations.py
-        ├── test_itineraries.py
-        ├── test_recommendations.py
-        └── test_scoring.py
+└── README.md
+
+
 
         
 
@@ -117,4 +136,20 @@ curl -X GET http://localhost:5000/itineraries -H "Authorization: Bearer %TOKEN%"
 | `data/destinations.json`| Static catalogue of travel destinations  |
 | `data/users.json`       | Registered users  |
 | `data/itineraries.json` | User itineraries  |
+
+
+# FRONTEND
+
+React web app (Vite + JS), lives in `global_trotter_frontend/`.
+
+### Setup
+
+cd global_trotter_frontend
+npm install
+
+### Running
+
+npm run dev
+
+The app runs on http://localhost:5173 and expects the backend on http://localhost:5000.
 
