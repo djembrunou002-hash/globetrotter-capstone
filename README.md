@@ -140,7 +140,11 @@ curl -X GET http://localhost:5000/itineraries -H "Authorization: Bearer %TOKEN%"
 
 # FRONTEND
 
-React web app (Vite + JS), lives in `global_trotter_frontend/`.
+React web app (Vite + JS), lives in `global_trotter_web/`.
+
+## pages
+
+register page
 
 ### Setup
 
