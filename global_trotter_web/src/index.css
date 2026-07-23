@@ -1,70 +1,49 @@
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f5f6fa;
-  font-family: system-ui, sans-serif;
+:root {
+  --color-forest: #0B3D24;
+  --color-forest-mid: #123F27;
+  --color-forest-line: rgba(247, 242, 228, 0.16);
+  --color-gold: #F2B705;
+  --color-gold-soft: #F7D774;
+  --color-ember: #C8102E;
+  --color-sand: #F7F2E4;
+  --color-ink: #1B1A17;
+  --color-cream: #F5EFE0;
+  --color-muted: #6B6558;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
-.auth-form {
-  background: #fff;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.auth-form h1 {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
+html,
+body,
+#root {
+  height: 100%;
 }
 
-.auth-form label {
-  font-size: 0.85rem;
-  margin-bottom: 0.35rem;
-  color: #333;
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-sand);
+  -webkit-font-smoothing: antialiased;
 }
 
-.auth-form input {
-  padding: 0.6rem 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid #dcdfe4;
-  border-radius: 8px;
-  font-size: 0.95rem;
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.auth-form button {
-  padding: 0.7rem;
-  border: none;
-  border-radius: 8px;
-  background: #2f6fed;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 0.5rem;
+button {
+  font-family: inherit;
 }
 
-.auth-form button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-message {
-  background: #fdeaea;
-  color: #c0392b;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.auth-form p {
-  text-align: center;
-  font-size: 0.85rem;
-  margin-top: 1rem;
+img {
+  max-width: 100%;
 }

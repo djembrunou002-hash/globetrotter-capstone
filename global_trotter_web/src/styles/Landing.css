@@ -1,0 +1,203 @@
+.landing {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-forest);
+  overflow: hidden;
+}
+
+.landing__pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(600px 600px at 88% -10%, rgba(242, 183, 5, 0.18), transparent 60%),
+    radial-gradient(500px 500px at -10% 110%, rgba(200, 16, 46, 0.16), transparent 60%);
+}
+
+.landing__nav {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px clamp(20px, 5vw, 64px) 0;
+}
+
+.landing__logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--color-cream);
+}
+
+.landing__nav-cta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--color-gold);
+  color: var(--color-forest);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.landing__nav-cta:hover {
+  background: var(--color-gold-soft);
+  transform: translateY(-1px);
+}
+
+.landing__hero {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: clamp(32px, 6vw, 80px);
+  padding: clamp(40px, 8vh, 96px) clamp(20px, 5vw, 64px);
+  max-width: 1180px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.landing__copy {
+  flex: 1 1 480px;
+}
+
+.landing__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: var(--color-gold-soft);
+  text-transform: uppercase;
+}
+
+.landing__headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  line-height: 1.05;
+  color: var(--color-cream);
+  margin: 18px 0 20px;
+  font-weight: 600;
+}
+
+.landing__headline em {
+  color: var(--color-gold);
+  font-style: normal;
+}
+
+.landing__subcopy {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(245, 239, 224, 0.78);
+  max-width: 46ch;
+  margin-bottom: 32px;
+}
+
+.landing__cta {
+  display: inline-block;
+  background: var(--color-gold);
+  color: var(--color-forest);
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.landing__cta:hover {
+  background: var(--color-gold-soft);
+  transform: translateY(-1px);
+}
+
+.landing__frame-wrap {
+  flex: 1 1 360px;
+  display: flex;
+  justify-content: center;
+}
+
+.landing__frame {
+  position: relative;
+  background: var(--color-forest-mid);
+  border: 1px dashed var(--color-gold);
+  border-radius: 18px;
+  padding: 14px;
+  width: min(420px, 100%);
+}
+
+.landing__frame::before,
+.landing__frame::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  background: var(--color-forest);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.landing__frame::before {
+  left: -11px;
+}
+
+.landing__frame::after {
+  right: -11px;
+}
+
+.landing__stamp {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  background: var(--color-ember);
+  color: var(--color-cream);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transform: rotate(4deg);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  z-index: 1;
+}
+
+.landing__image {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: linear-gradient(160deg, var(--color-gold-soft), var(--color-forest-mid));
+}
+
+.landing__flagbar {
+  position: relative;
+  z-index: 2;
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--color-forest) 0 33.33%,
+    var(--color-ember) 33.33% 66.66%,
+    var(--color-gold) 66.66% 100%
+  );
+}
+
+@media (max-width: 820px) {
+  .landing__hero {
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .landing__frame-wrap {
+    width: 100%;
+  }
+
+  .landing__frame {
+    width: min(320px, 100%);
+    margin: 0 auto;
+  }
+}

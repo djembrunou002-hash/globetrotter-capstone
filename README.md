@@ -144,7 +144,9 @@ React web app (Vite + JS), lives in `global_trotter_web/`.
 
 ## pages
 
+landing page
 register page
+
 
 ### Setup
 

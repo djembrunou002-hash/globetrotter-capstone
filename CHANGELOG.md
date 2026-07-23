@@ -42,3 +42,8 @@ Include the token as `Authorization: Bearer <token>` on protected routes.
 *** added CORS to backend to allow communication between different origin (web to server and vice versa) ***
 *** added .env and python-dotenv to backend ***
 
+## [23-07-2026]
+
+*** added landing page and its dedicated testing file ***
+*** Updated register page UI ***
+
