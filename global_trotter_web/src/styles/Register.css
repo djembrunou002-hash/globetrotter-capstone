@@ -149,6 +149,84 @@
   cursor: pointer;
 }
 
+.register__phone-row {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #DED6C2;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.register__phone-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  background: #F1EBDA;
+  border-right: 1px solid #DED6C2;
+}
+
+.register__phone-row input {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+}
+
+.register__phone-row input:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.register__phone-row:focus-within {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.25);
+}
+
+.register__strength-meter {
+  margin-top: 8px;
+}
+
+.register__strength-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #E7DFC9;
+  overflow: hidden;
+}
+
+.register__strength-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.register__strength-fill--weak {
+  background: var(--color-ember);
+}
+
+.register__strength-fill--fair {
+  background: var(--color-gold);
+}
+
+.register__strength-fill--strong {
+  background: var(--color-forest);
+}
+
+.register__strength-label {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+  display: block;
+}
+
+.register__requirement {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 6px;
+}
+
 .register__submit {
   margin-top: 28px;
   padding: 14px;

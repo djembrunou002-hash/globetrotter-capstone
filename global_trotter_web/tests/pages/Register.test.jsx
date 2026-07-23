@@ -12,6 +12,8 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate
 }))
 
+const STRONG_PASSWORD = 'Sup3rSecret!'
+
 describe('Register', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -25,12 +27,13 @@ describe('Register', () => {
     )
   }
 
-  test('renders all form fields', () => {
+  test('renders all form fields including the CMR phone prefix', () => {
     renderRegister()
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.getByText('+237')).toBeInTheDocument()
   })
 
   test('shows an error when name and password are missing', async () => {
@@ -44,7 +47,7 @@ describe('Register', () => {
     renderRegister()
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
-    await userEvent.type(screen.getByLabelText(/password/i), 'supersecret')
+    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -52,13 +55,48 @@ describe('Register', () => {
     expect(registerUser).not.toHaveBeenCalled()
   })
 
-  test('submits successfully with only a phone number as contact method', async () => {
+  test('rejects an invalid email format', async () => {
+    renderRegister()
+
+    await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
+    await userEvent.type(screen.getByLabelText(/email/i), 'not-an-email')
+    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+
+    expect(await screen.findByText(/enter a valid email address/i)).toBeInTheDocument()
+    expect(registerUser).not.toHaveBeenCalled()
+  })
+
+  test('restricts the phone number input to 9 digits', async () => {
+    renderRegister()
+    const numberInput = screen.getByLabelText(/phone number/i)
+
+    await userEvent.type(numberInput, '12345678901234')
+
+    expect(numberInput).toHaveValue('123456789')
+  })
+
+  test('rejects a weak password', async () => {
+    renderRegister()
+
+    await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
+    await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
+    await userEvent.type(screen.getByLabelText(/password/i), 'weakpass')
+
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+
+    expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument()
+    expect(registerUser).not.toHaveBeenCalled()
+  })
+
+  test('submits with the +237 prefix combined into the phone number', async () => {
     registerUser.mockResolvedValueOnce({ id: 'user_001' })
     renderRegister()
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
-    await userEvent.type(screen.getByLabelText(/phone number/i), '1234567890')
-    await userEvent.type(screen.getByLabelText(/password/i), 'supersecret')
+    await userEvent.type(screen.getByLabelText(/phone number/i), '677123456')
+    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -66,8 +104,8 @@ describe('Register', () => {
       expect(registerUser).toHaveBeenCalledWith({
         name: 'Jane Doe',
         email: '',
-        number: '1234567890',
-        password: 'supersecret'
+        number: '+237677123456',
+        password: STRONG_PASSWORD
       })
     })
 
@@ -76,13 +114,13 @@ describe('Register', () => {
     })
   })
 
-  test('submits successfully with only an email as contact method', async () => {
+  test('submits successfully with only a valid email as contact method', async () => {
     registerUser.mockResolvedValueOnce({ id: 'user_002' })
     renderRegister()
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
-    await userEvent.type(screen.getByLabelText(/password/i), 'supersecret')
+    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -91,7 +129,7 @@ describe('Register', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         number: '',
-        password: 'supersecret'
+        password: STRONG_PASSWORD
       })
     })
   })
@@ -102,7 +140,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
-    await userEvent.type(screen.getByLabelText(/password/i), 'supersecret')
+    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
