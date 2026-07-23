@@ -24,4 +24,15 @@ describe('Landing', () => {
       expect(link).toHaveAttribute('href', '/register')
     })
   })
+
+  test('renders a log in link pointing to /login', () => {
+    renderLanding()
+    const link = screen.getByRole('link', { name: /log in/i })
+    expect(link).toHaveAttribute('href', '/login')
+  })
+
+  test('renders the logo as a link to /', () => {
+    renderLanding()
+    expect(screen.getByRole('link', { name: /globaltrotter/i })).toHaveAttribute('href', '/')
+  })
 })

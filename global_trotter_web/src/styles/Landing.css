@@ -26,11 +26,24 @@
   padding: 28px clamp(20px, 5vw, 64px) 0;
 }
 
-.landing__logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.3rem;
+.landing__nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.landing__nav-login {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-cream);
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.landing__nav-login:hover {
+  opacity: 1;
 }
 
 .landing__nav-cta {

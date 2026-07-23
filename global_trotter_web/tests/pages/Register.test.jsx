@@ -27,12 +27,21 @@ describe('Register', () => {
     )
   }
 
+  function getPasswordInput() {
+    return screen.getByLabelText('Password')
+  }
+
+  test('renders a home logo link pointing to /', () => {
+    renderRegister()
+    expect(screen.getByRole('link', { name: /globaltrotter/i })).toHaveAttribute('href', '/')
+  })
+
   test('renders all form fields including the CMR phone prefix', () => {
     renderRegister()
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(getPasswordInput()).toBeInTheDocument()
     expect(screen.getByText('+237')).toBeInTheDocument()
   })
 
@@ -47,7 +56,7 @@ describe('Register', () => {
     renderRegister()
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
-    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+    await userEvent.type(getPasswordInput(), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -60,7 +69,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'not-an-email')
-    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+    await userEvent.type(getPasswordInput(), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -82,7 +91,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
-    await userEvent.type(screen.getByLabelText(/password/i), 'weakpass')
+    await userEvent.type(getPasswordInput(), 'weakpass')
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -96,7 +105,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/phone number/i), '677123456')
-    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+    await userEvent.type(getPasswordInput(), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -120,7 +129,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
-    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+    await userEvent.type(getPasswordInput(), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -140,7 +149,7 @@ describe('Register', () => {
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')
-    await userEvent.type(screen.getByLabelText(/password/i), STRONG_PASSWORD)
+    await userEvent.type(getPasswordInput(), STRONG_PASSWORD)
 
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
@@ -149,13 +158,13 @@ describe('Register', () => {
 
   test('toggles password visibility', async () => {
     renderRegister()
-    const passwordInput = screen.getByLabelText(/password/i)
+    const passwordInput = getPasswordInput()
     expect(passwordInput).toHaveAttribute('type', 'password')
 
-    fireEvent.click(screen.getByRole('button', { name: /show/i }))
+    fireEvent.click(screen.getByRole('button', { name: /show password/i }))
     expect(passwordInput).toHaveAttribute('type', 'text')
 
-    fireEvent.click(screen.getByRole('button', { name: /hide/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }))
     expect(passwordInput).toHaveAttribute('type', 'password')
   })
 })

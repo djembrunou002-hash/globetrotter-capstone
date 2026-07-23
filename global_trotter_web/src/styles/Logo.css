@@ -1,0 +1,19 @@
+.logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.01em;
+  transition: opacity 0.2s ease;
+}
+
+.logo:hover {
+  opacity: 0.85;
+}
+
+.logo--light {
+  color: var(--color-cream);
+}
+
+.logo--dark {
+  color: var(--color-ink);
+}

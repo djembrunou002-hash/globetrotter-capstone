@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Logo from '../components/Logo.jsx'
 import '../styles/Landing.css'
 
 function Landing() {
@@ -7,17 +8,20 @@ function Landing() {
       <div className="landing__pattern" aria-hidden="true"></div>
 
       <nav className="landing__nav">
-        <span className="landing__logo">GlobalTrotter</span>
-        <Link to="/register" className="landing__nav-cta">Sign up</Link>
+        <Logo theme="light" />
+        <div className="landing__nav-links">
+          <Link to="/login" className="landing__nav-login">Log in</Link>
+          <Link to="/register" className="landing__nav-cta">Sign up</Link>
+        </div>
       </nav>
 
       <main className="landing__hero">
         <div className="landing__copy">
           <span className="landing__eyebrow">CMR · 237</span>
-          <h1 className="landing__headline">Yaounde, in <em>every</em> direction.</h1>
+          <h1 className="landing__headline">Cameroon, in <em>every</em> direction.</h1>
           <p className="landing__subcopy">
-            From shaded boulevards to panoramic hilltops, explore Yaoundé, the heart of Cameroon, 
-            where every neighborhood tells a story and every journey begins.
+            From the surf at Kribi to the peaks above Buea, plan a trip across
+            a country that holds nearly every landscape in Africa within its borders.
           </p>
           <Link to="/register" className="landing__cta">Sign up to start planning</Link>
         </div>

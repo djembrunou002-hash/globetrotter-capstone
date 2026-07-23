@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { registerUser } from '../services/authService.js'
+import { loginUser } from '../services/authService.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordField from '../components/PasswordField.jsx'
 import PhoneInput from '../components/PhoneInput.jsx'
 import EmailField from '../components/EmailField.jsx'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
 
-function Register() {
+function Login() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     number: '',
     password: ''
@@ -33,8 +31,8 @@ function Register() {
     e.preventDefault()
     setError('')
 
-    if (!formData.name || !formData.password) {
-      setError('Name and password are required')
+    if (!formData.password) {
+      setError('Password is required')
       return
     }
 
@@ -53,13 +51,7 @@ function Register() {
       return
     }
 
-    if (!PASSWORD_REGEX.test(formData.password)) {
-      setError('Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character')
-      return
-    }
-
     const payload = {
-      name: formData.name,
       email: formData.email,
       number: formData.number ? `+237${formData.number}` : '',
       password: formData.password
@@ -67,8 +59,8 @@ function Register() {
 
     setLoading(true)
     try {
-      await registerUser(payload)
-      navigate('/login')
+      await loginUser(payload)
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -77,44 +69,30 @@ function Register() {
   }
 
   return (
-    <AuthLayout tagline="Your journey through Cameroon starts here.">
+    <AuthLayout tagline="Pick up where you left off.">
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
-        <span className="auth__eyebrow">Create account</span>
-        <h1>Join GlobalTrotter</h1>
-        <p className="auth__hint">Fill in your name, a way to reach you, and a password.</p>
+        <span className="auth__eyebrow">Welcome back</span>
+        <h1>Log in to GlobalTrotter</h1>
+        <p className="auth__hint">Use the email or phone number you registered with.</p>
 
         {error && <p className="auth__error">{error}</p>}
-
-        <label htmlFor="name">Full name</label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          value={formData.name}
-          onChange={handleChange}
-        />
 
         <EmailField value={formData.email} onChange={handleChange} />
 
         <PhoneInput value={formData.number} onChange={handleNumberChange} />
 
-        <PasswordField
-          value={formData.password}
-          onChange={handleChange}
-          withStrengthMeter
-          hint="At least 8 characters, with uppercase, lowercase, a number, and a special character."
-        />
+        <PasswordField value={formData.password} onChange={handleChange} />
 
         <button type="submit" className="auth__submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Sign up'}
+          {loading ? 'Logging in...' : 'Log in'}
         </button>
 
         <p className="auth__switch">
-          Already have an account? <Link to="/login">Log in</Link>
+          Don't have an account? <Link to="/register">Sign up</Link>
         </p>
       </form>
     </AuthLayout>
   )
 }
 
-export default Register
+export default Login

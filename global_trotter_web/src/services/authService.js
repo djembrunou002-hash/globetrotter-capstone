@@ -6,3 +6,10 @@ export function registerUser(payload) {
     body: JSON.stringify(payload)
   })
 }
+
+export function loginUser(payload) {
+  return apiRequest('/login', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
