@@ -1,16 +1,16 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Landing from '../../src/pages/Landing.jsx'
 
-describe('Landing', () => {
-  function renderLanding() {
-    render(
-      <MemoryRouter>
-        <Landing />
-      </MemoryRouter>
-    )
-  }
+function renderLanding() {
+  return render(
+    <MemoryRouter>
+      <Landing />
+    </MemoryRouter>
+  )
+}
 
+describe('Landing', () => {
   test('renders the headline', () => {
     renderLanding()
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
@@ -34,5 +34,25 @@ describe('Landing', () => {
   test('renders the logo as a link to /', () => {
     renderLanding()
     expect(screen.getByRole('link', { name: /globaltrotter/i })).toHaveAttribute('href', '/')
+  })
+
+  test('renders the showcase heading', () => {
+    renderLanding()
+    expect(screen.getByText(/beautiful areas to visit/i)).toBeInTheDocument()
+  })
+
+  test('renders exactly 5 showcase image tiles', () => {
+    const { container } = renderLanding()
+    expect(container.querySelectorAll('.landing__showcase-image').length).toBe(5)
+  })
+
+  test('falls back to a placeholder tile when a showcase image fails to load', async () => {
+    renderLanding()
+    const images = screen.getAllByAltText('A beautiful area to visit in Cameroon')
+    const firstImage = images[0]
+
+    fireEvent.error(firstImage)
+
+    expect(await screen.findAllByAltText('A beautiful area to visit in Cameroon')).toHaveLength(4)
   })
 })

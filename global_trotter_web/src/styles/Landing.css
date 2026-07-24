@@ -187,6 +187,46 @@
   background: linear-gradient(160deg, var(--color-gold-soft), var(--color-forest-mid));
 }
 
+.landing__showcase {
+  position: relative;
+  z-index: 2;
+  padding: 0 clamp(20px, 5vw, 64px) 72px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.landing__showcase-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  color: var(--color-cream);
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.landing__showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.landing__showcase-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+  border: 1px solid var(--color-forest-line);
+  transition: transform 0.25s ease;
+}
+
+.landing__showcase-image:hover {
+  transform: scale(1.03);
+}
+
+.landing__showcase-image--placeholder {
+  background: linear-gradient(160deg, var(--color-gold-soft), var(--color-forest-mid));
+}
+
 .landing__flagbar {
   position: relative;
   z-index: 2;

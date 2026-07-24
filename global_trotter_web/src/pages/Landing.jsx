@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
+import ShowcaseImage from '../components/ShowcaseImage.jsx'
 import '../styles/Landing.css'
+
+const SHOWCASE_IMAGES = [
+  { src: '/src/assets/cameroon-showcase-1.jpg', alt: 'A beautiful area to visit in Cameroon' },
+  { src: '/src/assets/cameroon-showcase-2.jpg', alt: 'A beautiful area to visit in Cameroon' },
+  { src: '/src/assets/cameroon-showcase-3.jpg', alt: 'A beautiful area to visit in Cameroon' },
+  { src: '/src/assets/cameroon-showcase-4.jpg', alt: 'A beautiful area to visit in Cameroon' },
+  { src: '/src/assets/cameroon-showcase-5.jpg', alt: 'A beautiful area to visit in Cameroon' }
+]
 
 function Landing() {
   return (
@@ -37,6 +46,15 @@ function Landing() {
           </div>
         </div>
       </main>
+
+      <section className="landing__showcase">
+        <h2 className="landing__showcase-title">Beautiful areas to visit</h2>
+        <div className="landing__showcase-grid">
+          {SHOWCASE_IMAGES.map((image, index) => (
+            <ShowcaseImage key={index} src={image.src} alt={image.alt} />
+          ))}
+        </div>
+      </section>
 
       <footer className="landing__flagbar" aria-hidden="true"></footer>
     </div>

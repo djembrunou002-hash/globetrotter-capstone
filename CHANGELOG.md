@@ -46,4 +46,20 @@ Include the token as `Authorization: Bearer <token>` on protected routes.
 
 *** added landing page and its dedicated testing file ***
 *** Updated register page UI ***
+*** added form constraints ***
+*** added login page and its dedicated testing file ***
+*** added shared files to manage both register and login page UI and layout(authform.jsx,emailfield.jsx,passwordfield.jsx,phoneinput.jsx) ***
+*** added "GLOBALTROTTER" logo as home link ***
 
+## [24-07-2026]
+
+*** added tokenStorage.js inorder to store each user token after login ***
+*** updated api.js so it attaches token to all request going forward ***
+*** added home page (home.jsx) and dedicated testing file ***
+*** added destination cards component (Destinationcard.jsx) and dedicated testing file ***
+*** added star rating component (starrating.jsx) ***
+*** added destiantion service (destinationService.js) for destination fetching from frontend ***
+*** updated login page to redirect to home page ***
+*** updated login test to test token storage ***
+*** updated landing page with more visitable areas images ***
+*** updated landing test file to include those images ***

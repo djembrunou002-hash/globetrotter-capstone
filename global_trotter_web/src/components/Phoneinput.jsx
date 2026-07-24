@@ -17,7 +17,7 @@ function PhoneInput({ id = 'number', name = 'number', value, onChange }) {
           type="tel"
           inputMode="numeric"
           maxLength={9}
-          placeholder="677123456"
+          placeholder="6xxxxxxxx"
           value={value}
           onChange={handleChange}
         />

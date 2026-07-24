@@ -55,6 +55,78 @@
       "password_hash": "scrypt:32768:8:1$GICbSq5AMk1Vx2sX$de470a2831af33a0da814830b5337ce9ca95a36cd65b41119291cf2ce23d7dcee819dd3bcb54b0cc1de75a75506387f2e40ab7d17271f90d075e1b3e80b16180",
       "favorites": [],
       "created_at": "2026-07-22T19:21:24.883726+00:00"
+    },
+    {
+      "id": "usr_f65e139c",
+      "name": "Amina",
+      "email": "amina@gmail.com",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$piKPXPuiQ4oElh7o$1f520a3f37da8a96091cc05aeceb9ce486f21f1dd0dbb69558a40580eb41fb9d3a9295902ff5d285679068e1f66e78993e806f3701a30c156cae372f8657a401",
+      "favorites": [],
+      "created_at": "2026-07-23T09:05:59.443635+00:00"
+    },
+    {
+      "id": "usr_5402da9e",
+      "name": "fahdil",
+      "email": "bruno@gmail",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$vSupOlWSwORajWAV$154df85b372f555910b3f60729e1530143c50f5c30e586189015980f5bdf95bfc81d073ae9456117fb0ab5bcc3a07dcc855dccc7885d38691c37148069082648",
+      "favorites": [],
+      "created_at": "2026-07-23T09:06:52.403165+00:00"
+    },
+    {
+      "id": "usr_ff854a52",
+      "name": "Booba",
+      "email": "booba@gmail.co",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$cBDbYbqglQk6bWmx$44ab724d291019b877b39206b3e1022e536dcab81bea883dc4868f0af350b339a2159d862637747a2c77245e18da0448c0d1d63ed10738e4d86607be6fd8cb48",
+      "favorites": [],
+      "created_at": "2026-07-23T09:28:46.170659+00:00"
+    },
+    {
+      "id": "usr_04cd91cf",
+      "name": "raf",
+      "email": "raf@gmail.c",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$xPWjgTZhFtx3UqUX$f4b9f7d91577c5911d32a0d72605617aec2eedc32e83618273b64ae44a58716df5130306d24c7cf23ea3010155550ce1759921a2628d2b70a30d79100354fd62",
+      "favorites": [],
+      "created_at": "2026-07-23T09:29:19.579724+00:00"
+    },
+    {
+      "id": "usr_4212a080",
+      "name": "ben",
+      "email": "ben@gmail.q",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$86SF3Y5H1b9EZzZk$9ea51dde3f67ae4bdb3db80a9f18e8a5d408f9de22af142b1a932e218adc9cabb193ed0a5e342d6c4fd0e37ba3991a7b49d93ce7f79a022f079e2131ecd5e9df",
+      "favorites": [],
+      "created_at": "2026-07-23T09:32:25.466267+00:00"
+    },
+    {
+      "id": "usr_2996e6df",
+      "name": "Yaya",
+      "email": "yaya@yahoo.fr",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$uJMYqQDSuUVLaoB5$9ed4b370096f00d8830f3dfbe79aa216be5eaa8e32702ef9149bc6c79978dc1080cfb684b51204c541fab5e14e13ad49f35fa67eb78e7040c4f0fdcc3d3f1984",
+      "favorites": [],
+      "created_at": "2026-07-23T09:33:08.242359+00:00"
+    },
+    {
+      "id": "usr_d7759e09",
+      "name": "zozo",
+      "email": "zozo@gmal.com",
+      "number": "",
+      "password_hash": "scrypt:32768:8:1$KMUKIsIzet8SDEKN$206df3ed15835552dc7585ceea63cb2cc13897f1b7922025d4999373b100c4803b69df53ddc94ca44cb151394980858ed8d4c62404716abd71dfa33a39ead696",
+      "favorites": [],
+      "created_at": "2026-07-23T09:34:12.933258+00:00"
+    },
+    {
+      "id": "usr_5702dbdd",
+      "name": "fred",
+      "email": "",
+      "number": "+237612345678",
+      "password_hash": "scrypt:32768:8:1$hNHt9NxCPaZRTqIC$576c51626f6c3b8e49afa1716cc7ead7d333f5e9ff61631e7ce21570d5ee57c8a799ed55e9e3b0629a25447e4fb88c4cf85776df0ec53738c77f116def948c2e",
+      "favorites": [],
+      "created_at": "2026-07-23T19:05:32.269374+00:00"
     }
   ]
 }
