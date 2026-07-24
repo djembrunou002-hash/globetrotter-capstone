@@ -3,8 +3,10 @@ import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import Login from '../../src/pages/Login.jsx'
 import { loginUser } from '../../src/services/authService.js'
+import { setToken } from '../../src/services/tokenStorage.js'
 
 jest.mock('../../src/services/authService.js')
+jest.mock('../../src/services/tokenStorage.js')
 
 const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
@@ -103,7 +105,11 @@ describe('Login', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+      expect(setToken).toHaveBeenCalledWith('fake-jwt')
+    })
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/home')
     })
   })
 
