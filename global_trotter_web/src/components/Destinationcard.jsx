@@ -7,12 +7,21 @@ const BUDGET_LABELS = {
   high: 'High budget'
 }
 
-function DestinationCard({ destination, isFavorite, isAuthenticated, onToggleFavorite, onRate }) {
+function DestinationCard({
+  destination,
+  isFavorite,
+  isAuthenticated,
+  onToggleFavorite,
+  onRate,
+  selectable = false,
+  selected = false,
+  onToggleSelect
+}) {
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
 
   return (
-    <article className="destination-card">
+    <article className={`destination-card ${selectable ? 'destination-card--selectable' : ''}`}>
       <div className="destination-card__image-wrap">
         {image && !imageFailed ? (
           <img
@@ -27,6 +36,22 @@ function DestinationCard({ destination, isFavorite, isAuthenticated, onToggleFav
         <span className={`destination-card__budget destination-card__budget--${destination.budget_level}`}>
           {BUDGET_LABELS[destination.budget_level] || destination.budget_level}
         </span>
+
+        {selectable && (
+          <button
+            type="button"
+            className={`destination-card__checkbox ${selected ? 'destination-card__checkbox--checked' : ''}`}
+            onClick={() => onToggleSelect(destination.id)}
+            aria-label={selected ? `Deselect ${destination.name}` : `Select ${destination.name}`}
+            aria-pressed={selected}
+          >
+            {selected && (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M5 12l5 5 9-9" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="destination-card__body">

@@ -8,13 +8,22 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/DestinationCard.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 import '../styles/Home.css'
 
 function Home() {
   const navigate = useNavigate()
   const isAuthenticated = Boolean(getToken())
+  const {
+    selectionMode,
+    draft,
+    toggleDestination,
+    confirmSelection,
+    cancelSelection
+  } = useItineraryDraft()
 
   const [destinations, setDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
@@ -87,6 +96,16 @@ function Home() {
     }
   }
 
+  function handleConfirmSelection() {
+    confirmSelection()
+    navigate('/itineraries')
+  }
+
+  function handleCancelSelection() {
+    cancelSelection()
+    navigate('/itineraries')
+  }
+
   return (
     <div className="home">
       <header className="home__header">
@@ -94,7 +113,23 @@ function Home() {
         <h1 className="home__title">Destinations</h1>
       </header>
 
-      <main className="home__content">
+      {selectionMode && (
+        <div className="home__selection-bar">
+          <button
+            type="button"
+            className="home__selection-cancel"
+            onClick={handleCancelSelection}
+            aria-label="Cancel destination selection"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12H19" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <main className="home__content home__content--with-bottom-nav">
         {loading && <p className="home__status">Loading destinations...</p>}
         {error && <p className="home__status home__status--error">{error}</p>}
 
@@ -108,11 +143,22 @@ function Home() {
                 isAuthenticated={isAuthenticated}
                 onToggleFavorite={handleToggleFavorite}
                 onRate={handleRate}
+                selectable={selectionMode}
+                selected={draft.selectedDestinationIds.includes(destination.id)}
+                onToggleSelect={toggleDestination}
               />
             ))}
           </div>
         )}
       </main>
+
+      {selectionMode && draft.selectedDestinationIds.length > 0 && (
+        <button type="button" className="home__confirm-selection" onClick={handleConfirmSelection}>
+          Confirm selected ({draft.selectedDestinationIds.length})
+        </button>
+      )}
+
+      <BottomNav />
     </div>
   )
 }

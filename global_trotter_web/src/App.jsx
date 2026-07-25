@@ -1,19 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ItineraryDraftProvider from './context/ItineraryDraftProvider.jsx'
 import Landing from './pages/Landing.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
+import Itineraries from './pages/Itineraries.jsx'
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ItineraryDraftProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/itineraries" element={<Itineraries />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ItineraryDraftProvider>
     </BrowserRouter>
   )
 }

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Home from '../../src/pages/Home.jsx'
+import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 import {
   getDestinations,
   getFavorites,
@@ -37,7 +38,9 @@ const DESTINATION = {
 function renderHome() {
   render(
     <MemoryRouter>
-      <Home />
+      <ItineraryDraftProvider>
+        <Home />
+      </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }
@@ -145,5 +148,22 @@ describe('Home', () => {
     })
 
     expect(await screen.findByText(/4.4 \(57\)/)).toBeInTheDocument()
+  })
+
+  test('renders the bottom nav with Destinations and Itineraries links', async () => {
+    getToken.mockReturnValue(null)
+    renderHome()
+
+    await screen.findByText('Marche Central')
+    expect(screen.getByRole('link', { name: /destinations/i })).toHaveAttribute('href', '/home')
+    expect(screen.getByRole('link', { name: /itineraries/i })).toHaveAttribute('href', '/itineraries')
+  })
+
+  test('does not show selection checkboxes outside of selection mode', async () => {
+    getToken.mockReturnValue(null)
+    renderHome()
+
+    await screen.findByText('Marche Central')
+    expect(screen.queryByRole('button', { name: /select marche central/i })).not.toBeInTheDocument()
   })
 })

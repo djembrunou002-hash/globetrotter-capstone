@@ -193,3 +193,67 @@
 .destination-card__favorite:hover {
   background: #FBE7E9;
 }
+
+.destination-card__checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid #fff;
+  background: rgba(11, 61, 36, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+}
+
+.destination-card__checkbox--checked {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  color: var(--color-forest);
+}
+
+.home__selection-bar {
+  position: fixed;
+  top: 20px;
+  right: clamp(20px, 5vw, 48px);
+  z-index: 30;
+}
+
+.home__selection-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(11, 61, 36, 0.12);
+}
+
+.home__confirm-selection {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--color-forest);
+  color: var(--color-cream);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.25);
+}
+
+.home__content--with-bottom-nav {
+  padding-bottom: 100px;
+}
