@@ -5,6 +5,7 @@ import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
 import Itineraries from './pages/Itineraries.jsx'
+import ItineraryDetails from './pages/ItineraryDetails.jsx'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/itineraries" element={<Itineraries />} />
+          <Route path="/itineraries/:id" element={<ItineraryDetails />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ItineraryDraftProvider>

@@ -1,11 +1,31 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function ItineraryCard({ itinerary, coverImage }) {
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
 
+  function handleOpen() {
+    navigate(`/itineraries/${itinerary.id}`)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleOpen()
+    }
+  }
+
   return (
-    <article className="itinerary-card">
+    <article
+      className="itinerary-card"
+      role="button"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      aria-label={`Open ${itinerary.title}`}
+    >
       <div className="itinerary-card__image-wrap">
         {coverImage && !imageFailed ? (
           <img
@@ -21,7 +41,10 @@ function ItineraryCard({ itinerary, coverImage }) {
         <button
           type="button"
           className="itinerary-card__menu-trigger"
-          onClick={() => setMenuOpen(prev => !prev)}
+          onClick={e => {
+            e.stopPropagation()
+            setMenuOpen(prev => !prev)
+          }}
           aria-label="Itinerary options"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -33,8 +56,14 @@ function ItineraryCard({ itinerary, coverImage }) {
 
         {menuOpen && (
           <>
-            <div className="itinerary-card__menu-backdrop" onClick={() => setMenuOpen(false)} />
-            <div className="itinerary-card__menu">
+            <div
+              className="itinerary-card__menu-backdrop"
+              onClick={e => {
+                e.stopPropagation()
+                setMenuOpen(false)
+              }}
+            />
+            <div className="itinerary-card__menu" onClick={e => e.stopPropagation()}>
               <button type="button" className="itinerary-card__menu-item" disabled title="Coming soon">
                 Delete itinerary
               </button>

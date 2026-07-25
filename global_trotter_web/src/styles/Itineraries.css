@@ -6,7 +6,8 @@
 .itineraries__header {
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
   padding: 24px clamp(20px, 5vw, 48px);
   border-bottom: 1px solid #E7DFC9;
 }
@@ -16,10 +17,13 @@
   font-size: 1.4rem;
   color: var(--color-ink);
   margin: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .itineraries__add-button {
+  flex-shrink: 0;
   background: var(--color-forest);
   color: var(--color-cream);
   border: none;
@@ -29,6 +33,14 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .itineraries__add-button {
+    flex-grow: 1;
+    text-align: center;
+  }
 }
 
 .itineraries__add-button:hover {
@@ -85,7 +97,7 @@
 
 .itineraries__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -94,6 +106,12 @@
   overflow: hidden;
   border: 1px solid #E7DFC9;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.itinerary-card:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 .itinerary-card:hover {
@@ -279,6 +297,7 @@
 
 .itinerary-modal__date-row > div {
   flex: 1;
+  min-width: 0;
 }
 
 .itinerary-modal__submit {

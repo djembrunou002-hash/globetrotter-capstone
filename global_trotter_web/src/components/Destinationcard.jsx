@@ -15,13 +15,20 @@ function DestinationCard({
   onRate,
   selectable = false,
   selected = false,
-  onToggleSelect
+  onToggleSelect,
+  visitable = false,
+  visited = false,
+  onToggleVisited
 }) {
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
 
   return (
-    <article className={`destination-card ${selectable ? 'destination-card--selectable' : ''}`}>
+    <article
+      className={`destination-card ${selectable ? 'destination-card--selectable' : ''} ${
+        visited ? 'destination-card--visited' : ''
+      }`}
+    >
       <div className="destination-card__image-wrap">
         {image && !imageFailed ? (
           <img
@@ -46,6 +53,24 @@ function DestinationCard({
             aria-pressed={selected}
           >
             {selected && (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M5 12l5 5 9-9" />
+              </svg>
+            )}
+          </button>
+        )}
+
+        {visitable && (
+          <button
+            type="button"
+            className={`destination-card__visited-checkbox ${
+              visited ? 'destination-card__visited-checkbox--checked' : ''
+            }`}
+            onClick={() => onToggleVisited(destination.id)}
+            aria-label={visited ? `Mark ${destination.name} as not visited` : `Mark ${destination.name} as visited`}
+            aria-pressed={visited}
+          >
+            {visited && (
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3">
                 <path d="M5 12l5 5 9-9" />
               </svg>
