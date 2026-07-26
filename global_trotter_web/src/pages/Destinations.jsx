@@ -10,8 +10,8 @@ import {
 import { getToken } from '../services/tokenStorage.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
-import DestinationCard from '../components/DestinationCard.jsx'
-import BottomNav from '../components/BottomNav.jsx'
+import DestinationCard from '../components/Destinationcard.jsx'
+import BottomNav from '../components/Bottomnav.jsx'
 import '../styles/Destinations.css'
 
 function Destinations() {
@@ -29,6 +29,7 @@ function Destinations() {
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -106,12 +107,57 @@ function Destinations() {
     navigate('/itineraries')
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredDestinations = normalizedQuery
+    ? destinations.filter(destination => {
+        const name = (destination.name || '').toLowerCase()
+        const area = (destination.area || '').toLowerCase()
+        return name.startsWith(normalizedQuery) || area.startsWith(normalizedQuery)
+      })
+    : destinations
+
   return (
     <div className="destinations">
       <header className="destinations__header">
         <Logo theme="dark" />
         <h1 className="destinations__title">Destinations</h1>
       </header>
+
+      <div className="destinations__search-bar">
+        <svg
+          className="destinations__search-icon"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          className="destinations__search-input"
+          placeholder="Search by name or area"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          aria-label="Search destinations by name or area"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            className="destinations__search-clear"
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {selectionMode && (
         <div className="destinations__selection-bar">
@@ -133,9 +179,13 @@ function Destinations() {
         {loading && <p className="destinations__status">Loading destinations...</p>}
         {error && <p className="destinations__status destinations__status--error">{error}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && filteredDestinations.length === 0 && (
+          <p className="destinations__status">No destinations match "{searchQuery}".</p>
+        )}
+
+        {!loading && !error && filteredDestinations.length > 0 && (
           <div className="destinations__grid">
-            {destinations.map(destination => (
+            {filteredDestinations.map(destination => (
               <DestinationCard
                 key={destination.id}
                 destination={destination}

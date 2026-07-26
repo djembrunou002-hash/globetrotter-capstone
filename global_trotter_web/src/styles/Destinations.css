@@ -79,3 +79,54 @@
 .destinations__content--with-bottom-nav {
   padding-bottom: 100px;
 }
+
+.destinations__search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px clamp(20px, 5vw, 48px) 0;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(11, 61, 36, 0.06);
+}
+
+.destinations__search-icon {
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+
+.destinations__search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.destinations__search-input::placeholder {
+  color: var(--color-muted);
+}
+
+.destinations__search-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-sand);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.destinations__search-clear:hover {
+  background: #E7DFC9;
+  color: var(--color-ink);
+}

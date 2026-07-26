@@ -35,6 +35,36 @@ const DESTINATION = {
   description: 'Bustling central market known for local produce and crafts.'
 }
 
+const MONT_FEBE = {
+  id: 'dest_003',
+  name: 'Mont Febe',
+  country: 'Cameroon',
+  region: 'Centre',
+  area: 'Bastos',
+  type: 'viewpoint',
+  tags: ['nature', 'hiking', 'viewpoint'],
+  budget_level: 'low',
+  location: { lat: 3.9, lng: 11.53, address: 'Bastos, Yaounde' },
+  rating: { average: 4.4, count: 63 },
+  images: ['https://cdn.globetrotter.com/dest_003/main.jpg'],
+  description: 'A forested hill with panoramic views over Yaounde.'
+}
+
+const CRAFT_VILLAGE = {
+  id: 'dest_007',
+  name: 'Craft Village',
+  country: 'Cameroon',
+  region: 'Centre',
+  area: 'Mont Febe',
+  type: 'market',
+  tags: ['culture', 'shopping'],
+  budget_level: 'low',
+  location: { lat: 3.91, lng: 11.54, address: 'Mont Febe, Yaounde' },
+  rating: { average: 4.1, count: 22 },
+  images: ['https://cdn.globetrotter.com/dest_007/main.jpg'],
+  description: 'A small artisan market near the base of Mont Febe.'
+}
+
 function renderDestinations() {
   render(
     <MemoryRouter>
@@ -166,5 +196,100 @@ describe('Destinations', () => {
 
     await screen.findByText('Marche Central')
     expect(screen.queryByRole('button', { name: /select marche central/i })).not.toBeInTheDocument()
+  })
+
+  describe('search', () => {
+    beforeEach(() => {
+      getToken.mockReturnValue(null)
+      getDestinations.mockResolvedValue({
+        destinations: [DESTINATION, MONT_FEBE, CRAFT_VILLAGE]
+      })
+    })
+
+    test('shows all destinations before anything is typed', async () => {
+      renderDestinations()
+
+      expect(await screen.findByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+    })
+
+    test('filters live as the user types, matching by name prefix', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      fireEvent.change(searchInput, { target: { value: 'Marche' } })
+
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.queryByText('Mont Febe')).not.toBeInTheDocument()
+      expect(screen.queryByText('Craft Village')).not.toBeInTheDocument()
+    })
+
+    test('matches destinations whose area starts with the query, even if the name does not', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      // "Craft Village" doesn't start with "Mont", but its area ("Mont Febe") does
+      fireEvent.change(searchInput, { target: { value: 'Mont' } })
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+
+    test('updates live on every keystroke without needing a submit action, matching name or area', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+
+      // Typing "Mo" should match "Mont Febe" (name) and "Craft Village" (area: "Mont Febe")
+      fireEvent.change(searchInput, { target: { value: 'Mo' } })
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+
+    test('search is case-insensitive', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      fireEvent.change(searchInput, { target: { value: 'MONT' } })
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+    })
+
+    test('shows a no-results message when nothing matches', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      fireEvent.change(searchInput, { target: { value: 'zzzz' } })
+
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mont Febe')).not.toBeInTheDocument()
+      expect(screen.getByText(/no destinations match/i)).toBeInTheDocument()
+    })
+
+    test('clearing the search restores the full list', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      fireEvent.change(searchInput, { target: { value: 'Mont' } })
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: /clear search/i }))
+
+      expect(searchInput).toHaveValue('')
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+    })
   })
 })
