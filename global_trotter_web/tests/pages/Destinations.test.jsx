@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import Home from '../../src/pages/Home.jsx'
+import Destinations from '../../src/pages/Destinations.jsx'
 import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 import {
   getDestinations,
@@ -35,17 +35,17 @@ const DESTINATION = {
   description: 'Bustling central market known for local produce and crafts.'
 }
 
-function renderHome() {
+function renderDestinations() {
   render(
     <MemoryRouter>
       <ItineraryDraftProvider>
-        <Home />
+        <Destinations />
       </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }
 
-describe('Home', () => {
+describe('Destinations', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     getDestinations.mockResolvedValue({ destinations: [DESTINATION] })
@@ -54,7 +54,7 @@ describe('Home', () => {
 
   test('shows a loading state then renders destination cards', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     expect(screen.getByText(/loading destinations/i)).toBeInTheDocument()
 
@@ -66,14 +66,14 @@ describe('Home', () => {
   test('shows an error message when the destinations request fails', async () => {
     getToken.mockReturnValue(null)
     getDestinations.mockRejectedValueOnce(new Error('Request failed'))
-    renderHome()
+    renderDestinations()
 
     expect(await screen.findByText('Request failed')).toBeInTheDocument()
   })
 
   test('does not fetch favorites when logged out', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     expect(getFavorites).not.toHaveBeenCalled()
@@ -81,7 +81,7 @@ describe('Home', () => {
 
   test('redirects to /login when favoriting while logged out', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     fireEvent.click(screen.getByRole('button', { name: /add to favorites/i }))
@@ -93,7 +93,7 @@ describe('Home', () => {
   test('toggles favorite when logged in', async () => {
     getToken.mockReturnValue('fake-jwt')
     addFavorite.mockResolvedValueOnce({ favorites: ['dest_001'] })
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     fireEvent.click(screen.getByRole('button', { name: /add to favorites/i }))
@@ -109,7 +109,7 @@ describe('Home', () => {
     getToken.mockReturnValue('fake-jwt')
     getFavorites.mockResolvedValueOnce({ favorites: [DESTINATION] })
     removeFavorite.mockResolvedValueOnce({ favorites: [] })
-    renderHome()
+    renderDestinations()
 
     const removeButton = await screen.findByRole('button', { name: /remove from favorites/i })
     fireEvent.click(removeButton)
@@ -123,7 +123,7 @@ describe('Home', () => {
 
   test('redirects to /login when rating while logged out', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     fireEvent.click(screen.getByRole('button', { name: /rate 5 stars/i }))
@@ -138,7 +138,7 @@ describe('Home', () => {
       destination_id: 'dest_001',
       rating: { average: 4.4, count: 57 }
     })
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     fireEvent.click(screen.getByRole('button', { name: /rate 5 stars/i }))
@@ -152,7 +152,7 @@ describe('Home', () => {
 
   test('renders the bottom nav with Destinations, Home, and Itineraries links', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     expect(screen.getByRole('link', { name: /destinations/i })).toHaveAttribute('href', '/destinations')
@@ -162,7 +162,7 @@ describe('Home', () => {
 
   test('does not show selection checkboxes outside of selection mode', async () => {
     getToken.mockReturnValue(null)
-    renderHome()
+    renderDestinations()
 
     await screen.findByText('Marche Central')
     expect(screen.queryByRole('button', { name: /select marche central/i })).not.toBeInTheDocument()

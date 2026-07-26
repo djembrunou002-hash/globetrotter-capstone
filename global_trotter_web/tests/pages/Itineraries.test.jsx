@@ -136,7 +136,8 @@ describe('Itineraries', () => {
     renderItineraries()
 
     await screen.findByText('No itinerary')
-    expect(screen.getByRole('link', { name: /destinations/i })).toHaveAttribute('href', '/home')
+    expect(screen.getByRole('link', { name: /destinations/i })).toHaveAttribute('href', '/destinations')
+    expect(screen.getByRole('link', { name: /^home$/i })).toHaveAttribute('href', '/home')
     expect(screen.getByRole('link', { name: /itineraries/i })).toHaveAttribute('href', '/itineraries')
   })
 

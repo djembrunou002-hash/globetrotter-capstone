@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import StarRating from './StarRating.jsx'
+import '../styles/DestinationCard.css'
 
 const BUDGET_LABELS = {
   low: 'Low budget',
