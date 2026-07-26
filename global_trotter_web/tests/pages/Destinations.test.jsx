@@ -292,4 +292,75 @@ describe('Destinations', () => {
       expect(screen.getByText('Craft Village')).toBeInTheDocument()
     })
   })
+
+  describe('type filters', () => {
+    beforeEach(() => {
+      getToken.mockReturnValue(null)
+      getDestinations.mockResolvedValue({
+        destinations: [DESTINATION, MONT_FEBE, CRAFT_VILLAGE]
+      })
+    })
+
+    test('renders one pill per distinct type present in the data, plus an All pill', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Market' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Viewpoint' })).toBeInTheDocument()
+      // Both Marche Central and Craft Village are type "market" -- should only get one pill
+      expect(screen.getAllByRole('button', { name: 'Market' })).toHaveLength(1)
+    })
+
+    test('All is active by default and shows every destination', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+    })
+
+    test('selecting a type pill filters the grid to that type only', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Viewpoint' }))
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+      expect(screen.queryByText('Craft Village')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Viewpoint' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    test('clicking the active pill again toggles back to showing all destinations', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const viewpointPill = screen.getByRole('button', { name: 'Viewpoint' })
+      fireEvent.click(viewpointPill)
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+
+      fireEvent.click(viewpointPill)
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(viewpointPill).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    test('combines the type filter with the search query', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      // Both Marche Central and Craft Village are "market" type
+      fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+
+      // Narrow further by search -- only Craft Village's area starts with "Mont"
+      const searchInput = screen.getByRole('textbox', { name: /search destinations/i })
+      fireEvent.change(searchInput, { target: { value: 'Mont' } })
+
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+  })
 })

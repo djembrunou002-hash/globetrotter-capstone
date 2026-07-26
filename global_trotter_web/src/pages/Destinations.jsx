@@ -30,6 +30,7 @@ function Destinations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeType, setActiveType] = useState(null)
 
   useEffect(() => {
     async function loadData() {
@@ -108,13 +109,19 @@ function Destinations() {
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
-  const filteredDestinations = normalizedQuery
-    ? destinations.filter(destination => {
-        const name = (destination.name || '').toLowerCase()
-        const area = (destination.area || '').toLowerCase()
-        return name.startsWith(normalizedQuery) || area.startsWith(normalizedQuery)
-      })
-    : destinations
+  const availableTypes = [...new Set(destinations.map(destination => destination.type).filter(Boolean))]
+
+  const filteredDestinations = destinations.filter(destination => {
+    const name = (destination.name || '').toLowerCase()
+    const area = (destination.area || '').toLowerCase()
+    const matchesSearch = !normalizedQuery || name.startsWith(normalizedQuery) || area.startsWith(normalizedQuery)
+    const matchesType = !activeType || destination.type === activeType
+    return matchesSearch && matchesType
+  })
+
+  function handleSelectType(type) {
+    setActiveType(prev => (prev === type ? null : type))
+  }
 
   return (
     <div className="destinations">
@@ -159,6 +166,30 @@ function Destinations() {
         )}
       </div>
 
+      {availableTypes.length > 0 && (
+        <div className="destinations__filters" role="group" aria-label="Filter destinations by type">
+          <button
+            type="button"
+            className={`destinations__filter-pill ${activeType === null ? 'destinations__filter-pill--active' : ''}`}
+            onClick={() => setActiveType(null)}
+            aria-pressed={activeType === null}
+          >
+            All
+          </button>
+          {availableTypes.map(type => (
+            <button
+              key={type}
+              type="button"
+              className={`destinations__filter-pill ${activeType === type ? 'destinations__filter-pill--active' : ''}`}
+              onClick={() => handleSelectType(type)}
+              aria-pressed={activeType === type}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {selectionMode && (
         <div className="destinations__selection-bar">
           <button
@@ -180,7 +211,11 @@ function Destinations() {
         {error && <p className="destinations__status destinations__status--error">{error}</p>}
 
         {!loading && !error && filteredDestinations.length === 0 && (
-          <p className="destinations__status">No destinations match "{searchQuery}".</p>
+          <p className="destinations__status">
+            {searchQuery
+              ? `No destinations match "${searchQuery}".`
+              : 'No destinations match this filter.'}
+          </p>
         )}
 
         {!loading && !error && filteredDestinations.length > 0 && (

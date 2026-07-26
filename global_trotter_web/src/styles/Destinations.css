@@ -130,3 +130,39 @@
   background: #E7DFC9;
   color: var(--color-ink);
 }
+
+.destinations__filters {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 4px clamp(20px, 5vw, 48px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.destinations__filters::-webkit-scrollbar {
+  display: none;
+}
+
+.destinations__filter-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.destinations__filter-pill--active {
+  background: var(--color-forest);
+  border-color: var(--color-forest);
+  color: var(--color-cream);
+}
