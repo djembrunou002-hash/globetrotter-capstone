@@ -148,6 +148,8 @@ landing page
 register page
 login page
 home page
+itineraries
+destinations page
 
 
 ### Setup
