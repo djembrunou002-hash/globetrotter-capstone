@@ -9,7 +9,7 @@ function AddItineraryModal({ destinations, onClose, onSubmit, submitting, submit
 
   function handleChooseDestinations() {
     startSelection()
-    navigate('/home')
+    navigate('/destinations')
   }
 
   function handleSubmit(e) {

@@ -110,14 +110,14 @@ describe('Itineraries', () => {
     expect(createItinerary).not.toHaveBeenCalled()
   })
 
-  test('clicking choose destinations navigates to /home', async () => {
+  test('clicking choose destinations navigates to /destinations', async () => {
     getItineraries.mockResolvedValue({ itineraries: [] })
     renderItineraries()
 
     fireEvent.click(await screen.findByRole('button', { name: /add itinerary/i }))
     fireEvent.click(screen.getByRole('button', { name: /choose destinations/i }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/home')
+    expect(mockNavigate).toHaveBeenCalledWith('/destinations')
   })
 
   test('the itineraries options menu shows a disabled delete action', async () => {

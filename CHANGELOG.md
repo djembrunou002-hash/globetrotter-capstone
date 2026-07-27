@@ -92,6 +92,10 @@
 - Destination images
 - Additional images
 
+
 ## Changed 
 - Destination.json to add destinations
+- Itineraries detail page(`itineraryDetails.jsx`) to add search bar and filters
+- additinerarymodal(`Additinerarymodal`) inorder to route to destination page then add a search bar
+and filters
 
