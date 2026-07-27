@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import Login from '../../src/pages/Login.jsx'
 import { loginUser } from '../../src/services/authService.js'
-import { setToken } from '../../src/services/tokenStorage.js'
+import { setToken, setUser } from '../../src/services/tokenStorage.js'
 
 jest.mock('../../src/services/authService.js')
 jest.mock('../../src/services/tokenStorage.js')
@@ -89,7 +89,7 @@ describe('Login', () => {
   })
 
   test('submits with the +237 prefix silently added to the phone number', async () => {
-    loginUser.mockResolvedValueOnce({ token: 'fake-jwt' })
+    loginUser.mockResolvedValueOnce({ token: 'fake-jwt', user: { id: 'usr_1', name: 'Jane' } })
     renderLogin()
 
     await userEvent.type(screen.getByLabelText(/phone number/i), '677123456')
@@ -109,12 +109,16 @@ describe('Login', () => {
     })
 
     await waitFor(() => {
+      expect(setUser).toHaveBeenCalledWith({ id: 'usr_1', name: 'Jane' })
+    })
+
+    await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/home')
     })
   })
 
   test('submits successfully with only email as the identifier', async () => {
-    loginUser.mockResolvedValueOnce({ token: 'fake-jwt' })
+    loginUser.mockResolvedValueOnce({ token: 'fake-jwt', user: { id: 'usr_1', name: 'Jane' } })
     renderLogin()
 
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@example.com')

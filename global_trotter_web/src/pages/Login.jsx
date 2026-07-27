@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loginUser } from '../services/authService.js'
-import { setToken } from '../services/tokenStorage.js'
+import { setToken, setUser } from '../services/tokenStorage.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordField from '../components/PasswordField.jsx'
 import PhoneInput from '../components/PhoneInput.jsx'
@@ -62,6 +62,7 @@ function Login() {
     try {
       const response = await loginUser(payload)
       setToken(response.token)
+      setUser(response.user)
       navigate('/home')
     } catch (err) {
       setError(err.message)

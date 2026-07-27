@@ -1,0 +1,115 @@
+.profile {
+  min-height: 100vh;
+  background: var(--color-sand);
+}
+
+.profile__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px clamp(20px, 5vw, 48px);
+  border-bottom: 1px solid #E7DFC9;
+}
+
+.profile__title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.profile__content {
+  padding: 32px clamp(20px, 5vw, 48px) 64px;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.profile__content--with-bottom-nav {
+  padding-bottom: 100px;
+}
+
+.profile__status {
+  font-family: var(--font-body);
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}
+
+.profile__status--error {
+  color: #8A1424;
+}
+
+.profile__avatar {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 16px;
+  border-radius: 999px;
+  background: var(--color-forest);
+  color: var(--color-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 2rem;
+}
+
+.profile__name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--color-ink);
+  margin: 0 0 28px;
+}
+
+.profile__info {
+  text-align: left;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  border-radius: 16px;
+  margin: 0 0 28px;
+  overflow: hidden;
+}
+
+.profile__info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.profile__info-row + .profile__info-row {
+  border-top: 1px solid #E7DFC9;
+}
+
+.profile__info-row dt {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.profile__info-row dd {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  text-align: right;
+}
+
+.profile__logout {
+  width: 100%;
+  padding: 14px;
+  border-radius: 999px;
+  border: 1px solid #F3C6CB;
+  background: #FBE7E9;
+  color: #8A1424;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.profile__logout:hover {
+  background: #F3C6CB;
+}

@@ -180,7 +180,7 @@ describe('Destinations', () => {
     expect(await screen.findByText(/4.4 \(57\)/)).toBeInTheDocument()
   })
 
-  test('renders the bottom nav with Destinations, Home, and Itineraries links', async () => {
+  test('renders the bottom nav with Destinations, Home, Itineraries, and Profile links', async () => {
     getToken.mockReturnValue(null)
     renderDestinations()
 
@@ -188,6 +188,7 @@ describe('Destinations', () => {
     expect(screen.getByRole('link', { name: /destinations/i })).toHaveAttribute('href', '/destinations')
     expect(screen.getByRole('link', { name: /^home$/i })).toHaveAttribute('href', '/home')
     expect(screen.getByRole('link', { name: /itineraries/i })).toHaveAttribute('href', '/itineraries')
+    expect(screen.getByRole('link', { name: /profile/i })).toHaveAttribute('href', '/profile')
   })
 
   test('does not show selection checkboxes outside of selection mode', async () => {

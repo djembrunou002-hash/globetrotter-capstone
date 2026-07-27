@@ -10,8 +10,8 @@ import {
 import { getToken } from '../services/tokenStorage.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
-import DestinationCard from '../components/DestinationCard.jsx'
-import BottomNav from '../components/BottomNav.jsx'
+import DestinationCard from '../components/Destinationcard.jsx'
+import BottomNav from '../components/Bottomnav.jsx'
 import '../styles/Home.css'
 
 function Home() {
