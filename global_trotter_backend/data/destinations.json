@@ -345,7 +345,7 @@
       "description": "Stylish nightlife venue offering cocktails, music, and an energetic evening atmosphere."
     },
     {
-      "id": "dest_014",
+      "id": "dest_013",
       "name": "Stade Ahmadou Ahidjo",
       "country": "Cameroon",
       "region": "Centre",
@@ -368,13 +368,13 @@
         "count": 310
       },
       "images": [
-        "/images/destinations/dest_014.jpg"
+        "/images/destinations/dest_013.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Historic national sports stadium host to major football matches and international athletics."
     },
     {
-      "id": "dest_015",
+      "id": "dest_014",
       "name": "Yaounde Golf Club",
       "country": "Cameroon",
       "region": "Centre",
@@ -397,13 +397,13 @@
         "count": 67
       },
       "images": [
-        "/images/destinations/dest_015.jpg"
+        "/images/destinations/dest_014.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Scenic 18-hole golf course nestled in the lush green hills of Mount Fébé."
     },
     {
-      "id": "dest_016",
+      "id": "dest_015",
       "name": "Palais des Sports de Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -426,13 +426,13 @@
         "count": 240
       },
       "images": [
-        "/images/destinations/dest_016.jpg"
+        "/images/destinations/dest_015.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Modern multi-purpose indoor arena hosting sports competitions, expos, and concerts."
     },
     {
-      "id": "dest_017",
+      "id": "dest_016",
       "name": "Hotel La Merina",
       "country": "Cameroon",
       "region": "Centre",
@@ -455,13 +455,13 @@
         "count": 88
       },
       "images": [
-        "/images/destinations/dest_017.jpg"
+        "/images/destinations/dest_016.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Comfortable downtown business hotel situated close to key government ministries."
     },
     {
-      "id": "dest_018",
+      "id": "dest_017",
       "name": "La Pizzeria Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -484,13 +484,13 @@
         "count": 110
       },
       "images": [
-        "/images/destinations/dest_018.jpg"
+        "/images/destinations/dest_017.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Popular pizzeria famous for wood-fired pizzas, pasta, and casual family dining."
     },
     {
-      "id": "dest_019",
+      "id": "dest_018",
       "name": "Chez Marcello",
       "country": "Cameroon",
       "region": "Centre",
@@ -512,13 +512,13 @@
         "count": 73
       },
       "images": [
-        "/images/destinations/dest_019.jpg"
+        "/images/destinations/dest_018.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Charming Italian eatery known for traditional pasta, pizzas, and cozy environment."
     },
     {
-      "id": "dest_020",
+      "id": "dest_019",
       "name": "Maison Blanche Food",
       "country": "Cameroon",
       "region": "Centre",
@@ -541,13 +541,13 @@
         "count": 125
       },
       "images": [
-        "/images/destinations/dest_020.jpg"
+        "/images/destinations/dest_019.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Famous open-air dining spot renowned across town for its seasoned grilled fish."
     },
     {
-      "id": "dest_021",
+      "id": "dest_020",
       "name": "The Famous Restaurant & Lounge",
       "country": "Cameroon",
       "region": "Centre",
@@ -570,13 +570,13 @@
         "count": 80
       },
       "images": [
-        "/images/destinations/dest_021.jpg"
+        "/images/destinations/dest_020.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Modern lounge bar and restaurant offering international plates and weekend music."
     },
     {
-      "id": "dest_022",
+      "id": "dest_021",
       "name": "Bar Panoramique",
       "country": "Cameroon",
       "region": "Centre",
@@ -599,13 +599,13 @@
         "count": 142
       },
       "images": [
-        "/images/destinations/dest_022.jpg"
+        "/images/destinations/dest_021.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Rooftop cocktail bar located atop the Hilton Hotel, boasting skyline views of Yaoundé."
     },
     {
-      "id": "dest_023",
+      "id": "dest_022",
       "name": "Le Bacchus Plus",
       "country": "Cameroon",
       "region": "Centre",
@@ -628,13 +628,13 @@
         "count": 98
       },
       "images": [
-        "/images/destinations/dest_023.jpg"
+        "/images/destinations/dest_022.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Established high-end French gastronomic restaurant and wine cellar."
     },
     {
-      "id": "dest_024",
+      "id": "dest_023",
       "name": "Hilton Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -657,13 +657,13 @@
         "count": 520
       },
       "images": [
-        "/images/destinations/dest_024.jpg"
+        "/images/destinations/dest_023.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Iconic 5-star downtown hotel featuring executive suites, pools, and multiple restaurants."
     },
     {
-      "id": "dest_025",
+      "id": "dest_024",
       "name": "Le Safoutier",
       "country": "Cameroon",
       "region": "Centre",
@@ -686,13 +686,13 @@
         "count": 86
       },
       "images": [
-        "/images/destinations/dest_025.jpg"
+        "/images/destinations/dest_024.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Main restaurant at the Hilton Hotel known for expansive breakfast and dinner buffets."
     },
     {
-      "id": "dest_026",
+      "id": "dest_025",
       "name": "Mont Febe",
       "country": "Cameroon",
       "region": "Centre",
@@ -715,13 +715,13 @@
         "count": 69
       },
       "images": [
-        "/images/destinations/dest_026.jpg"
+        "/images/destinations/dest_025.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Famous hill elevated above the city offering sweeping mountain views and fresh breezes."
     },
     {
-      "id": "dest_027",
+      "id": "dest_026",
       "name": "Bois Sainte-Anastasie",
       "country": "Cameroon",
       "region": "Centre",
@@ -744,13 +744,13 @@
         "count": 165
       },
       "images": [
-        "/images/destinations/dest_027.jpg"
+        "/images/destinations/dest_026.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Tranquil botanical park in central Yaoundé with garden walkways and outdoor dining."
     },
     {
-      "id": "dest_028",
+      "id": "dest_027",
       "name": "Eco Park Ahala",
       "country": "Cameroon",
       "region": "Centre",
@@ -773,13 +773,13 @@
         "count": 140
       },
       "images": [
-        "/images/destinations/dest_028.jpg"
+        "/images/destinations/dest_027.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Family-friendly recreational eco-park featuring ponds, playgrounds, and animal exhibits."
     },
     {
-      "id": "dest_029",
+      "id": "dest_028",
       "name": "Blackitude Museum",
       "country": "Cameroon",
       "region": "Centre",
@@ -802,13 +802,13 @@
         "count": 92
       },
       "images": [
-        "/images/destinations/dest_029.jpg"
+        "/images/destinations/dest_028.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Private museum showcasing royal artifacts, traditional masks, and Cameroonian tribal heritage."
     },
     {
-      "id": "dest_030",
+      "id": "dest_029",
       "name": "Hotel La Falaise Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -831,13 +831,13 @@
         "count": 280
       },
       "images": [
-        "/images/destinations/dest_030.jpg"
+        "/images/destinations/dest_029.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Modern high-rise hotel featuring upscale rooms, dining, and city views."
     },
     {
-      "id": "dest_031",
+      "id": "dest_030",
       "name": "Star Land Hotel Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -860,13 +860,13 @@
         "count": 190
       },
       "images": [
-        "/images/destinations/dest_031.jpg"
+        "/images/destinations/dest_030.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Contemporary luxury hotel situated in the quiet diplomatic neighborhood of Bastos."
     },
     {
-      "id": "dest_032",
+      "id": "dest_031",
       "name": "Statue of Charles Atangana",
       "country": "Cameroon",
       "region": "Centre",
@@ -888,13 +888,13 @@
         "count": 35
       },
       "images": [
-        "/images/destinations/dest_032.jpg"
+        "/images/destinations/dest_031.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Historic monument honoring the paramount chief of the Ewondo and Bene peoples."
     },
     {
-      "id": "dest_033",
+      "id": "dest_032",
       "name": "Basilique Marie-Reine-des-Apostres de Mvolye",
       "country": "Cameroon",
       "region": "Centre",
@@ -917,13 +917,13 @@
         "count": 210
       },
       "images": [
-        "/images/destinations/dest_033.jpg"
+        "/images/destinations/dest_032.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Striking architectural Marian basilica built on 12 granite pillars with stained-glass art."
     },
     {
-      "id": "dest_034",
+      "id": "dest_033",
       "name": "Cathedrale Notre-Dame-des-Victoires",
       "country": "Cameroon",
       "region": "Centre",
@@ -945,13 +945,13 @@
         "count": 185
       },
       "images": [
-        "/images/destinations/dest_034.jpg"
+        "/images/destinations/dest_033.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Grand Catholic cathedral located at the central city roundabout."
     },
     {
-      "id": "dest_035",
+      "id": "dest_034",
       "name": "Reunification Monument",
       "country": "Cameroon",
       "region": "Centre",
@@ -974,13 +974,13 @@
         "count": 230
       },
       "images": [
-        "/images/destinations/dest_035.jpg"
+        "/images/destinations/dest_034.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Famous architectural monument symbolizing the 1961 union of British and French Cameroon."
     },
     {
-      "id": "dest_036",
+      "id": "dest_035",
       "name": "Le Bois d'Ebene",
       "country": "Cameroon",
       "region": "Centre",
@@ -1002,13 +1002,13 @@
         "count": 55
       },
       "images": [
-        "/images/destinations/dest_036.jpg"
+        "/images/destinations/dest_035.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Welcoming restaurant blending local flavors with international dining."
     },
     {
-      "id": "dest_037",
+      "id": "dest_036",
       "name": "Chez Wou",
       "country": "Cameroon",
       "region": "Centre",
@@ -1031,13 +1031,13 @@
         "count": 140
       },
       "images": [
-        "/images/destinations/dest_037.jpg"
+        "/images/destinations/dest_036.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Premier Asian restaurant in Yaoundé known for authentic Chinese dishes and dim sum."
     },
     {
-      "id": "dest_038",
+      "id": "dest_037",
       "name": "Le Wengue Restaurant",
       "country": "Cameroon",
       "region": "Centre",
@@ -1059,13 +1059,13 @@
         "count": 48
       },
       "images": [
-        "/images/destinations/dest_038.jpg"
+        "/images/destinations/dest_037.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Cozy restaurant with an inviting garden setting and diverse lunch menus."
     },
     {
-      "id": "dest_039",
+      "id": "dest_038",
       "name": "La Briqueterie 50-50 (Soya)",
       "country": "Cameroon",
       "region": "Centre",
@@ -1089,13 +1089,13 @@
         "count": 310
       },
       "images": [
-        "/images/destinations/dest_039.jpg"
+        "/images/destinations/dest_038.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Legendary street food spot famous for sliced spicy beef skewers (Soya) grilled over open flame."
     },
     {
-      "id": "dest_040",
+      "id": "dest_039",
       "name": "Lac Municipal de Yaounde",
       "country": "Cameroon",
       "region": "Centre",
@@ -1118,13 +1118,13 @@
         "count": 115
       },
       "images": [
-        "/images/destinations/dest_040.jpg"
+        "/images/destinations/dest_039.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Central urban lake surrounded by government buildings and walking promenades."
     },
     {
-      "id": "dest_041",
+      "id": "dest_040",
       "name": "Ekom Nkam Waterfalls",
       "country": "Cameroon",
       "region": "Littoral",
@@ -1147,13 +1147,13 @@
         "count": 180
       },
       "images": [
-        "/images/destinations/dest_041.jpg"
+        "/images/destinations/dest_040.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Spectacular 80m twin waterfalls in dense jungle foliage, filmed in the 1984 Tarzan movie."
     },
     {
-      "id": "dest_042",
+      "id": "dest_041",
       "name": "Nkolbisson Forest",
       "country": "Cameroon",
       "region": "Centre",
@@ -1175,13 +1175,13 @@
         "count": 32
       },
       "images": [
-        "/images/destinations/dest_042.jpg"
+        "/images/destinations/dest_041.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Lush forest area near IRAD institute suitable for nature walks and research trips."
     },
     {
-      "id": "dest_043",
+      "id": "dest_042",
       "name": "Fleuve Nyong",
       "country": "Cameroon",
       "region": "Centre",
@@ -1204,13 +1204,13 @@
         "count": 60
       },
       "images": [
-        "/images/destinations/dest_043.jpg"
+        "/images/destinations/dest_042.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Major river offering scenic pirogue trips, fishing, and peaceful natural views."
     },
     {
-      "id": "dest_044",
+      "id": "dest_043",
       "name": "Parc National de Mefou",
       "country": "Cameroon",
       "region": "Centre",
@@ -1233,13 +1233,13 @@
         "count": 210
       },
       "images": [
-        "/images/destinations/dest_044.jpg"
+        "/images/destinations/dest_043.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Renowned primate sanctuary providing natural rainforest habitats for rescued gorillas and chimps."
     },
     {
-      "id": "dest_045",
+      "id": "dest_044",
       "name": "Majestic Cinema",
       "country": "Cameroon",
       "region": "Centre",
@@ -1262,13 +1262,13 @@
         "count": 110
       },
       "images": [
-        "/images/destinations/dest_045.jpg"
+        "/images/destinations/dest_044.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
       "description": "Modern movie theater showing international blockbusters and African cinematic releases."
     },
     {
-  "id": "dest_046",
+  "id": "dest_045",
   "name": "National Museum of Cameroon",
   "country": "Cameroon",
   "region": "Centre",
@@ -1292,7 +1292,7 @@
     "count": 250
   },
   "images": [
-    "/images/destinations/dest_046.jpg"
+    "/images/destinations/dest_045.jpg"
   ],
   "last_updated": "2026-07-27T00:00:00Z",
   "description": "Cameroon's principal national museum, housed in the former presidential palace. It features exhibitions on the country's history, cultural diversity, traditional artifacts, and contemporary art."
