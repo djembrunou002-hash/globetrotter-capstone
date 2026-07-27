@@ -1240,62 +1240,64 @@
     },
     {
       "id": "dest_044",
-      "name": "Majestic Cinema",
+      "name": "Majestic Yaoundé I University",
       "country": "Cameroon",
       "region": "Centre",
-      "area": "Bastos",
+      "area": "Ngoa-Ekellé",
       "type": "entertainment",
       "tags": [
         "cinema",
         "movies",
         "entertainment",
-        "nightlife"
+        "university",
+        "culture",
+        "events"
       ],
-      "budget_level": "medium",
+      "budget_level": "low",
       "location": {
-        "lat": 3.8885,
-        "lng": 11.5155,
-        "address": "Bastos, Yaounde"
+      "lat": 3.8485,
+      "lng": 11.5015,
+      "address": "University of Yaoundé I, Joseph Tchooungui Akoa, Ngoa-Ekellé, Yaoundé"
       },
       "rating": {
-        "average": 4.2,
-        "count": 110
+      "average": 4.1,
+      "count": 1852
       },
       "images": [
         "/images/destinations/dest_044.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Modern movie theater showing international blockbusters and African cinematic releases."
+      "description": "Modern cinema and cultural complex located on the University of Yaoundé I campus. Formerly Canal Olympia, it now operates as Majestic Yaoundé I University, offering blockbuster movies, African films, student discounts, gaming spaces, cultural events, concerts, and gala evenings."
     },
     {
-  "id": "dest_045",
-  "name": "National Museum of Cameroon",
-  "country": "Cameroon",
-  "region": "Centre",
-  "area": "Centre-ville",
-  "type": "museum",
-  "tags": [
-    "museum",
-    "history",
-    "culture",
-    "art",
-    "heritage"
-  ],
-  "budget_level": "low",
-  "location": {
-    "lat": 3.8618,
-    "lng": 11.5164,
-    "address": "Former Presidential Palace, Centre-ville, Yaounde"
-  },
-  "rating": {
-    "average": 4.5,
-    "count": 250
-  },
-  "images": [
-    "/images/destinations/dest_045.jpg"
-  ],
-  "last_updated": "2026-07-27T00:00:00Z",
-  "description": "Cameroon's principal national museum, housed in the former presidential palace. It features exhibitions on the country's history, cultural diversity, traditional artifacts, and contemporary art."
-}
+      "id": "dest_045",
+      "name": "National Museum of Cameroon",
+      "country": "Cameroon",
+      "region": "Centre",
+      "area": "Centre-ville",
+      "type": "museum",
+      "tags": [
+        "museum",
+        "history",
+        "culture",
+        "art",
+        "heritage"
+      ],
+      "budget_level": "low",
+      "location": {
+      "lat": 3.8618,
+      "lng": 11.5164,
+      "address": "Former Presidential Palace, Centre-ville, Yaounde"
+      },
+      "rating": {
+      "average": 4.5,
+      "count": 250
+      },
+      "images": [
+        "/images/destinations/dest_045.jpg"
+      ],
+      "last_updated": "2026-07-27T00:00:00Z",
+      "description": "Cameroon's principal national museum, housed in the former presidential palace. It features exhibitions on the country's history, cultural diversity, traditional artifacts, and contemporary art."
+    }
   ]
 }

@@ -90,6 +90,7 @@
 
 ## Added 
 - Destination images
+- Additional images
 
 ## Changed 
 - Destination.json to add destinations
