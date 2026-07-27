@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import StarRating from './StarRating.jsx'
 import '../styles/DestinationCard.css'
 
@@ -21,14 +22,31 @@ function DestinationCard({
   visited = false,
   onToggleVisited
 }) {
+  const navigate = useNavigate()
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
+
+  function handleOpenDetails() {
+    navigate(`/destinations/${destination.id}`)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleOpenDetails()
+    }
+  }
 
   return (
     <article
       className={`destination-card ${selectable ? 'destination-card--selectable' : ''} ${
         visited ? 'destination-card--visited' : ''
       }`}
+      role="button"
+      tabIndex={0}
+      onClick={handleOpenDetails}
+      onKeyDown={handleKeyDown}
+      aria-label={`View details for ${destination.name}`}
     >
       <div className="destination-card__image-wrap">
         {image && !imageFailed ? (
@@ -49,7 +67,10 @@ function DestinationCard({
           <button
             type="button"
             className={`destination-card__checkbox ${selected ? 'destination-card__checkbox--checked' : ''}`}
-            onClick={() => onToggleSelect(destination.id)}
+            onClick={e => {
+              e.stopPropagation()
+              onToggleSelect(destination.id)
+            }}
             aria-label={selected ? `Deselect ${destination.name}` : `Select ${destination.name}`}
             aria-pressed={selected}
           >
@@ -67,7 +88,10 @@ function DestinationCard({
             className={`destination-card__visited-checkbox ${
               visited ? 'destination-card__visited-checkbox--checked' : ''
             }`}
-            onClick={() => onToggleVisited(destination.id)}
+            onClick={e => {
+              e.stopPropagation()
+              onToggleVisited(destination.id)
+            }}
             aria-label={visited ? `Mark ${destination.name} as not visited` : `Mark ${destination.name} as visited`}
             aria-pressed={visited}
           >
@@ -94,14 +118,16 @@ function DestinationCard({
           </ul>
         )}
 
-        <StarRating
-          average={destination.rating?.average || 0}
-          count={destination.rating?.count || 0}
-          isAuthenticated={isAuthenticated}
-          onRate={stars => onRate(destination.id, stars)}
-        />
+        <div onClick={e => e.stopPropagation()}>
+          <StarRating
+            average={destination.rating?.average || 0}
+            count={destination.rating?.count || 0}
+            isAuthenticated={isAuthenticated}
+            onRate={stars => onRate(destination.id, stars)}
+          />
+        </div>
 
-        <div className="destination-card__actions">
+        <div className="destination-card__actions" onClick={e => e.stopPropagation()}>
           <button type="button" className="destination-card__location" disabled title="Map view coming soon">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />

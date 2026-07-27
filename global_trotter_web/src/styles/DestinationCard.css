@@ -6,11 +6,17 @@
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .destination-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(11, 61, 36, 0.1);
+}
+
+.destination-card:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
 
 .destination-card__image-wrap {

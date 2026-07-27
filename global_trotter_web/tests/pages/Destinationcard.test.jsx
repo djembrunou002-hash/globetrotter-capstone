@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import DestinationCard from '../../src/components/DestinationCard.jsx'
 
 const DESTINATION = {
@@ -12,17 +13,34 @@ const DESTINATION = {
   images: ['https://cdn.globetrotter.com/dest_001/main.jpg']
 }
 
-describe('DestinationCard', () => {
-  test('renders name, area, type, tags, and budget level', () => {
-    render(
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate
+}))
+
+function renderCard(props = {}) {
+  return render(
+    <MemoryRouter>
       <DestinationCard
         destination={DESTINATION}
         isFavorite={false}
         isAuthenticated={true}
         onToggleFavorite={jest.fn()}
         onRate={jest.fn()}
+        {...props}
       />
-    )
+    </MemoryRouter>
+  )
+}
+
+beforeEach(() => {
+  jest.clearAllMocks()
+})
+
+describe('DestinationCard', () => {
+  test('renders name, area, type, tags, and budget level', () => {
+    renderCard()
 
     expect(screen.getByText('Marche Central')).toBeInTheDocument()
     expect(screen.getByText(/centre-ville · market/i)).toBeInTheDocument()
@@ -33,79 +51,94 @@ describe('DestinationCard', () => {
   })
 
   test('the location button is disabled', () => {
-    render(
-      <DestinationCard
-        destination={DESTINATION}
-        isFavorite={false}
-        isAuthenticated={true}
-        onToggleFavorite={jest.fn()}
-        onRate={jest.fn()}
-      />
-    )
+    renderCard()
 
     expect(screen.getByRole('button', { name: /location/i })).toBeDisabled()
   })
 
   test('calls onToggleFavorite with the destination id', () => {
     const onToggleFavorite = jest.fn()
-    render(
-      <DestinationCard
-        destination={DESTINATION}
-        isFavorite={false}
-        isAuthenticated={true}
-        onToggleFavorite={onToggleFavorite}
-        onRate={jest.fn()}
-      />
-    )
+    renderCard({ onToggleFavorite })
 
     fireEvent.click(screen.getByRole('button', { name: /add to favorites/i }))
     expect(onToggleFavorite).toHaveBeenCalledWith('dest_001')
   })
 
   test('shows remove label when already a favorite', () => {
-    render(
-      <DestinationCard
-        destination={DESTINATION}
-        isFavorite={true}
-        isAuthenticated={true}
-        onToggleFavorite={jest.fn()}
-        onRate={jest.fn()}
-      />
-    )
+    renderCard({ isFavorite: true })
 
     expect(screen.getByRole('button', { name: /remove from favorites/i })).toBeInTheDocument()
   })
 
   test('calls onRate with the destination id and chosen star count', () => {
     const onRate = jest.fn()
-    render(
-      <DestinationCard
-        destination={DESTINATION}
-        isFavorite={false}
-        isAuthenticated={true}
-        onToggleFavorite={jest.fn()}
-        onRate={onRate}
-      />
-    )
+    renderCard({ onRate })
 
     fireEvent.click(screen.getByRole('button', { name: /rate 3 stars/i }))
     expect(onRate).toHaveBeenCalledWith('dest_001', 3)
   })
 
   test('falls back to a placeholder image on load failure', () => {
-    render(
-      <DestinationCard
-        destination={DESTINATION}
-        isFavorite={false}
-        isAuthenticated={true}
-        onToggleFavorite={jest.fn()}
-        onRate={jest.fn()}
-      />
-    )
+    renderCard()
 
     const image = screen.getByAltText('Marche Central')
     fireEvent.error(image)
 
     expect(screen.queryByAltText('Marche Central')).not.toBeInTheDocument()
+  })
+
+  describe('navigating to the detail page', () => {
+    test('clicking the card navigates to its detail page', () => {
+      renderCard()
+
+      fireEvent.click(screen.getByRole('button', { name: /view details for marche central/i }))
+
+      expect(mockNavigate).toHaveBeenCalledWith('/destinations/dest_001')
+    })
+
+    test('pressing Enter on the focused card navigates to its detail page', () => {
+      renderCard()
+
+      const card = screen.getByRole('button', { name: /view details for marche central/i })
+      fireEvent.keyDown(card, { key: 'Enter' })
+
+      expect(mockNavigate).toHaveBeenCalledWith('/destinations/dest_001')
+    })
+
+    test('clicking the favorite button does not also navigate', () => {
+      renderCard()
+
+      fireEvent.click(screen.getByRole('button', { name: /add to favorites/i }))
+
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    test('clicking a rating star does not also navigate', () => {
+      renderCard()
+
+      fireEvent.click(screen.getByRole('button', { name: /rate 3 stars/i }))
+
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    test('clicking the selection checkbox does not also navigate', () => {
+      const onToggleSelect = jest.fn()
+      renderCard({ selectable: true, onToggleSelect })
+
+      fireEvent.click(screen.getByRole('button', { name: /select marche central/i }))
+
+      expect(onToggleSelect).toHaveBeenCalledWith('dest_001')
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
+
+    test('clicking the visited checkbox does not also navigate', () => {
+      const onToggleVisited = jest.fn()
+      renderCard({ visitable: true, onToggleVisited })
+
+      fireEvent.click(screen.getByRole('button', { name: /mark marche central as visited/i }))
+
+      expect(onToggleVisited).toHaveBeenCalledWith('dest_001')
+      expect(mockNavigate).not.toHaveBeenCalled()
+    })
   })
 })

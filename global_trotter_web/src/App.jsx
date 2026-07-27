@@ -5,8 +5,9 @@ import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
 import Destinations from './pages/Destinations.jsx'
+import DestinationDetails from './pages/DestinationDetails.jsx'
 import Itineraries from './pages/Itineraries.jsx'
-import ItineraryDetails from './pages/ItineraryDetails.jsx'
+import ItineraryDetails from './pages/itineraryDetails.jsx'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/destinations" element={<Destinations />} />
+          <Route path="/destinations/:id" element={<DestinationDetails />} />
           <Route path="/itineraries" element={<Itineraries />} />
           <Route path="/itineraries/:id" element={<ItineraryDetails />} />
           <Route path="*" element={<Navigate to="/" replace />} />
