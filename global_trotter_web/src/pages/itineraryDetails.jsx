@@ -10,8 +10,8 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
-import DestinationCard from '../components/DestinationCard.jsx'
-import BottomNav from '../components/BottomNav.jsx'
+import DestinationCard from '../components/Destinationcard.jsx'
+import BottomNav from '../components/Bottomnav.jsx'
 import '../styles/ItineraryDetails.css'
 
 function formatDate(dateString) {

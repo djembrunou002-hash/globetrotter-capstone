@@ -117,4 +117,5 @@ and filters
 - `Destinationcard.css` to update stars UI to your actual vote
 - `destinations.json`
 - `users.json`
+- itinerary details page(`itineraryDetails.jsx`) adding search bar and filters
 
