@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import userEvent from '@testing-library/user-event'
 import ItineraryDetails from '../../src/pages/itineraryDetails.jsx'
 import { getItineraries } from '../../src/services/itineraryService.js'
 import {
@@ -103,5 +104,81 @@ describe('ItineraryDetails', () => {
 
     const checkbox = screen.getByRole('button', { name: /mark marche central as visited/i })
     expect(checkbox).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  describe('search and filter', () => {
+    test('filters this itinerary by name prefix as the user types', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      await userEvent.type(
+        screen.getByRole('textbox', { name: /search this itinerary/i }),
+        'Mo'
+      )
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+
+    test('filters this itinerary by area prefix', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      await userEvent.type(
+        screen.getByRole('textbox', { name: /search this itinerary/i }),
+        'Bas'
+      )
+
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+
+    test('shows a no-results message scoped to this itinerary when nothing matches', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      await userEvent.type(
+        screen.getByRole('textbox', { name: /search this itinerary/i }),
+        'zzz'
+      )
+
+      expect(screen.getByText(/no destinations in this itinerary match "zzz"/i)).toBeInTheDocument()
+    })
+
+    test('clearing the search restores both destinations', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      const searchInput = screen.getByRole('textbox', { name: /search this itinerary/i })
+      await userEvent.type(searchInput, 'Mo')
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+
+      await userEvent.clear(searchInput)
+
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+    })
+
+    test('renders a filter pill for each type present in this itinerary', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Market' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Viewpoint' })).toBeInTheDocument()
+    })
+
+    test('selecting a type filter shows only matching destinations, and toggling it off restores both', async () => {
+      renderItineraryDetails()
+      await screen.findByText('Marche Central')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.queryByText('Mont Febe')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+    })
   })
 })

@@ -10,15 +10,15 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
-import DestinationCard from '../components/Destinationcard.jsx'
-import BottomNav from '../components/Bottomnav.jsx'
+import DestinationCard from '../components/DestinationCard.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 import '../styles/ItineraryDetails.css'
 
 function formatDate(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return dateString
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function ItineraryDetails() {
@@ -32,6 +32,8 @@ function ItineraryDetails() {
   const [visitedIds, setVisitedIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeType, setActiveType] = useState(null)
 
   useEffect(() => {
     if (!getToken()) {
@@ -113,9 +115,24 @@ function ItineraryDetails() {
     })
   }
 
+  function handleSelectType(type) {
+    setActiveType(prev => (prev === type ? null : type))
+  }
+
   const itineraryDestinations = itinerary
     ? itinerary.destinations.map(destId => destinations.find(d => d.id === destId)).filter(Boolean)
     : []
+
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const availableTypes = [...new Set(itineraryDestinations.map(destination => destination.type).filter(Boolean))]
+
+  const filteredDestinations = itineraryDestinations.filter(destination => {
+    const name = (destination.name || '').toLowerCase()
+    const area = (destination.area || '').toLowerCase()
+    const matchesSearch = !normalizedQuery || name.startsWith(normalizedQuery) || area.startsWith(normalizedQuery)
+    const matchesType = !activeType || destination.type === activeType
+    return matchesSearch && matchesType
+  })
 
   return (
     <div className="itinerary-details">
@@ -144,21 +161,91 @@ function ItineraryDetails() {
               {formatDate(itinerary.start_date)} – {formatDate(itinerary.end_date)}
             </p>
 
-            <div className="itinerary-details__grid">
-              {itineraryDestinations.map(destination => (
-                <DestinationCard
-                  key={destination.id}
-                  destination={destination}
-                  isFavorite={favoriteIds.has(destination.id)}
-                  isAuthenticated={isAuthenticated}
-                  onToggleFavorite={handleToggleFavorite}
-                  onRate={handleRate}
-                  visitable
-                  visited={visitedIds.has(destination.id)}
-                  onToggleVisited={handleToggleVisited}
-                />
-              ))}
+            <div className="itinerary-details__search-bar">
+              <svg
+                className="itinerary-details__search-icon"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                className="itinerary-details__search-input"
+                placeholder="Search this itinerary by name or area"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                aria-label="Search this itinerary's destinations by name or area"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="itinerary-details__search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              )}
             </div>
+
+            {availableTypes.length > 0 && (
+              <div className="itinerary-details__filters" role="group" aria-label="Filter this itinerary's destinations by type">
+                <button
+                  type="button"
+                  className={`itinerary-details__filter-pill ${activeType === null ? 'itinerary-details__filter-pill--active' : ''}`}
+                  onClick={() => setActiveType(null)}
+                  aria-pressed={activeType === null}
+                >
+                  All
+                </button>
+                {availableTypes.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`itinerary-details__filter-pill ${activeType === type ? 'itinerary-details__filter-pill--active' : ''}`}
+                    onClick={() => handleSelectType(type)}
+                    aria-pressed={activeType === type}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {filteredDestinations.length === 0 && (
+              <p className="itinerary-details__status">
+                {searchQuery
+                  ? `No destinations in this itinerary match "${searchQuery}".`
+                  : 'No destinations match this filter.'}
+              </p>
+            )}
+
+            {filteredDestinations.length > 0 && (
+              <div className="itinerary-details__grid">
+                {filteredDestinations.map(destination => (
+                  <DestinationCard
+                    key={destination.id}
+                    destination={destination}
+                    isFavorite={favoriteIds.has(destination.id)}
+                    isAuthenticated={isAuthenticated}
+                    onToggleFavorite={handleToggleFavorite}
+                    onRate={handleRate}
+                    visitable
+                    visited={visitedIds.has(destination.id)}
+                    onToggleVisited={handleToggleVisited}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </main>
