@@ -81,14 +81,14 @@ function Landing() {
 
 
           <h1 className="landing__headline">
-            Cameroon, in <em>every</em> direction.
+            Yaoundé, in <em>every</em> direction.
           </h1>
 
 
           <p className="landing__subcopy">
-            From the surf at Kribi to the peaks above Buea,
-            plan a trip across a country that holds nearly
-            every landscape in Africa within its borders.
+            From shaded boulevards to panoramic hilltops, explore Yaoundé, 
+            the heart of Cameroon, where every neighborhood tells a story 
+            and every journey begins.
           </p>
 
 
