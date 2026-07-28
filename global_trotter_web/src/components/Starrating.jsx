@@ -2,13 +2,16 @@ import { useState } from 'react'
 
 function StarRating({ average, count, isAuthenticated, onRate }) {
   const [hovered, setHovered] = useState(0)
+  const [userRating, setUserRating] = useState(null)
   const rounded = Math.round(average)
+  const displayedStars = hovered || userRating || rounded
 
   function handleClick(stars) {
     if (!isAuthenticated) {
       onRate(null)
       return
     }
+    setUserRating(stars)
     onRate(stars)
   }
 
@@ -31,7 +34,7 @@ function StarRating({ average, count, isAuthenticated, onRate }) {
               viewBox="0 0 24 24"
               width="16"
               height="16"
-              fill={(hovered || rounded) >= star ? '#F2B705' : 'none'}
+              fill={displayedStars >= star ? '#F2B705' : 'none'}
               stroke="#F2B705"
               strokeWidth="1.5"
             >
@@ -41,6 +44,7 @@ function StarRating({ average, count, isAuthenticated, onRate }) {
         ))}
       </div>
       <span className="destination-card__rating-count">
+        {userRating && <span className="destination-card__your-rating">You rated {userRating} · </span>}
         {average.toFixed(1)} ({count})
       </span>
     </div>

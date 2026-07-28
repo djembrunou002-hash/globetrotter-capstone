@@ -124,6 +124,11 @@
   color: var(--color-muted);
 }
 
+.destination-card__your-rating {
+  color: var(--color-forest);
+  font-weight: 600;
+}
+
 .destination-card__actions {
   display: flex;
   align-items: center;
