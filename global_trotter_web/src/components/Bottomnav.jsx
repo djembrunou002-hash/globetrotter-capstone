@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import '../styles/BottomNav.css'
+import '../styles/Bottomnav.css'
 
 function BottomNav() {
   const location = useLocation()
