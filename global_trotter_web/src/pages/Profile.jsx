@@ -34,6 +34,10 @@ function Profile() {
       return
     }
 
+    if (!user) {
+      return
+    }
+
     async function loadFavorites() {
       try {
         const response = await getFavorites()
@@ -44,7 +48,7 @@ function Profile() {
     }
 
     loadFavorites()
-  }, [navigate])
+  }, [navigate, user])
 
   function handleLogout() {
     clearToken()

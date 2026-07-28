@@ -7,8 +7,8 @@ import {
   removeFavorite,
   rateDestination
 } from '../services/destinationService.js'
+import { getRecommendations } from '../services/recommendationService.js'
 import { getToken } from '../services/tokenStorage.js'
-import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -17,29 +17,34 @@ import '../styles/Home.css'
 function Home() {
   const navigate = useNavigate()
   const isAuthenticated = Boolean(getToken())
-  const {
-    selectionMode,
-    draft,
-    toggleDestination,
-    confirmSelection,
-    cancelSelection
-  } = useItineraryDraft()
 
-  const [destinations, setDestinations] = useState([])
+  const [recommendedDestinations, setRecommendedDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!getToken()) {
+      navigate('/login')
+      return
+    }
+
     async function loadData() {
       setLoading(true)
       setError('')
       try {
-        const [destinationsResponse, favoritesResponse] = await Promise.all([
+        const [recommendationsResponse, destinationsResponse, favoritesResponse] = await Promise.all([
+          getRecommendations(),
           getDestinations(),
-          isAuthenticated ? getFavorites() : Promise.resolve({ favorites: [] })
+          getFavorites()
         ])
-        setDestinations(destinationsResponse.destinations)
+
+        const destinationsById = new Map(destinationsResponse.destinations.map(d => [d.id, d]))
+        const recommended = recommendationsResponse.recommendations
+          .map(r => destinationsById.get(r.destination_id))
+          .filter(Boolean)
+
+        setRecommendedDestinations(recommended)
         setFavoriteIds(new Set(favoritesResponse.favorites.map(d => d.id)))
       } catch (err) {
         setError(err.message)
@@ -49,14 +54,9 @@ function Home() {
     }
 
     loadData()
-  }, [isAuthenticated])
+  }, [navigate])
 
   async function handleToggleFavorite(destinationId) {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
-    }
-
     const isCurrentlyFavorite = favoriteIds.has(destinationId)
 
     try {
@@ -77,14 +77,9 @@ function Home() {
   }
 
   async function handleRate(destinationId, stars) {
-    if (stars === null) {
-      navigate('/login')
-      return
-    }
-
     try {
       const response = await rateDestination(destinationId, stars)
-      setDestinations(prev =>
+      setRecommendedDestinations(prev =>
         prev.map(destination =>
           destination.id === destinationId
             ? { ...destination, rating: response.rating }
@@ -96,46 +91,26 @@ function Home() {
     }
   }
 
-  function handleConfirmSelection() {
-    confirmSelection()
-    navigate('/itineraries')
-  }
-
-  function handleCancelSelection() {
-    cancelSelection()
-    navigate('/itineraries')
-  }
-
   return (
     <div className="home">
       <header className="home__header">
         <Logo theme="dark" />
-        <h1 className="home__title">Destinations</h1>
+        <h1 className="home__title">Recommended for you</h1>
       </header>
 
-      {selectionMode && (
-        <div className="home__selection-bar">
-          <button
-            type="button"
-            className="home__selection-cancel"
-            onClick={handleCancelSelection}
-            aria-label="Cancel destination selection"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12H19" />
-              <path d="M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      )}
-
       <main className="home__content home__content--with-bottom-nav">
-        {loading && <p className="home__status">Loading destinations...</p>}
+        {loading && <p className="home__status">Loading recommendations...</p>}
         {error && <p className="home__status home__status--error">{error}</p>}
 
-        {!loading && !error && (
+        {!loading && !error && recommendedDestinations.length === 0 && (
+          <p className="home__status">
+            No recommendations yet -- rate or favorite a few destinations to get personalized picks.
+          </p>
+        )}
+
+        {!loading && !error && recommendedDestinations.length > 0 && (
           <div className="home__grid">
-            {destinations.map(destination => (
+            {recommendedDestinations.map(destination => (
               <DestinationCard
                 key={destination.id}
                 destination={destination}
@@ -143,20 +118,11 @@ function Home() {
                 isAuthenticated={isAuthenticated}
                 onToggleFavorite={handleToggleFavorite}
                 onRate={handleRate}
-                selectable={selectionMode}
-                selected={draft.selectedDestinationIds.includes(destination.id)}
-                onToggleSelect={toggleDestination}
               />
             ))}
           </div>
         )}
       </main>
-
-      {selectionMode && draft.selectedDestinationIds.length > 0 && (
-        <button type="button" className="home__confirm-selection" onClick={handleConfirmSelection}>
-          Confirm selected ({draft.selectedDestinationIds.length})
-        </button>
-      )}
 
       <BottomNav />
     </div>

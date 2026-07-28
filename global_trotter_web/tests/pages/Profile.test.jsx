@@ -52,6 +52,9 @@ describe('Profile', () => {
     expect(screen.getByText('jane@example.com')).toBeInTheDocument()
     expect(screen.getByText('+237 677123456')).toBeInTheDocument()
     expect(screen.getByText('June 2026')).toBeInTheDocument()
+
+    // wait for the favorites fetch to settle so it doesn't resolve after the test ends
+    expect(await screen.findByText('2')).toBeInTheDocument()
   })
 
   test('shows the favorite destination count fetched from the backend', async () => {
@@ -61,11 +64,13 @@ describe('Profile', () => {
     expect(await screen.findByText('2')).toBeInTheDocument()
   })
 
-  test('shows a fallback message when no user info is stored', () => {
+  test('shows a fallback message when no user info is stored', async () => {
     getUser.mockReturnValue(null)
     renderProfile()
 
-    expect(screen.getByText(/profile information isn't available/i)).toBeInTheDocument()
+    expect(await screen.findByText(/profile information isn't available/i)).toBeInTheDocument()
+    // with no user, the favorites fetch is skipped entirely -- nothing pending to await
+    expect(getFavorites).not.toHaveBeenCalled()
   })
 
   test('does not render optional fields the user does not have', async () => {
@@ -76,12 +81,18 @@ describe('Profile', () => {
     expect(screen.queryByText('Email')).not.toBeInTheDocument()
     expect(screen.queryByText('Phone')).not.toBeInTheDocument()
     expect(screen.queryByText('Member since')).not.toBeInTheDocument()
+
+    // wait for the favorites fetch to settle so it doesn't resolve after the test ends
+    expect(await screen.findByText('2')).toBeInTheDocument()
   })
 
   test('logging out clears stored auth state and redirects to login', async () => {
     renderProfile()
 
     await screen.findByText('Jane Doe')
+    // wait for the favorites fetch to settle before triggering logout
+    await screen.findByText('2')
+
     fireEvent.click(screen.getByRole('button', { name: /log out/i }))
 
     await waitFor(() => {
