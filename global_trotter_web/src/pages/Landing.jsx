@@ -3,7 +3,7 @@ import Logo from '../components/Logo.jsx'
 import ShowcaseImage from '../components/Showcaseimage.jsx'
 import '../styles/Landing.css'
 
-import landingImage from '../assets/cameroon-landing.jpg'
+import landingImage from '../assets/Cameroon-landing.jpg'
 import showcase1 from '../assets/cameroon-showcase-1.jpg'
 import showcase2 from '../assets/cameroon-showcase-2.jpg'
 import showcase3 from '../assets/cameroon-showcase-3.jpg'

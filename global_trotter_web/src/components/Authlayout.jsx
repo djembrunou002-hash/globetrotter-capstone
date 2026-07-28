@@ -1,7 +1,7 @@
 import Logo from './Logo.jsx'
 import '../styles/AuthForm.css'
 
-import landingImage from '../assets/cameroon-landing.jpg'
+import landingImage from '../assets/Cameroon-landing.jpg'
 
 
 function AuthLayout({tagline, children}) {
