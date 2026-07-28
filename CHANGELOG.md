@@ -110,6 +110,7 @@ and filters
 
 ## Added
 - Recommendationservice(`recommendationService.jsx`) and dedicated testing file
+- .env.production
 
 ## Changed
 - Home page(`Home.jsx`) to include recommendations
@@ -118,4 +119,5 @@ and filters
 - `destinations.json`
 - `users.json`
 - itinerary details page(`itineraryDetails.jsx`) adding search bar and filters
+- api(`api.js`)
 
