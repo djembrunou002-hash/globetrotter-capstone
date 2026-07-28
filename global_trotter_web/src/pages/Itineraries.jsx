@@ -5,9 +5,9 @@ import { getDestinations } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
-import BottomNav from '../components/BottomNav.jsx'
-import ItineraryCard from '../components/ItineraryCard.jsx'
-import AddItineraryModal from '../components/AddItineraryModal.jsx'
+import BottomNav from '../components/Bottomnav.jsx'
+import ItineraryCard from '../components/Itinerarycard.jsx'
+import AddItineraryModal from '../components/Additinerarymodal.jsx'
 import '../styles/Itineraries.css'
 
 function Itineraries() {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import StarRating from './StarRating.jsx'
+import StarRating from './Starrating.jsx'
 import '../styles/DestinationCard.css'
 
 const BUDGET_LABELS = {

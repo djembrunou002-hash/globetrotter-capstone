@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
-import ShowcaseImage from '../components/ShowcaseImage.jsx'
+import ShowcaseImage from '../components/Showcaseimage.jsx'
 import '../styles/Landing.css'
 
 const SHOWCASE_IMAGES = [

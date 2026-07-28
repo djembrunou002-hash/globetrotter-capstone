@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '../services/authService.js'
-import AuthLayout from '../components/AuthLayout.jsx'
-import PasswordField from '../components/PasswordField.jsx'
-import PhoneInput from '../components/PhoneInput.jsx'
-import EmailField from '../components/EmailField.jsx'
+import AuthLayout from '../components/Authlayout.jsx'
+import PasswordField from '../components/Passwordfield.jsx'
+import PhoneInput from '../components/Phoneinput.jsx'
+import EmailField from '../components/Emailfield.jsx'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/

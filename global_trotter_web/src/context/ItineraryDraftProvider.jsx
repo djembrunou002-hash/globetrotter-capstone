@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ItineraryDraftContext, EMPTY_DRAFT } from './ItineraryDraftContext'
+import { ItineraryDraftContext, EMPTY_DRAFT } from './ItineraryDraftContext.jsx'
 
 function ItineraryDraftProvider({ children }) {
   const [formOpen, setFormOpen] = useState(false)
