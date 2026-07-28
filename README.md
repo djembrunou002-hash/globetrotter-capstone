@@ -150,6 +150,7 @@ login page
 home page
 itineraries
 destinations page
+profile page
 
 
 ### Setup

@@ -42,7 +42,11 @@ def test_login_success(client):
     resp = client.post("/login", json={"email": "alice@example.com", "password": "secret123"})
 
     assert resp.status_code == 200
-    assert "token" in resp.get_json()
+    body = resp.get_json()
+    assert "token" in body
+    assert body["user"]["name"] == "Alice"
+    assert body["user"]["email"] == "alice@example.com"
+    assert "password_hash" not in body["user"]
 
 
 def test_login_wrong_password(client):

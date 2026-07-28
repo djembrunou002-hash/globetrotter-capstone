@@ -20,8 +20,8 @@
         "address": "Mvog-Mbi, Yaounde"
       },
       "rating": {
-        "average": 4.0,
-        "count": 85
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_001.jpg"
@@ -48,8 +48,8 @@
         "address": "Mfoundi, Centre-ville, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 112
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_002.jpg"
@@ -77,14 +77,14 @@
         "address": "Centre-ville, Yaounde"
       },
       "rating": {
-        "average": 4.15,
-        "count": 140
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_003.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Bustling multi-story central market in the heart of downtown Yaoundé."
+      "description": "Bustling multi-story central market in the heart of downtown Yaounde."
     },
     {
       "id": "dest_004",
@@ -106,8 +106,8 @@
         "address": "Mokolo, Yaounde"
       },
       "rating": {
-        "average": 3.9,
-        "count": 210
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_004.jpg"
@@ -135,14 +135,14 @@
         "address": "Eloundem, Yaounde"
       },
       "rating": {
-        "average": 4.5,
-        "count": 58
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_005.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Challenging mountain trail offering panoramic views over southwestern Yaoundé."
+      "description": "Challenging mountain trail offering panoramic views over southwestern Yaounde."
     },
     {
       "id": "dest_006",
@@ -164,8 +164,8 @@
         "address": "Ebogo, Mbalmayo"
       },
       "rating": {
-        "average": 4.4,
-        "count": 92
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_006.jpg"
@@ -193,8 +193,8 @@
         "address": "Mvog-Betsi, Yaounde"
       },
       "rating": {
-        "average": 3.8,
-        "count": 130
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_007.jpg"
@@ -222,8 +222,8 @@
         "address": "Boulevard du 20 Mai, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 48
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_008.jpg"
@@ -250,8 +250,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.2,
-        "count": 64
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_009.jpg"
@@ -278,8 +278,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 78
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_010.jpg"
@@ -306,8 +306,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 52
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_011.jpg"
@@ -335,8 +335,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 95
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_012.jpg"
@@ -364,8 +364,8 @@
         "address": "Omnisports, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 310
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_013.jpg"
@@ -393,14 +393,14 @@
         "address": "Mont Febe, Yaounde"
       },
       "rating": {
-        "average": 4.5,
-        "count": 67
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_014.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Scenic 18-hole golf course nestled in the lush green hills of Mount Fébé."
+      "description": "Scenic 18-hole golf course nestled in the lush green hills of Mount Febe."
     },
     {
       "id": "dest_015",
@@ -422,8 +422,8 @@
         "address": "Warda, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 240
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_015.jpg"
@@ -451,8 +451,8 @@
         "address": "Avenue Mvog-Fouda, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 88
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_016.jpg"
@@ -480,8 +480,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.2,
-        "count": 110
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_017.jpg"
@@ -508,8 +508,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 73
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_018.jpg"
@@ -537,8 +537,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.2,
-        "count": 125
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_019.jpg"
@@ -566,8 +566,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 80
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_020.jpg"
@@ -595,14 +595,14 @@
         "address": "Hilton Hotel 10th Floor, Yaounde"
       },
       "rating": {
-        "average": 4.5,
-        "count": 142
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_021.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Rooftop cocktail bar located atop the Hilton Hotel, boasting skyline views of Yaoundé."
+      "description": "Rooftop cocktail bar located atop the Hilton Hotel, boasting skyline views of Yaounde."
     },
     {
       "id": "dest_022",
@@ -624,8 +624,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 98
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_022.jpg"
@@ -653,8 +653,8 @@
         "address": "Boulevard du 20 Mai, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 520
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_023.jpg"
@@ -682,8 +682,8 @@
         "address": "Hilton Hotel, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 86
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_024.jpg"
@@ -711,8 +711,8 @@
         "address": "Mont Febe, Yaounde"
       },
       "rating": {
-        "average": 4.27,
-        "count": 69
+        "average": 2.0,
+        "count": 2
       },
       "images": [
         "/images/destinations/dest_025.jpg"
@@ -740,14 +740,14 @@
         "address": "Carrefour Warda, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 165
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_026.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Tranquil botanical park in central Yaoundé with garden walkways and outdoor dining."
+      "description": "Tranquil botanical park in central Yaounde with garden walkways and outdoor dining."
     },
     {
       "id": "dest_027",
@@ -769,8 +769,8 @@
         "address": "Ahala, Yaounde"
       },
       "rating": {
-        "average": 4.2,
-        "count": 140
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_027.jpg"
@@ -798,8 +798,8 @@
         "address": "Place Intendance, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 92
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_028.jpg"
@@ -827,8 +827,8 @@
         "address": "Boulevard du 20 Mai, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 280
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_029.jpg"
@@ -856,8 +856,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.5,
-        "count": 190
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_030.jpg"
@@ -884,8 +884,8 @@
         "address": "Near Cercle Municipal, Yaounde"
       },
       "rating": {
-        "average": 4.0,
-        "count": 35
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_031.jpg"
@@ -913,8 +913,8 @@
         "address": "Mvolye, Yaounde"
       },
       "rating": {
-        "average": 4.7,
-        "count": 210
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_032.jpg"
@@ -941,8 +941,8 @@
         "address": "Place de la Poste, Yaounde"
       },
       "rating": {
-        "average": 4.4,
-        "count": 185
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_033.jpg"
@@ -970,8 +970,8 @@
         "address": "Near Assembly, Ngoa-Ekelle, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 230
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_034.jpg"
@@ -998,8 +998,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.2,
-        "count": 55
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_035.jpg"
@@ -1027,14 +1027,14 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.3,
-        "count": 140
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_036.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Premier Asian restaurant in Yaoundé known for authentic Chinese dishes and dim sum."
+      "description": "Premier Asian restaurant in Yaounde known for authentic Chinese dishes and dim sum."
     },
     {
       "id": "dest_037",
@@ -1055,8 +1055,8 @@
         "address": "Bastos, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 48
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_037.jpg"
@@ -1085,8 +1085,8 @@
         "address": "La Briqueterie, Yaounde"
       },
       "rating": {
-        "average": 4.6,
-        "count": 310
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_038.jpg"
@@ -1114,8 +1114,8 @@
         "address": "Lac Municipal, Yaounde"
       },
       "rating": {
-        "average": 3.9,
-        "count": 115
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_039.jpg"
@@ -1143,8 +1143,8 @@
         "address": "Melong / Nkongsamba"
       },
       "rating": {
-        "average": 4.8,
-        "count": 180
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_040.jpg"
@@ -1171,8 +1171,8 @@
         "address": "Nkolbisson, Yaounde"
       },
       "rating": {
-        "average": 4.1,
-        "count": 32
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_041.jpg"
@@ -1200,8 +1200,8 @@
         "address": "Nyong River, near Mbalmayo"
       },
       "rating": {
-        "average": 4.3,
-        "count": 60
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_042.jpg"
@@ -1229,8 +1229,8 @@
         "address": "Route de Mfou, near Yaounde"
       },
       "rating": {
-        "average": 4.5,
-        "count": 210
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_043.jpg"
@@ -1240,10 +1240,10 @@
     },
     {
       "id": "dest_044",
-      "name": "Majestic Yaoundé I University",
+      "name": "Majestic Yaounde I University",
       "country": "Cameroon",
       "region": "Centre",
-      "area": "Ngoa-Ekellé",
+      "area": "Ngoa-Ekelle",
       "type": "entertainment",
       "tags": [
         "cinema",
@@ -1255,19 +1255,19 @@
       ],
       "budget_level": "low",
       "location": {
-      "lat": 3.8485,
-      "lng": 11.5015,
-      "address": "University of Yaoundé I, Joseph Tchooungui Akoa, Ngoa-Ekellé, Yaoundé"
+        "lat": 3.8485,
+        "lng": 11.5015,
+        "address": "University of Yaounde I, Joseph Tchooungui Akoa, Ngoa-Ekelle, Yaounde"
       },
       "rating": {
-      "average": 4.1,
-      "count": 1852
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_044.jpg"
       ],
       "last_updated": "2026-07-26T10:00:00Z",
-      "description": "Modern cinema and cultural complex located on the University of Yaoundé I campus. Formerly Canal Olympia, it now operates as Majestic Yaoundé I University, offering blockbuster movies, African films, student discounts, gaming spaces, cultural events, concerts, and gala evenings."
+      "description": "Modern cinema and cultural complex located on the University of Yaounde I campus. Formerly Canal Olympia, it now operates as Majestic Yaounde I University, offering blockbuster movies, African films, student discounts, gaming spaces, cultural events, concerts, and gala evenings."
     },
     {
       "id": "dest_045",
@@ -1285,13 +1285,13 @@
       ],
       "budget_level": "low",
       "location": {
-      "lat": 3.8618,
-      "lng": 11.5164,
-      "address": "Former Presidential Palace, Centre-ville, Yaounde"
+        "lat": 3.8618,
+        "lng": 11.5164,
+        "address": "Former Presidential Palace, Centre-ville, Yaounde"
       },
       "rating": {
-      "average": 4.5,
-      "count": 250
+        "average": 0,
+        "count": 0
       },
       "images": [
         "/images/destinations/dest_045.jpg"

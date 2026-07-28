@@ -1,132 +1,19 @@
 {
   "users": [
     {
-      "id": "usr_10507aef",
-      "name": "Jane ",
-      "email": "jane@example.com",
-      "number": null,
-      "password_hash": "scrypt:32768:8:1$2U9wK0KNTA8E2dpl$0a8492a2fa822b7c2fba893b9b024db45a2c1a2bea3b9ff576e244f8f10647407594d79ded3f820b15b5a5097a48baeb98947bd79b8b52ab149357f699743298",
-      "created_at": "2026-07-18T12:25:45.891397+00:00",
-      "favorites": []
-    },
-    {
-      "id": "usr_610212f1",
-      "name": "Paul Biya Jr",
-      "email": null,
-      "number": "+237600000000",
-      "password_hash": "scrypt:32768:8:1$RC9H6tfw73RVhM5C$fa15cf8df46717374bc28c8b7ddaebd08fd3819c4bc714d86f7b495ca03f1c9e4a8fee73eb1b0f4d7b11165b6baccc1e1028772014773fdbe822ab70700f3367",
-      "created_at": "2026-07-18T12:26:03.324662+00:00",
-      "favorites": []
-    },
-    {
       "id": "usr_48f97346",
       "name": "Bruno",
       "email": "bruno@gmail.com",
       "number": null,
       "password_hash": "scrypt:32768:8:1$PWKWHH9mNB3gRbjr$9748f100929a3a3bb5478b6f1e92ad5bae37b3b019b505bb6ac8ecb60ee29688cde4cc608830fe7cd1dd2a6c498611907f803b228cefb9cd6bcaa90a33762699",
       "created_at": "2026-07-20T15:18:59.176948+00:00",
-      "favorites": []
-    },
-    {
-      "id": "usr_35af5c5d",
-      "name": "Doe",
-      "email": "doe@example.com",
-      "number": "1234567890",
-      "password_hash": "scrypt:32768:8:1$x377z1WMByG4OvGO$62e8530f30a1cac12f6a2071e8992fe6d5dcc73c50cb533dd074fb29c42c7b6a47d0666f08b7ea3e0ea85c84e685df79bf5f8f4b53e358427b3f5adf40fd566d",
       "favorites": [
-        "dest_001"
-      ],
-      "created_at": "2026-07-21T20:58:49.633023+00:00"
-    },
-    {
-      "id": "usr_edfe3f7b",
-      "name": "Jones",
-      "email": "jones@example.com",
-      "number": "2234567890",
-      "password_hash": "scrypt:32768:8:1$99UXmdd7pam5V6sV$e70d7c7425ddd43b69f9d6847451bfa4a1ab8cca2b2cf4654970d7a8fd220ad51039d0970c0ee04b4130a1e781a647d10517515e5a470b69879be1fea785d86f",
-      "favorites": [],
-      "created_at": "2026-07-21T22:14:21.854734+00:00"
-    },
-    {
-      "id": "usr_1259ccde",
-      "name": "yoyo",
-      "email": "yoyo@gmail.com",
-      "number": "657525751",
-      "password_hash": "scrypt:32768:8:1$GICbSq5AMk1Vx2sX$de470a2831af33a0da814830b5337ce9ca95a36cd65b41119291cf2ce23d7dcee819dd3bcb54b0cc1de75a75506387f2e40ab7d17271f90d075e1b3e80b16180",
-      "favorites": [],
-      "created_at": "2026-07-22T19:21:24.883726+00:00"
-    },
-    {
-      "id": "usr_f65e139c",
-      "name": "Amina",
-      "email": "amina@gmail.com",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$piKPXPuiQ4oElh7o$1f520a3f37da8a96091cc05aeceb9ce486f21f1dd0dbb69558a40580eb41fb9d3a9295902ff5d285679068e1f66e78993e806f3701a30c156cae372f8657a401",
-      "favorites": [],
-      "created_at": "2026-07-23T09:05:59.443635+00:00"
-    },
-    {
-      "id": "usr_5402da9e",
-      "name": "fahdil",
-      "email": "bruno@gmail",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$vSupOlWSwORajWAV$154df85b372f555910b3f60729e1530143c50f5c30e586189015980f5bdf95bfc81d073ae9456117fb0ab5bcc3a07dcc855dccc7885d38691c37148069082648",
-      "favorites": [],
-      "created_at": "2026-07-23T09:06:52.403165+00:00"
-    },
-    {
-      "id": "usr_ff854a52",
-      "name": "Booba",
-      "email": "booba@gmail.co",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$cBDbYbqglQk6bWmx$44ab724d291019b877b39206b3e1022e536dcab81bea883dc4868f0af350b339a2159d862637747a2c77245e18da0448c0d1d63ed10738e4d86607be6fd8cb48",
-      "favorites": [],
-      "created_at": "2026-07-23T09:28:46.170659+00:00"
-    },
-    {
-      "id": "usr_04cd91cf",
-      "name": "raf",
-      "email": "raf@gmail.c",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$xPWjgTZhFtx3UqUX$f4b9f7d91577c5911d32a0d72605617aec2eedc32e83618273b64ae44a58716df5130306d24c7cf23ea3010155550ce1759921a2628d2b70a30d79100354fd62",
-      "favorites": [],
-      "created_at": "2026-07-23T09:29:19.579724+00:00"
-    },
-    {
-      "id": "usr_4212a080",
-      "name": "ben",
-      "email": "ben@gmail.q",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$86SF3Y5H1b9EZzZk$9ea51dde3f67ae4bdb3db80a9f18e8a5d408f9de22af142b1a932e218adc9cabb193ed0a5e342d6c4fd0e37ba3991a7b49d93ce7f79a022f079e2131ecd5e9df",
-      "favorites": [],
-      "created_at": "2026-07-23T09:32:25.466267+00:00"
-    },
-    {
-      "id": "usr_2996e6df",
-      "name": "Yaya",
-      "email": "yaya@yahoo.fr",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$uJMYqQDSuUVLaoB5$9ed4b370096f00d8830f3dfbe79aa216be5eaa8e32702ef9149bc6c79978dc1080cfb684b51204c541fab5e14e13ad49f35fa67eb78e7040c4f0fdcc3d3f1984",
-      "favorites": [],
-      "created_at": "2026-07-23T09:33:08.242359+00:00"
-    },
-    {
-      "id": "usr_d7759e09",
-      "name": "zozo",
-      "email": "zozo@gmal.com",
-      "number": "",
-      "password_hash": "scrypt:32768:8:1$KMUKIsIzet8SDEKN$206df3ed15835552dc7585ceea63cb2cc13897f1b7922025d4999373b100c4803b69df53ddc94ca44cb151394980858ed8d4c62404716abd71dfa33a39ead696",
-      "favorites": [],
-      "created_at": "2026-07-23T09:34:12.933258+00:00"
-    },
-    {
-      "id": "usr_5702dbdd",
-      "name": "fred",
-      "email": "",
-      "number": "+237612345678",
-      "password_hash": "scrypt:32768:8:1$hNHt9NxCPaZRTqIC$576c51626f6c3b8e49afa1716cc7ead7d333f5e9ff61631e7ce21570d5ee57c8a799ed55e9e3b0629a25447e4fb88c4cf85776df0ec53738c77f116def948c2e",
-      "favorites": [],
-      "created_at": "2026-07-23T19:05:32.269374+00:00"
+        "dest_001",
+        "dest_002",
+        "dest_003",
+        "dest_004",
+        "dest_005"
+      ]
     }
   ]
 }

@@ -66,4 +66,5 @@ def login():
         return jsonify({"error": "invalid credentials"}), 401
 
     token = create_access_token(identity=user["id"])
-    return jsonify({"token": token}), 200
+    public_user = {k: v for k, v in user.items() if k != "password_hash"}
+    return jsonify({"token": token, "user": public_user}), 200

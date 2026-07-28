@@ -91,6 +91,7 @@
 ## Added 
 - Destination images
 - Additional images
+- Destination detail page (`Destinationdetails.jsx`) and its dedicated testing files
 
 
 ## Changed 
@@ -98,4 +99,22 @@
 - Itineraries detail page(`itineraryDetails.jsx`) to add search bar and filters
 - additinerarymodal(`Additinerarymodal`) inorder to route to destination page then add a search bar
 and filters
+- Destinations page(`Destinations`) to route to destination details page
+- `auth.py` and dedicated testing file to return user object
+- `tokenstorage.js`
+- `login.jsx` store the returned user object
+- bottomnav (`bottomnav.jsx`) to add profile
+- profile page (`profile.jsx`)
+
+## [27-07-2026]
+
+## Added
+- Recommendationservice(`recommendationService.jsx`) and dedicated testing file
+
+## Changed
+- Home page(`Home.jsx`) to include recommendations
+- Star rating(`Starrating.jsx`) 
+- `Destinationcard.css` to update stars UI to your actual vote
+- `destinations.json`
+- `users.json`
 
