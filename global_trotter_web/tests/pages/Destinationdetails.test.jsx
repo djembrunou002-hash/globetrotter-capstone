@@ -128,13 +128,12 @@ describe('DestinationDetails', () => {
     expect(await screen.findByText(/4.4 \(57\)/)).toBeInTheDocument()
   })
 
-  test('the back link points to /destinations', async () => {
+  test('the back button navigates to the previous page', async () => {
     renderDestinationDetails()
 
     await screen.findByText('Marche Central')
-    expect(screen.getByRole('link', { name: /back to destinations/i })).toHaveAttribute(
-      'href',
-      '/destinations'
-    )
+    fireEvent.click(screen.getByRole('button', { name: /go back/i }))
+
+    expect(mockNavigate).toHaveBeenCalledWith(-1)
   })
 })

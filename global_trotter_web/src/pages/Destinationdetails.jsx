@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   getDestinations,
   getFavorites,
@@ -86,17 +86,26 @@ function DestinationDetails() {
     }
   }
 
+  function handleBack() {
+    navigate(-1)
+  }
+
   const image = destination?.images && destination.images[0]
 
   return (
     <div className="destination-details">
       <header className="destination-details__header">
-        <Link to="/destinations" className="destination-details__back" aria-label="Back to destinations">
+        <button
+          type="button"
+          className="destination-details__back"
+          aria-label="Go back"
+          onClick={handleBack}
+        >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
-        </Link>
+        </button>
         <Logo theme="dark" />
       </header>
 

@@ -106,11 +106,13 @@ and filters
 - bottomnav (`bottomnav.jsx`) to add profile
 - profile page (`profile.jsx`)
 
-## [27-07-2026]
+## [28-07-2026]
 
 ## Added
 - Recommendationservice(`recommendationService.jsx`) and dedicated testing file
 - .env.production
+- web app icon 
+
 
 ## Changed
 - Home page(`Home.jsx`) to include recommendations
@@ -120,4 +122,9 @@ and filters
 - `users.json`
 - itinerary details page(`itineraryDetails.jsx`) adding search bar and filters
 - api(`api.js`)
+
+## [29-07-2026]
+
+## Changed 
+- Destination details page(`Destinationdetails.jsx`) + css and test file
 

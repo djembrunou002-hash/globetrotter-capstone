@@ -22,6 +22,9 @@
   background: #fff;
   border: 1px solid #E7DFC9;
   flex-shrink: 0;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
 }
 
 .destination-details__content {
