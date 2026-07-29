@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   getDestinations,
   getFavorites,
@@ -11,6 +11,7 @@ import { getToken } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
 import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import CommentSection from '../components/CommentSection.jsx'
 import '../styles/DestinationDetails.css'
 
 const BUDGET_LABELS = {
@@ -22,7 +23,9 @@ const BUDGET_LABELS = {
 function DestinationDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const isAuthenticated = Boolean(getToken())
+  const focusComments = Boolean(location.state?.focusComments)
 
   const [destination, setDestination] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -205,8 +208,14 @@ function DestinationDetails() {
               )}
 
               <div className="destination-details__coming-soon">
-                More details -- photos, reviews, and nearby suggestions -- are coming soon.
+                More details -- photos and nearby suggestions -- are coming soon.
               </div>
+
+              <CommentSection
+                destinationId={id}
+                isAuthenticated={isAuthenticated}
+                focusOnMount={focusComments}
+              />
             </div>
           </>
         )}

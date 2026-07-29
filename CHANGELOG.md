@@ -128,6 +128,7 @@ and filters
 # Added
 - comments data(`comments.json`)
 - comments route(`comments.py`) + dedicated test file
+- Comment section (`CommentSection.jsx`)
 
 ## Changed 
 - Destination details page(`Destinationdetails.jsx`) + css and test file

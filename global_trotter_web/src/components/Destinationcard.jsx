@@ -25,9 +25,15 @@ function DestinationCard({
   const navigate = useNavigate()
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
+  const commentCount = destination.comment_count || 0
 
   function handleOpenDetails() {
     navigate(`/destinations/${destination.id}`)
+  }
+
+  function handleOpenComments(e) {
+    e.stopPropagation()
+    navigate(`/destinations/${destination.id}`, { state: { focusComments: true } })
   }
 
   function handleKeyDown(e) {
@@ -134,6 +140,18 @@ function DestinationCard({
               <circle cx="12" cy="10" r="2.5" />
             </svg>
             Location
+          </button>
+
+          <button
+            type="button"
+            className="destination-card__comments"
+            onClick={handleOpenComments}
+            aria-label={`View ${commentCount} comment${commentCount === 1 ? '' : 's'} for ${destination.name}`}
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 21l1.5-5.5a8.38 8.38 0 0 1-1-4A8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 9 8.5z" />
+            </svg>
+            {commentCount}
           </button>
 
           <button

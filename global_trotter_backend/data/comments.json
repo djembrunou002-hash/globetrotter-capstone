@@ -1,3 +1,12 @@
 {
-  "comments": []
+  "comments": [
+    {
+      "id": "cmt_550dcf66",
+      "destination_id": "dest_006",
+      "user_id": "usr_48f97346",
+      "text": "nice place",
+      "created_at": "2026-07-29T21:29:36.599489+00:00",
+      "replies": []
+    }
+  ]
 }
