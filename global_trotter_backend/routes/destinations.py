@@ -6,6 +6,17 @@ from services.storage import load_json, save_json
 destinations_bp = Blueprint("destinations", __name__)
 
 
+def _with_comment_counts(destinations):
+    comments = load_json("comments.json")["comments"]
+    comment_counts = {}
+    for comment in comments:
+        destination_id = comment["destination_id"]
+        total = 1 + len(comment.get("replies", []))
+        comment_counts[destination_id] = comment_counts.get(destination_id, 0) + total
+
+    return [{**d, "comment_count": comment_counts.get(d["id"], 0)} for d in destinations]
+
+
 @destinations_bp.route("/destinations", methods=["GET"])
 def get_destinations():
     data = load_json("destinations.json")
@@ -38,7 +49,7 @@ def get_destinations():
             if q in d["name"].lower() or q in d.get("description", "").lower()
         ]
 
-    return jsonify({"destinations": results}), 200
+    return jsonify({"destinations": _with_comment_counts(results)}), 200
 
 
 @destinations_bp.route("/destinations/<destination_id>/rating", methods=["POST"])
@@ -120,4 +131,4 @@ def list_favorites():
     destinations = load_json("destinations.json")["destinations"]
     favorites = [d for d in destinations if d["id"] in favorite_ids]
 
-    return jsonify({"favorites": favorites}), 200
+    return jsonify({"favorites": _with_comment_counts(favorites)}), 200

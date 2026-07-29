@@ -125,6 +125,12 @@ and filters
 
 ## [29-07-2026]
 
+# Added
+- comments data(`comments.json`)
+- comments route(`comments.py`) + dedicated test file
+
 ## Changed 
 - Destination details page(`Destinationdetails.jsx`) + css and test file
+- destination route(`destination.py`)
+- `app.py`
 
