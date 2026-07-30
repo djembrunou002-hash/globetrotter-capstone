@@ -6,6 +6,7 @@ import '../styles/CommentSection.css'
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000
 const ROOT_PAGE_SIZE = 3
+const REPLY_PAGE_SIZE = 3
 
 function formatDate(value) {
   if (!value) return ''
@@ -16,6 +17,19 @@ function formatDate(value) {
 
 function countAllNodes(nodes) {
   return nodes.reduce((sum, node) => sum + 1 + countAllNodes(node.replies || []), 0)
+}
+
+function flattenDescendants(rootNode) {
+  const result = []
+  function walk(current) {
+    for (const child of current.replies || []) {
+      const replyingTo = current.id === rootNode.id ? null : { id: current.id, author: current.author }
+      result.push({ ...child, replyingTo })
+      walk(child)
+    }
+  }
+  walk(rootNode)
+  return result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 }
 
 function mapNode(nodes, targetId, updater) {
@@ -56,10 +70,39 @@ function insertReply(nodes, parentId, reply) {
   return insertReplyRec(nodes, parentId, reply)[0]
 }
 
-function CommentNode({ node, destinationId, isAuthenticated, currentUserId, depth, onReplyPosted, onCommentUpdated }) {
+function removeNodeRec(nodes, targetId) {
+  let didRemove = false
+  const result = []
+  for (const node of nodes) {
+    if (didRemove) {
+      result.push(node)
+      continue
+    }
+    if (node.id === targetId) {
+      didRemove = true
+      result.push(...(node.replies || []))
+      continue
+    }
+    if (node.replies && node.replies.length) {
+      const [childReplies, childRemoved] = removeNodeRec(node.replies, targetId)
+      if (childRemoved) {
+        didRemove = true
+        result.push({ ...node, reply_count: Math.max((node.reply_count || 0) - 1, 0), replies: childReplies })
+        continue
+      }
+    }
+    result.push(node)
+  }
+  return [result, didRemove]
+}
+
+function removeNode(nodes, targetId) {
+  return removeNodeRec(nodes, targetId)[0]
+}
+
+function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, isReply, replyingTo, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
   const navigate = useNavigate()
 
-  const [repliesExpanded, setRepliesExpanded] = useState((node.replies || []).length > 0)
   const [isReplying, setIsReplying] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
@@ -73,11 +116,8 @@ function CommentNode({ node, destinationId, isAuthenticated, currentUserId, dept
 
   const isOwner = isAuthenticated && currentUserId && node.author?.id === currentUserId
   const withinEditWindow = Date.now() - new Date(node.created_at).getTime() <= EDIT_WINDOW_MS
-  const canEdit = isOwner && !node.deleted && withinEditWindow
-  const canDelete = isOwner && !node.deleted
-
-  const replies = node.replies || []
-  const replyCount = node.reply_count || 0
+  const canEdit = isOwner && withinEditWindow
+  const canDelete = isOwner
 
   function requireAuth() {
     if (!isAuthenticated) {
@@ -105,7 +145,6 @@ function CommentNode({ node, destinationId, isAuthenticated, currentUserId, dept
       onReplyPosted(node.id, { ...response.reply, reply_count: 0, replies: [] })
       setIsReplying(false)
       setReplyText('')
-      setRepliesExpanded(true)
     } catch (err) {
       setLocalError(err.message)
     } finally {
@@ -137,149 +176,188 @@ function CommentNode({ node, destinationId, isAuthenticated, currentUserId, dept
   }
 
   async function handleDelete() {
-    if (!window.confirm('Delete this comment?')) return
-
     setDeleteSubmitting(true)
     setLocalError('')
     try {
-      const response = await deleteComment(destinationId, node.id)
-      onCommentUpdated(node.id, response.comment)
+      await deleteComment(destinationId, node.id)
+      onCommentDeleted(node.id)
     } catch (err) {
       setLocalError(err.message)
-    } finally {
       setDeleteSubmitting(false)
     }
   }
 
   return (
-    <div className="comment-section__node">
-      <div className="comment-section__comment">
-        <div className={`comment-section__avatar ${depth > 0 ? 'comment-section__avatar--small' : ''}`}>
-          {(node.author?.name || '?').charAt(0).toUpperCase()}
-        </div>
-        <div className="comment-section__body">
-          <div className="comment-section__meta">
-            <span className="comment-section__author">{node.author?.name || 'Traveler'}</span>
-            <span className="comment-section__date">{formatDate(node.created_at)}</span>
-            {node.edited && <span className="comment-section__edited-tag">(edited)</span>}
-          </div>
-
-          {isEditing ? (
-            <form className="comment-section__edit-form" onSubmit={handleSubmitEdit}>
-              <textarea
-                className="comment-section__textarea comment-section__textarea--reply"
-                value={editText}
-                onChange={e => setEditText(e.target.value)}
-                rows={2}
-                autoFocus
-              />
-              <div className="comment-section__reply-actions">
-                <button type="button" className="comment-section__cancel" onClick={() => setIsEditing(false)}>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="comment-section__submit comment-section__submit--reply"
-                  disabled={editSubmitting || !editText.trim()}
-                >
-                  {editSubmitting ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <p className={`comment-section__text ${node.deleted ? 'comment-section__text--deleted' : ''}`}>
-              {node.text}
-            </p>
-          )}
-
-          {localError && <p className="comment-section__status comment-section__status--error">{localError}</p>}
-
-          {!isEditing && (
-            <div className="comment-section__actions">
-              <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
-                Reply
-              </button>
-              {canEdit && (
-                <button type="button" className="comment-section__reply-trigger" onClick={handleStartEdit}>
-                  Edit
-                </button>
-              )}
-              {canDelete && (
-                <button
-                  type="button"
-                  className="comment-section__reply-trigger comment-section__reply-trigger--danger"
-                  onClick={handleDelete}
-                  disabled={deleteSubmitting}
-                >
-                  {deleteSubmitting ? 'Deleting...' : 'Delete'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {isReplying && (
-            <form className="comment-section__reply-form" onSubmit={handleSubmitReply}>
-              <textarea
-                className="comment-section__textarea comment-section__textarea--reply"
-                placeholder={`Reply to ${node.author?.name || 'this comment'}...`}
-                value={replyText}
-                onChange={e => setReplyText(e.target.value)}
-                rows={2}
-                autoFocus
-              />
-              <div className="comment-section__reply-actions">
-                <button type="button" className="comment-section__cancel" onClick={() => setIsReplying(false)}>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="comment-section__submit comment-section__submit--reply"
-                  disabled={replySubmitting || !replyText.trim()}
-                >
-                  {replySubmitting ? 'Posting...' : 'Post reply'}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {replyCount > 0 && !repliesExpanded && (
-            <button
-              type="button"
-              className="comment-section__view-replies"
-              onClick={() => setRepliesExpanded(true)}
-            >
-              View replies ({replyCount})
-            </button>
-          )}
-
-          {replyCount > 0 && repliesExpanded && (
-            <button
-              type="button"
-              className="comment-section__view-replies"
-              onClick={() => setRepliesExpanded(false)}
-            >
-              Hide replies
-            </button>
-          )}
-
-          {repliesExpanded && replies.length > 0 && (
-            <div className="comment-section__replies">
-              {replies.map(reply => (
-                <CommentNode
-                  key={reply.id}
-                  node={reply}
-                  destinationId={destinationId}
-                  isAuthenticated={isAuthenticated}
-                  currentUserId={currentUserId}
-                  depth={depth + 1}
-                  onReplyPosted={onReplyPosted}
-                  onCommentUpdated={onCommentUpdated}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="comment-section__comment">
+      <div className={`comment-section__avatar ${isReply ? 'comment-section__avatar--small' : ''}`}>
+        {(node.author?.name || '?').charAt(0).toUpperCase()}
       </div>
+      <div className="comment-section__body">
+        <div className="comment-section__meta">
+          <span className="comment-section__author">{node.author?.name || 'Traveler'}</span>
+          <span className="comment-section__date">{formatDate(node.created_at)}</span>
+          {node.edited && <span className="comment-section__edited-tag">(edited)</span>}
+        </div>
+
+        {replyingTo && (
+          <div className="comment-section__reply-context">
+            <span className="comment-section__reply-context-icon">↳</span>
+            Replying to <strong>{replyingTo.author?.name || 'Traveler'}</strong>
+          </div>
+        )}
+
+        {isEditing ? (
+          <form className="comment-section__edit-form" onSubmit={handleSubmitEdit}>
+            <textarea
+              className="comment-section__textarea comment-section__textarea--reply"
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              rows={2}
+              autoFocus
+            />
+            <div className="comment-section__reply-actions">
+              <button type="button" className="comment-section__cancel" onClick={() => setIsEditing(false)}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="comment-section__submit comment-section__submit--reply"
+                disabled={editSubmitting || !editText.trim()}
+              >
+                {editSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="comment-section__text">{node.text}</p>
+        )}
+
+        {localError && <p className="comment-section__status comment-section__status--error">{localError}</p>}
+
+        {!isEditing && (
+          <div className="comment-section__actions">
+            <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
+              Reply
+            </button>
+            {canEdit && (
+              <button type="button" className="comment-section__reply-trigger" onClick={handleStartEdit}>
+                Edit
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                className="comment-section__reply-trigger comment-section__reply-trigger--danger"
+                onClick={handleDelete}
+                disabled={deleteSubmitting}
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Delete'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {isReplying && (
+          <form className="comment-section__reply-form" onSubmit={handleSubmitReply}>
+            <textarea
+              className="comment-section__textarea comment-section__textarea--reply"
+              placeholder={`Reply to ${node.author?.name || 'this comment'}...`}
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              rows={2}
+              autoFocus
+            />
+            <div className="comment-section__reply-actions">
+              <button type="button" className="comment-section__cancel" onClick={() => setIsReplying(false)}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="comment-section__submit comment-section__submit--reply"
+                disabled={replySubmitting || !replyText.trim()}
+              >
+                {replySubmitting ? 'Posting...' : 'Post reply'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function RootComment({ comment, destinationId, isAuthenticated, currentUserId, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
+  const [repliesExpanded, setRepliesExpanded] = useState(false)
+  const [visibleReplyCount, setVisibleReplyCount] = useState(REPLY_PAGE_SIZE)
+
+  const allReplies = flattenDescendants(comment)
+  const replyCount = comment.reply_count || 0
+  const visibleReplies = allReplies.slice(0, visibleReplyCount)
+  const remainingReplies = allReplies.length - visibleReplies.length
+
+  function handleHideReplies() {
+    setRepliesExpanded(false)
+    setVisibleReplyCount(REPLY_PAGE_SIZE)
+  }
+
+  function handleReplyPosted(parentId, reply) {
+    setRepliesExpanded(true)
+    onReplyPosted(parentId, reply)
+  }
+
+  return (
+    <div className="comment-section__node">
+      <CommentBubble
+        node={comment}
+        destinationId={destinationId}
+        isAuthenticated={isAuthenticated}
+        currentUserId={currentUserId}
+        isReply={false}
+        onReplyPosted={handleReplyPosted}
+        onCommentUpdated={onCommentUpdated}
+        onCommentDeleted={onCommentDeleted}
+      />
+
+      {replyCount > 0 && !repliesExpanded && (
+        <button type="button" className="comment-section__view-replies" onClick={() => setRepliesExpanded(true)}>
+          View replies ({replyCount})
+        </button>
+      )}
+
+      {replyCount > 0 && repliesExpanded && (
+        <>
+          <button type="button" className="comment-section__view-replies" onClick={handleHideReplies}>
+            Hide replies
+          </button>
+
+          <div className="comment-section__replies">
+            {visibleReplies.map(reply => (
+              <CommentBubble
+                key={reply.id}
+                node={reply}
+                destinationId={destinationId}
+                isAuthenticated={isAuthenticated}
+                currentUserId={currentUserId}
+                isReply
+                replyingTo={reply.replyingTo}
+                onReplyPosted={handleReplyPosted}
+                onCommentUpdated={onCommentUpdated}
+                onCommentDeleted={onCommentDeleted}
+              />
+            ))}
+
+            {remainingReplies > 0 && (
+              <button
+                type="button"
+                className="comment-section__view-replies"
+                onClick={() => setVisibleReplyCount(prev => prev + REPLY_PAGE_SIZE)}
+              >
+                View more replies ({remainingReplies} remaining)
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -336,7 +414,7 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
     setError('')
     try {
       const response = await addComment(destinationId, trimmed)
-      setComments(prev => [...prev, { ...response.comment, replies: response.comment.replies || [], reply_count: 0 }])
+      setComments(prev => [{ ...response.comment, replies: response.comment.replies || [], reply_count: 0 }, ...prev])
       setCommentText('')
     } catch (err) {
       setError(err.message)
@@ -351,6 +429,10 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
 
   function handleCommentUpdated(id, patch) {
     setComments(prev => mapNode(prev, id, node => ({ ...node, ...patch })))
+  }
+
+  function handleCommentDeleted(id) {
+    setComments(prev => removeNode(prev, id))
   }
 
   const totalCount = countAllNodes(comments)
@@ -396,14 +478,14 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
         <ul className="comment-section__list">
           {visibleRoots.map(comment => (
             <li key={comment.id} className="comment-section__item">
-              <CommentNode
-                node={comment}
+              <RootComment
+                comment={comment}
                 destinationId={destinationId}
                 isAuthenticated={isAuthenticated}
                 currentUserId={currentUserId}
-                depth={0}
                 onReplyPosted={handleReplyPosted}
                 onCommentUpdated={handleCommentUpdated}
+                onCommentDeleted={handleCommentDeleted}
               />
             </li>
           ))}
@@ -414,9 +496,19 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
         <button
           type="button"
           className="comment-section__view-more"
-          onClick={() => setVisibleRootCount(comments.length)}
+          onClick={() => setVisibleRootCount(prev => prev + ROOT_PAGE_SIZE)}
         >
           View more comments ({remainingRoots} remaining)
+        </button>
+      )}
+
+      {visibleRootCount > ROOT_PAGE_SIZE && (
+        <button
+          type="button"
+          className="comment-section__view-more"
+          onClick={() => setVisibleRootCount(ROOT_PAGE_SIZE)}
+        >
+          Hide comments
         </button>
       )}
     </section>

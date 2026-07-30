@@ -170,9 +170,24 @@
   word-break: break-word;
 }
 
-.comment-section__text--deleted {
+.comment-section__reply-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 2px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
   color: var(--color-muted);
-  font-style: italic;
+}
+
+.comment-section__reply-context-icon {
+  color: var(--color-forest);
+  font-weight: 700;
+}
+
+.comment-section__reply-context strong {
+  color: var(--color-ink);
+  font-weight: 600;
 }
 
 .comment-section__actions {
