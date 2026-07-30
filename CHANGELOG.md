@@ -140,8 +140,20 @@ and filters
 
 ## Added
 - Add to itinerary button(`AddToItineraryButton.jsx`)
+- destinationDisplay(`utils/destinationDisplay.js`)
+
 
 ## Changed
 
 - Destinationcard (`Destinationcard.jsx`)
+- `comments.py`
+- `confest.py`
+- `destinations.py`
+- comment section(`CommentSection.jsx`)
+- comment section(`CommentSection.jsx`)
+- comment section styling(`CommentSection.css`)
+- destination card page(`destinationcard.jsx`)
+- destination detail page(`destinationdetails.jsx`)
+- destination data(`destinations.json`)
+
 

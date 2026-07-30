@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-# Make the project root importable when running `pytest` from the project root
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import services.storage as storage
@@ -14,9 +14,7 @@ from app import create_app
 # Fixed destination fixtures used by the test suite. Tests should NEVER
 # depend on the real data/destinations.json content, since that file is
 # expected to grow/change as more destinations are added to the app.
-# This is written over the copied data/ folder for every test, so test
-# assertions (destination ids, tags, counts) stay stable regardless of
-# what's actually seeded in production.
+
 FIXTURE_DESTINATIONS = {
     "destinations": [
         {
@@ -107,9 +105,9 @@ def client(tmp_path, monkeypatch):
     storage.DATA_DIR at it, so tests never touch the real JSON files
     and each test starts from a known, disposable snapshot.
 
-    destinations.json is then overwritten with a fixed fixture set
-    (see FIXTURE_DESTINATIONS above), so tests never break just because
-    the real seed data grows or changes.
+    destinations.json and comments.json are then overwritten with fixed,
+    empty/known fixture state (see FIXTURE_DESTINATIONS above), so tests
+    never break just because the real seed/dev data grows or changes.
     """
     project_root = Path(__file__).resolve().parent.parent
     tmp_data_dir = tmp_path / "data"
@@ -117,6 +115,9 @@ def client(tmp_path, monkeypatch):
 
     with open(tmp_data_dir / "destinations.json", "w") as f:
         json.dump(FIXTURE_DESTINATIONS, f, indent=2)
+
+    with open(tmp_data_dir / "comments.json", "w") as f:
+        json.dump({"comments": []}, f, indent=2)
 
     monkeypatch.setattr(storage, "DATA_DIR", str(tmp_data_dir))
 

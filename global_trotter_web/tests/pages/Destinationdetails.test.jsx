@@ -26,8 +26,20 @@ const DESTINATION = {
   type: 'market',
   tags: ['food', 'shopping', 'local'],
   budget_level: 'low',
+  budget: { is_free: true, amount_label: 'Free to browse', note: 'Free to enter and walk around.' },
+  hours: { always_open: false, open: '07:00', close: '18:30', note: 'Open daily.' },
   rating: { average: 4.31, count: 56 },
-  images: ['https://cdn.globetrotter.com/dest_001/main.jpg'],
+  images: [
+    'https://cdn.globetrotter.com/dest_001/main.jpg',
+    'https://cdn.globetrotter.com/dest_001/2.jpg',
+    'https://cdn.globetrotter.com/dest_001/3.jpg',
+    'https://cdn.globetrotter.com/dest_001/4.jpg'
+  ],
+  nearby_services: [
+    { name: 'Central taxi rank', type: 'Transport' },
+    { name: 'Banks and ATMs on Avenue Foch', type: 'Bank/ATM' }
+  ],
+  advice: 'Bargaining is normal here - agree on a price before buying.',
   description: 'Bustling central market known for local produce and crafts.'
 }
 
@@ -58,18 +70,33 @@ describe('DestinationDetails', () => {
     expect(await screen.findByText('Marche Central')).toBeInTheDocument()
     expect(screen.getByText(/centre-ville · market/i)).toBeInTheDocument()
     expect(screen.getByText('food')).toBeInTheDocument()
-    expect(screen.getByText(/low budget/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Free to browse').length).toBeGreaterThan(0)
+    expect(screen.getByText(/7:00 AM - 6:30 PM/i)).toBeInTheDocument()
     expect(screen.getByText(/4.3 \(56\)/)).toBeInTheDocument()
     expect(
       screen.getByText('Bustling central market known for local produce and crafts.')
     ).toBeInTheDocument()
   })
 
-  test('shows a "coming soon" note for future features', async () => {
+  test('shows extra photos, nearby services, and advice', async () => {
     renderDestinationDetails()
 
     await screen.findByText('Marche Central')
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument()
+    expect(screen.getByText('More photos')).toBeInTheDocument()
+    expect(screen.getByAltText('Marche Central photo 2')).toBeInTheDocument()
+    expect(screen.getByAltText('Marche Central photo 3')).toBeInTheDocument()
+    expect(screen.getByAltText('Marche Central photo 4')).toBeInTheDocument()
+    expect(screen.getByText('Central taxi rank')).toBeInTheDocument()
+    expect(screen.getByText('Banks and ATMs on Avenue Foch')).toBeInTheDocument()
+    expect(screen.getByText(/bargaining is normal here/i)).toBeInTheDocument()
+  })
+
+  test('shows "No advice." when a destination has none', async () => {
+    getDestinations.mockResolvedValue({ destinations: [{ ...DESTINATION, advice: '' }] })
+    renderDestinationDetails()
+
+    await screen.findByText('Marche Central')
+    expect(screen.getByText('No advice.')).toBeInTheDocument()
   })
 
   test('shows "Destination not found" for an unknown id', async () => {

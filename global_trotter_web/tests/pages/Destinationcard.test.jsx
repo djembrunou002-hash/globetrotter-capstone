@@ -9,6 +9,8 @@ const DESTINATION = {
   type: 'market',
   tags: ['food', 'shopping', 'local'],
   budget_level: 'low',
+  budget: { is_free: true, amount_label: 'Free to browse', note: 'Free to enter and walk around.' },
+  hours: { always_open: false, open: '07:00', close: '18:30', note: 'Open daily.' },
   rating: { average: 4.31, count: 56 },
   images: ['https://cdn.globetrotter.com/dest_001/main.jpg']
 }
@@ -39,7 +41,7 @@ beforeEach(() => {
 })
 
 describe('DestinationCard', () => {
-  test('renders name, area, type, tags, and budget level', () => {
+  test('renders name, area, type, tags, budget, and hours', () => {
     renderCard()
 
     expect(screen.getByText('Marche Central')).toBeInTheDocument()
@@ -47,7 +49,8 @@ describe('DestinationCard', () => {
     expect(screen.getByText('food')).toBeInTheDocument()
     expect(screen.getByText('shopping')).toBeInTheDocument()
     expect(screen.getByText('local')).toBeInTheDocument()
-    expect(screen.getByText(/low budget/i)).toBeInTheDocument()
+    expect(screen.getByText('Free to browse')).toBeInTheDocument()
+    expect(screen.getByText(/7:00 AM - 6:30 PM/i)).toBeInTheDocument()
   })
 
   test('the location button is disabled', () => {

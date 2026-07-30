@@ -2,13 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import StarRating from './Starrating.jsx'
 import AddToItineraryButton from './AddToItineraryButton.jsx'
+import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
 import '../styles/DestinationCard.css'
-
-const BUDGET_LABELS = {
-  low: 'Low budget',
-  medium: 'Medium budget',
-  high: 'High budget'
-}
 
 function DestinationCard({
   destination,
@@ -27,6 +22,8 @@ function DestinationCard({
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
   const commentCount = destination.comment_count || 0
+  const budgetDisplay = getBudgetDisplay(destination.budget, destination.budget_level)
+  const hoursDisplay = getHoursDisplay(destination.hours)
 
   function handleOpenDetails() {
     navigate(`/destinations/${destination.id}`)
@@ -67,7 +64,7 @@ function DestinationCard({
           <div className="destination-card__image destination-card__image--placeholder" aria-hidden="true" />
         )}
         <span className={`destination-card__budget destination-card__budget--${destination.budget_level}`}>
-          {BUDGET_LABELS[destination.budget_level] || destination.budget_level}
+          {budgetDisplay.label}
         </span>
 
         {selectable && (
@@ -115,6 +112,14 @@ function DestinationCard({
         <h3 className="destination-card__name">{destination.name}</h3>
         <p className="destination-card__meta">
           {destination.area} · {destination.type}
+        </p>
+
+        <p className="destination-card__hours">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3.5 2" />
+          </svg>
+          {hoursDisplay.label}
         </p>
 
         {destination.tags && destination.tags.length > 0 && (

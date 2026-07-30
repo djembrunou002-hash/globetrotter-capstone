@@ -13,12 +13,25 @@ import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import CommentSection from '../components/CommentSection.jsx'
 import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
+import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
 import '../styles/DestinationDetails.css'
 
-const BUDGET_LABELS = {
-  low: 'Low budget',
-  medium: 'Medium budget',
-  high: 'High budget'
+function ExtraPhoto({ src, alt }) {
+  const [failed, setFailed] = useState(false)
+
+  if (!src || failed) {
+    return <div className="destination-details__extra-photo destination-details__extra-photo--placeholder" aria-hidden="true" />
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="destination-details__extra-photo"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function DestinationDetails() {
@@ -95,6 +108,11 @@ function DestinationDetails() {
   }
 
   const image = destination?.images && destination.images[0]
+  const extraPhotos = destination?.images ? destination.images.slice(1, 4) : []
+  const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level) : null
+  const hoursDisplay = destination ? getHoursDisplay(destination.hours) : null
+  const nearbyServices = destination?.nearby_services || []
+  const advice = destination?.advice && destination.advice.trim() ? destination.advice : 'No advice.'
 
   return (
     <div className="destination-details">
@@ -140,7 +158,7 @@ function DestinationDetails() {
               <span
                 className={`destination-details__budget destination-details__budget--${destination.budget_level}`}
               >
-                {BUDGET_LABELS[destination.budget_level] || destination.budget_level}
+                {budgetDisplay.label}
               </span>
             </div>
 
@@ -207,6 +225,24 @@ function DestinationDetails() {
                 />
               </div>
 
+              <div className="destination-details__info-grid">
+                <div className="destination-details__info-card">
+                  <span className="destination-details__info-label">Budget to visit</span>
+                  <span className="destination-details__info-value">{budgetDisplay.label}</span>
+                  {budgetDisplay.note && (
+                    <p className="destination-details__info-note">{budgetDisplay.note}</p>
+                  )}
+                </div>
+
+                <div className="destination-details__info-card">
+                  <span className="destination-details__info-label">Opening hours</span>
+                  <span className="destination-details__info-value">{hoursDisplay.label}</span>
+                  {hoursDisplay.note && (
+                    <p className="destination-details__info-note">{hoursDisplay.note}</p>
+                  )}
+                </div>
+              </div>
+
               {destination.description && (
                 <div className="destination-details__section">
                   <h2 className="destination-details__section-title">About this place</h2>
@@ -214,8 +250,34 @@ function DestinationDetails() {
                 </div>
               )}
 
-              <div className="destination-details__coming-soon">
-                More details -- photos and nearby suggestions -- are coming soon.
+              {extraPhotos.length > 0 && (
+                <div className="destination-details__section">
+                  <h2 className="destination-details__section-title">More photos</h2>
+                  <div className="destination-details__photo-grid">
+                    {extraPhotos.map((src, index) => (
+                      <ExtraPhoto key={src} src={src} alt={`${destination.name} photo ${index + 2}`} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {nearbyServices.length > 0 && (
+                <div className="destination-details__section">
+                  <h2 className="destination-details__section-title">Good to know nearby</h2>
+                  <ul className="destination-details__services">
+                    {nearbyServices.map(service => (
+                      <li key={service.name} className="destination-details__service">
+                        <span className="destination-details__service-type">{service.type}</span>
+                        <span className="destination-details__service-name">{service.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="destination-details__section">
+                <h2 className="destination-details__section-title">Advice</h2>
+                <p className="destination-details__advice">{advice}</p>
               </div>
 
               <CommentSection

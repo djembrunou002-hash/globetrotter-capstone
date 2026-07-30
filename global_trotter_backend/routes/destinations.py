@@ -10,9 +10,10 @@ def _with_comment_counts(destinations):
     comments = load_json("comments.json")["comments"]
     comment_counts = {}
     for comment in comments:
+        if comment.get("deleted"):
+            continue
         destination_id = comment["destination_id"]
-        total = 1 + len(comment.get("replies", []))
-        comment_counts[destination_id] = comment_counts.get(destination_id, 0) + total
+        comment_counts[destination_id] = comment_counts.get(destination_id, 0) + 1
 
     return [{**d, "comment_count": comment_counts.get(d["id"], 0)} for d in destinations]
 

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -7,6 +7,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from services.storage import load_json, save_json
 
 comments_bp = Blueprint("comments", __name__)
+
+EDIT_WINDOW = timedelta(minutes=15)
 
 
 def _get_destination(destination_id):
@@ -20,23 +22,47 @@ def _author(user_id):
     return {"id": user_id, "name": user["name"] if user else "Traveler"}
 
 
-def _serialize_reply(reply):
+def _find_node(data, destination_id, comment_id):
+    return next(
+        (c for c in data["comments"] if c["id"] == comment_id and c["destination_id"] == destination_id),
+        None,
+    )
+
+
+def _count_descendants(node_id, children_by_parent):
+    children = children_by_parent.get(node_id, [])
+    total = len(children)
+    for child in children:
+        total += _count_descendants(child["id"], children_by_parent)
+    return total
+
+
+def _serialize_node(node, children_by_parent):
+    children = sorted(children_by_parent.get(node["id"], []), key=lambda c: c["created_at"])
     return {
-        "id": reply["id"],
-        "author": _author(reply["user_id"]),
-        "text": reply["text"],
-        "created_at": reply["created_at"],
+        "id": node["id"],
+        "destination_id": node["destination_id"],
+        "author": _author(node["user_id"]),
+        "text": "[deleted]" if node["deleted"] else node["text"],
+        "created_at": node["created_at"],
+        "updated_at": node.get("updated_at"),
+        "edited": bool(node.get("updated_at")) and not node["deleted"],
+        "deleted": node["deleted"],
+        "reply_count": _count_descendants(node["id"], children_by_parent),
+        "replies": [_serialize_node(child, children_by_parent) for child in children],
     }
 
 
-def _serialize_comment(comment):
+def _serialize_flat(node):
     return {
-        "id": comment["id"],
-        "destination_id": comment["destination_id"],
-        "author": _author(comment["user_id"]),
-        "text": comment["text"],
-        "created_at": comment["created_at"],
-        "replies": [_serialize_reply(r) for r in comment.get("replies", [])],
+        "id": node["id"],
+        "destination_id": node["destination_id"],
+        "author": _author(node["user_id"]),
+        "text": "[deleted]" if node["deleted"] else node["text"],
+        "created_at": node["created_at"],
+        "updated_at": node.get("updated_at"),
+        "edited": bool(node.get("updated_at")) and not node["deleted"],
+        "deleted": node["deleted"],
     }
 
 
@@ -46,10 +72,15 @@ def get_comments(destination_id):
         return jsonify({"error": "destination not found"}), 404
 
     data = load_json("comments.json")
-    comments = [c for c in data["comments"] if c["destination_id"] == destination_id]
-    comments.sort(key=lambda c: c["created_at"])
+    all_nodes = [c for c in data["comments"] if c["destination_id"] == destination_id]
 
-    return jsonify({"comments": [_serialize_comment(c) for c in comments]}), 200
+    children_by_parent = {}
+    for node in all_nodes:
+        children_by_parent.setdefault(node["parent_id"], []).append(node)
+
+    roots = sorted(children_by_parent.get(None, []), key=lambda c: c["created_at"], reverse=True)
+
+    return jsonify({"comments": [_serialize_node(root, children_by_parent) for root in roots]}), 200
 
 
 @comments_bp.route("/destinations/<destination_id>/comments", methods=["POST"])
@@ -68,17 +99,19 @@ def add_comment(destination_id):
     comment = {
         "id": f"cmt_{uuid.uuid4().hex[:8]}",
         "destination_id": destination_id,
+        "parent_id": None,
         "user_id": user_id,
         "text": text,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "replies": [],
+        "updated_at": None,
+        "deleted": False,
     }
 
     data = load_json("comments.json")
     data["comments"].append(comment)
     save_json("comments.json", data)
 
-    return jsonify({"comment": _serialize_comment(comment)}), 201
+    return jsonify({"comment": _serialize_node(comment, {})}), 201
 
 
 @comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/replies", methods=["POST"])
@@ -93,23 +126,83 @@ def add_reply(destination_id, comment_id):
         return jsonify({"error": "text is required"}), 400
 
     data = load_json("comments.json")
-    comment = next(
-        (c for c in data["comments"] if c["id"] == comment_id and c["destination_id"] == destination_id),
-        None,
-    )
-    if not comment:
+    parent = _find_node(data, destination_id, comment_id)
+    if not parent or parent["deleted"]:
         return jsonify({"error": "comment not found"}), 404
 
     user_id = get_jwt_identity()
 
     reply = {
-        "id": f"rpl_{uuid.uuid4().hex[:8]}",
+        "id": f"cmt_{uuid.uuid4().hex[:8]}",
+        "destination_id": destination_id,
+        "parent_id": comment_id,
         "user_id": user_id,
         "text": text,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": None,
+        "deleted": False,
     }
 
-    comment.setdefault("replies", []).append(reply)
+    data["comments"].append(reply)
     save_json("comments.json", data)
 
-    return jsonify({"reply": _serialize_reply(reply)}), 201
+    return jsonify({"reply": _serialize_flat(reply)}), 201
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>", methods=["PATCH"])
+@jwt_required()
+def edit_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    text = (body.get("text") or "").strip()
+    if not text:
+        return jsonify({"error": "text is required"}), 400
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node:
+        return jsonify({"error": "comment not found"}), 404
+
+    if node["deleted"]:
+        return jsonify({"error": "cannot edit a deleted comment"}), 400
+
+    user_id = get_jwt_identity()
+    if node["user_id"] != user_id:
+        return jsonify({"error": "you can only edit your own comment"}), 403
+
+    created_at = datetime.fromisoformat(node["created_at"])
+    if datetime.now(timezone.utc) - created_at > EDIT_WINDOW:
+        return jsonify({"error": "edit window has expired"}), 403
+
+    node["text"] = text
+    node["updated_at"] = datetime.now(timezone.utc).isoformat()
+    save_json("comments.json", data)
+
+    return jsonify({"comment": _serialize_flat(node)}), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>", methods=["DELETE"])
+@jwt_required()
+def delete_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node:
+        return jsonify({"error": "comment not found"}), 404
+
+    user_id = get_jwt_identity()
+    if node["user_id"] != user_id:
+        return jsonify({"error": "you can only delete your own comment"}), 403
+
+    for other in data["comments"]:
+        if other["parent_id"] == comment_id:
+            other["parent_id"] = node["parent_id"]
+
+    data["comments"] = [c for c in data["comments"] if c["id"] != comment_id]
+    save_json("comments.json", data)
+
+    return jsonify({"deleted_id": comment_id}), 200
