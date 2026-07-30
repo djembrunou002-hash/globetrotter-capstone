@@ -17,3 +17,16 @@ export function replyToComment(destinationId, commentId, text) {
     body: JSON.stringify({ text })
   })
 }
+
+export function editComment(destinationId, commentId, text) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ text })
+  })
+}
+
+export function deleteComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}`, {
+    method: 'DELETE'
+  })
+}

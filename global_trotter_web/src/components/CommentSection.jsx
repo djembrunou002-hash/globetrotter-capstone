@@ -1,21 +1,301 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getComments, addComment, replyToComment } from '../services/commentService.js'
+import { getComments, addComment, replyToComment, editComment, deleteComment } from '../services/commentService.js'
+import { getUser } from '../services/tokenStorage.js'
 import '../styles/CommentSection.css'
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000
+const ROOT_PAGE_SIZE = 3
+
+function formatDate(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function countAllNodes(nodes) {
+  return nodes.reduce((sum, node) => sum + 1 + countAllNodes(node.replies || []), 0)
+}
+
+function mapNode(nodes, targetId, updater) {
+  return nodes.map(node => {
+    if (node.id === targetId) return updater(node)
+    if (node.replies && node.replies.length) {
+      return { ...node, replies: mapNode(node.replies, targetId, updater) }
+    }
+    return node
+  })
+}
+
+function insertReplyRec(nodes, parentId, reply) {
+  let didInsert = false
+  const result = nodes.map(node => {
+    if (didInsert) return node
+    if (node.id === parentId) {
+      didInsert = true
+      return {
+        ...node,
+        reply_count: (node.reply_count || 0) + 1,
+        replies: [...(node.replies || []), reply]
+      }
+    }
+    if (node.replies && node.replies.length) {
+      const [childReplies, childInserted] = insertReplyRec(node.replies, parentId, reply)
+      if (childInserted) {
+        didInsert = true
+        return { ...node, reply_count: (node.reply_count || 0) + 1, replies: childReplies }
+      }
+    }
+    return node
+  })
+  return [result, didInsert]
+}
+
+function insertReply(nodes, parentId, reply) {
+  return insertReplyRec(nodes, parentId, reply)[0]
+}
+
+function CommentNode({ node, destinationId, isAuthenticated, currentUserId, depth, onReplyPosted, onCommentUpdated }) {
+  const navigate = useNavigate()
+
+  const [repliesExpanded, setRepliesExpanded] = useState((node.replies || []).length > 0)
+  const [isReplying, setIsReplying] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [replySubmitting, setReplySubmitting] = useState(false)
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(node.text)
+  const [editSubmitting, setEditSubmitting] = useState(false)
+
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [localError, setLocalError] = useState('')
+
+  const isOwner = isAuthenticated && currentUserId && node.author?.id === currentUserId
+  const withinEditWindow = Date.now() - new Date(node.created_at).getTime() <= EDIT_WINDOW_MS
+  const canEdit = isOwner && !node.deleted && withinEditWindow
+  const canDelete = isOwner && !node.deleted
+
+  const replies = node.replies || []
+  const replyCount = node.reply_count || 0
+
+  function requireAuth() {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return false
+    }
+    return true
+  }
+
+  function handleStartReply() {
+    if (!requireAuth()) return
+    setIsReplying(true)
+    setReplyText('')
+  }
+
+  async function handleSubmitReply(e) {
+    e.preventDefault()
+    const trimmed = replyText.trim()
+    if (!trimmed) return
+
+    setReplySubmitting(true)
+    setLocalError('')
+    try {
+      const response = await replyToComment(destinationId, node.id, trimmed)
+      onReplyPosted(node.id, { ...response.reply, reply_count: 0, replies: [] })
+      setIsReplying(false)
+      setReplyText('')
+      setRepliesExpanded(true)
+    } catch (err) {
+      setLocalError(err.message)
+    } finally {
+      setReplySubmitting(false)
+    }
+  }
+
+  function handleStartEdit() {
+    setEditText(node.text)
+    setIsEditing(true)
+  }
+
+  async function handleSubmitEdit(e) {
+    e.preventDefault()
+    const trimmed = editText.trim()
+    if (!trimmed) return
+
+    setEditSubmitting(true)
+    setLocalError('')
+    try {
+      const response = await editComment(destinationId, node.id, trimmed)
+      onCommentUpdated(node.id, response.comment)
+      setIsEditing(false)
+    } catch (err) {
+      setLocalError(err.message)
+    } finally {
+      setEditSubmitting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm('Delete this comment?')) return
+
+    setDeleteSubmitting(true)
+    setLocalError('')
+    try {
+      const response = await deleteComment(destinationId, node.id)
+      onCommentUpdated(node.id, response.comment)
+    } catch (err) {
+      setLocalError(err.message)
+    } finally {
+      setDeleteSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="comment-section__node">
+      <div className="comment-section__comment">
+        <div className={`comment-section__avatar ${depth > 0 ? 'comment-section__avatar--small' : ''}`}>
+          {(node.author?.name || '?').charAt(0).toUpperCase()}
+        </div>
+        <div className="comment-section__body">
+          <div className="comment-section__meta">
+            <span className="comment-section__author">{node.author?.name || 'Traveler'}</span>
+            <span className="comment-section__date">{formatDate(node.created_at)}</span>
+            {node.edited && <span className="comment-section__edited-tag">(edited)</span>}
+          </div>
+
+          {isEditing ? (
+            <form className="comment-section__edit-form" onSubmit={handleSubmitEdit}>
+              <textarea
+                className="comment-section__textarea comment-section__textarea--reply"
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                rows={2}
+                autoFocus
+              />
+              <div className="comment-section__reply-actions">
+                <button type="button" className="comment-section__cancel" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="comment-section__submit comment-section__submit--reply"
+                  disabled={editSubmitting || !editText.trim()}
+                >
+                  {editSubmitting ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className={`comment-section__text ${node.deleted ? 'comment-section__text--deleted' : ''}`}>
+              {node.text}
+            </p>
+          )}
+
+          {localError && <p className="comment-section__status comment-section__status--error">{localError}</p>}
+
+          {!isEditing && (
+            <div className="comment-section__actions">
+              <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
+                Reply
+              </button>
+              {canEdit && (
+                <button type="button" className="comment-section__reply-trigger" onClick={handleStartEdit}>
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  className="comment-section__reply-trigger comment-section__reply-trigger--danger"
+                  onClick={handleDelete}
+                  disabled={deleteSubmitting}
+                >
+                  {deleteSubmitting ? 'Deleting...' : 'Delete'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {isReplying && (
+            <form className="comment-section__reply-form" onSubmit={handleSubmitReply}>
+              <textarea
+                className="comment-section__textarea comment-section__textarea--reply"
+                placeholder={`Reply to ${node.author?.name || 'this comment'}...`}
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                rows={2}
+                autoFocus
+              />
+              <div className="comment-section__reply-actions">
+                <button type="button" className="comment-section__cancel" onClick={() => setIsReplying(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="comment-section__submit comment-section__submit--reply"
+                  disabled={replySubmitting || !replyText.trim()}
+                >
+                  {replySubmitting ? 'Posting...' : 'Post reply'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {replyCount > 0 && !repliesExpanded && (
+            <button
+              type="button"
+              className="comment-section__view-replies"
+              onClick={() => setRepliesExpanded(true)}
+            >
+              View replies ({replyCount})
+            </button>
+          )}
+
+          {replyCount > 0 && repliesExpanded && (
+            <button
+              type="button"
+              className="comment-section__view-replies"
+              onClick={() => setRepliesExpanded(false)}
+            >
+              Hide replies
+            </button>
+          )}
+
+          {repliesExpanded && replies.length > 0 && (
+            <div className="comment-section__replies">
+              {replies.map(reply => (
+                <CommentNode
+                  key={reply.id}
+                  node={reply}
+                  destinationId={destinationId}
+                  isAuthenticated={isAuthenticated}
+                  currentUserId={currentUserId}
+                  depth={depth + 1}
+                  onReplyPosted={onReplyPosted}
+                  onCommentUpdated={onCommentUpdated}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
   const navigate = useNavigate()
   const sectionRef = useRef(null)
   const textareaRef = useRef(null)
+  const currentUserId = getUser()?.id || null
 
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [commentText, setCommentText] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [replyingTo, setReplyingTo] = useState(null)
-  const [replyText, setReplyText] = useState('')
-  const [replySubmitting, setReplySubmitting] = useState(false)
+  const [visibleRootCount, setVisibleRootCount] = useState(ROOT_PAGE_SIZE)
 
   useEffect(() => {
     async function loadComments() {
@@ -56,7 +336,7 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
     setError('')
     try {
       const response = await addComment(destinationId, trimmed)
-      setComments(prev => [...prev, { ...response.comment, replies: response.comment.replies || [] }])
+      setComments(prev => [...prev, { ...response.comment, replies: response.comment.replies || [], reply_count: 0 }])
       setCommentText('')
     } catch (err) {
       setError(err.message)
@@ -65,54 +345,17 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
     }
   }
 
-  function handleStartReply(commentId) {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
-    }
-    setReplyingTo(commentId)
-    setReplyText('')
+  function handleReplyPosted(parentId, reply) {
+    setComments(prev => insertReply(prev, parentId, reply))
   }
 
-  function handleCancelReply() {
-    setReplyingTo(null)
-    setReplyText('')
+  function handleCommentUpdated(id, patch) {
+    setComments(prev => mapNode(prev, id, node => ({ ...node, ...patch })))
   }
 
-  async function handleSubmitReply(e, commentId) {
-    e.preventDefault()
-
-    const trimmed = replyText.trim()
-    if (!trimmed) return
-
-    setReplySubmitting(true)
-    setError('')
-    try {
-      const response = await replyToComment(destinationId, commentId, trimmed)
-      setComments(prev =>
-        prev.map(comment =>
-          comment.id === commentId
-            ? { ...comment, replies: [...(comment.replies || []), response.reply] }
-            : comment
-        )
-      )
-      setReplyingTo(null)
-      setReplyText('')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setReplySubmitting(false)
-    }
-  }
-
-  function formatDate(value) {
-    if (!value) return ''
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-  }
-
-  const totalCount = comments.reduce((sum, comment) => sum + 1 + (comment.replies?.length || 0), 0)
+  const totalCount = countAllNodes(comments)
+  const visibleRoots = comments.slice(0, visibleRootCount)
+  const remainingRoots = comments.length - visibleRoots.length
 
   return (
     <section className="comment-section" ref={sectionRef} id="comments">
@@ -151,77 +394,30 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
 
       {!loading && comments.length > 0 && (
         <ul className="comment-section__list">
-          {comments.map(comment => (
+          {visibleRoots.map(comment => (
             <li key={comment.id} className="comment-section__item">
-              <div className="comment-section__comment">
-                <div className="comment-section__avatar">
-                  {(comment.author?.name || '?').charAt(0).toUpperCase()}
-                </div>
-                <div className="comment-section__body">
-                  <div className="comment-section__meta">
-                    <span className="comment-section__author">{comment.author?.name || 'Traveler'}</span>
-                    <span className="comment-section__date">{formatDate(comment.created_at)}</span>
-                  </div>
-                  <p className="comment-section__text">{comment.text}</p>
-                  <button
-                    type="button"
-                    className="comment-section__reply-trigger"
-                    onClick={() => handleStartReply(comment.id)}
-                  >
-                    Reply
-                  </button>
-
-                  {replyingTo === comment.id && (
-                    <form
-                      className="comment-section__reply-form"
-                      onSubmit={e => handleSubmitReply(e, comment.id)}
-                    >
-                      <textarea
-                        className="comment-section__textarea comment-section__textarea--reply"
-                        placeholder={`Reply to ${comment.author?.name || 'this comment'}...`}
-                        value={replyText}
-                        onChange={e => setReplyText(e.target.value)}
-                        rows={2}
-                        autoFocus
-                      />
-                      <div className="comment-section__reply-actions">
-                        <button type="button" className="comment-section__cancel" onClick={handleCancelReply}>
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="comment-section__submit comment-section__submit--reply"
-                          disabled={replySubmitting || !replyText.trim()}
-                        >
-                          {replySubmitting ? 'Posting...' : 'Post reply'}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-
-                  {comment.replies && comment.replies.length > 0 && (
-                    <ul className="comment-section__replies">
-                      {comment.replies.map(reply => (
-                        <li key={reply.id} className="comment-section__reply">
-                          <div className="comment-section__avatar comment-section__avatar--small">
-                            {(reply.author?.name || '?').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="comment-section__body">
-                            <div className="comment-section__meta">
-                              <span className="comment-section__author">{reply.author?.name || 'Traveler'}</span>
-                              <span className="comment-section__date">{formatDate(reply.created_at)}</span>
-                            </div>
-                            <p className="comment-section__text">{reply.text}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
+              <CommentNode
+                node={comment}
+                destinationId={destinationId}
+                isAuthenticated={isAuthenticated}
+                currentUserId={currentUserId}
+                depth={0}
+                onReplyPosted={handleReplyPosted}
+                onCommentUpdated={handleCommentUpdated}
+              />
             </li>
           ))}
         </ul>
+      )}
+
+      {remainingRoots > 0 && (
+        <button
+          type="button"
+          className="comment-section__view-more"
+          onClick={() => setVisibleRootCount(comments.length)}
+        >
+          View more comments ({remainingRoots} remaining)
+        </button>
       )}
     </section>
   )
