@@ -6,6 +6,16 @@ from services.storage import load_json, save_json
 destinations_bp = Blueprint("destinations", __name__)
 
 
+def _with_absolute_images(destination):
+    base = request.host_url.rstrip("/")
+    images = destination.get("images", [])
+    absolute_images = [
+        img if img.startswith("http://") or img.startswith("https://") else f"{base}{img}"
+        for img in images
+    ]
+    return {**destination, "images": absolute_images}
+
+
 def _with_comment_counts(destinations):
     comments = load_json("comments.json")["comments"]
     comment_counts = {}
@@ -15,7 +25,10 @@ def _with_comment_counts(destinations):
         destination_id = comment["destination_id"]
         comment_counts[destination_id] = comment_counts.get(destination_id, 0) + 1
 
-    return [{**d, "comment_count": comment_counts.get(d["id"], 0)} for d in destinations]
+    return [
+        {**_with_absolute_images(d), "comment_count": comment_counts.get(d["id"], 0)}
+        for d in destinations
+    ]
 
 
 @destinations_bp.route("/destinations", methods=["GET"])

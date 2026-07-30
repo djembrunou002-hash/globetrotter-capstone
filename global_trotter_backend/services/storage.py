@@ -6,6 +6,8 @@ _lock = threading.Lock()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
+UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
+DESTINATION_IMAGES_DIR = os.path.join(UPLOADS_DIR, "destinations")
 
 
 def _path(filename):

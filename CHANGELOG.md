@@ -141,6 +141,7 @@ and filters
 ## Added
 - Add to itinerary button(`AddToItineraryButton.jsx`)
 - destinationDisplay(`utils/destinationDisplay.js`)
+- uploads/destinations/ `images`
 
 
 ## Changed
@@ -155,5 +156,6 @@ and filters
 - destination card page(`destinationcard.jsx`)
 - destination detail page(`destinationdetails.jsx`)
 - destination data(`destinations.json`)
+- public/images (deleted images)
 
 
