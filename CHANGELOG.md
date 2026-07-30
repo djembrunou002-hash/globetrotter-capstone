@@ -130,8 +130,18 @@ and filters
 - comments route(`comments.py`) + dedicated test file
 - Comment section (`CommentSection.jsx`)
 
+
 ## Changed 
 - Destination details page(`Destinationdetails.jsx`) + css and test file
 - destination route(`destination.py`)
 - `app.py`
+
+## [30-07-2026]
+
+## Added
+- Add to itinerary button(`AddToItineraryButton.jsx`)
+
+## Changed
+
+- Destinationcard (`Destinationcard.jsx`)
 

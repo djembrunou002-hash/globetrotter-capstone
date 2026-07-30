@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import StarRating from './Starrating.jsx'
+import AddToItineraryButton from './AddToItineraryButton.jsx'
 import '../styles/DestinationCard.css'
 
 const BUDGET_LABELS = {
@@ -164,6 +165,14 @@ function DestinationCard({
               <path d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.5 4.5 6 4c2-.3 3.8.8 6 3.2C14.2 4.8 16 3.7 18 4c3.5.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" />
             </svg>
           </button>
+
+          {!selectable && (
+            <AddToItineraryButton
+              destinationId={destination.id}
+              isAuthenticated={isAuthenticated}
+              variant="icon"
+            />
+          )}
         </div>
       </div>
     </article>

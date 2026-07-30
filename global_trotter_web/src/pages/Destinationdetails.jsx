@@ -12,6 +12,7 @@ import Logo from '../components/Logo.jsx'
 import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import CommentSection from '../components/CommentSection.jsx'
+import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
 import '../styles/DestinationDetails.css'
 
 const BUDGET_LABELS = {
@@ -198,6 +199,12 @@ function DestinationDetails() {
                   </svg>
                   {isFavorite ? 'Saved to favorites' : 'Add to favorites'}
                 </button>
+
+                <AddToItineraryButton
+                  destinationId={id}
+                  isAuthenticated={isAuthenticated}
+                  variant="pill"
+                />
               </div>
 
               {destination.description && (

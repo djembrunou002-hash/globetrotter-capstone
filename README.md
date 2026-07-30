@@ -151,6 +151,9 @@ home page
 itineraries
 destinations page
 profile page
+itnerary details page
+destination detail page
+destination choose page
 
 
 ### Setup

@@ -118,19 +118,26 @@
       "user_id": "usr_48f97346",
       "title": "Jonatan Trip",
       "destinations": [
-        "dest_001"
+        "dest_001",
+        "dest_025",
+        "dest_035"
       ],
       "destination_times": {},
       "tags": [
+        "dining",
         "food",
+        "fresh-air",
+        "hiking",
         "local",
-        "shopping"
+        "nature",
+        "shopping",
+        "viewpoint"
       ],
       "start_date": "2026-07-25",
       "end_date": "2026-07-31",
       "shared_with": [],
       "created_at": "2026-07-25T20:14:06.291216+00:00",
-      "updated_at": "2026-07-25T20:14:06.291216+00:00"
+      "updated_at": "2026-07-30T09:50:32.022857+00:00"
     },
     {
       "id": "itin_1c12d85f",

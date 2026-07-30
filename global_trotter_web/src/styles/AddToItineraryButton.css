@@ -1,0 +1,219 @@
+.add-to-itinerary {
+  display: inline-flex;
+  position: relative;
+}
+
+.add-to-itinerary__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--color-forest);
+  background: var(--color-forest);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.add-to-itinerary__trigger:hover {
+  opacity: 0.88;
+}
+
+.add-to-itinerary__trigger--pill {
+  width: auto;
+  height: auto;
+  padding: 9px 16px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.add-to-itinerary__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(11, 19, 15, 0);
+  pointer-events: none;
+  transition: background 0.25s ease;
+}
+
+.add-to-itinerary__backdrop--open {
+  background: rgba(11, 19, 15, 0.45);
+  pointer-events: auto;
+}
+
+.add-to-itinerary__sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.28s ease;
+}
+
+.add-to-itinerary__sheet--open {
+  transform: translateY(0);
+  box-shadow: 0 -16px 40px rgba(11, 61, 36, 0.22);
+}
+
+.add-to-itinerary__handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: #E7DFC9;
+  margin: 12px auto 4px;
+  flex-shrink: 0;
+}
+
+.add-to-itinerary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 8px;
+  flex-shrink: 0;
+}
+
+.add-to-itinerary__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-ink);
+}
+
+.add-to-itinerary__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-sand);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.add-to-itinerary__body {
+  padding: 4px 20px 24px;
+  overflow-y: auto;
+}
+
+.add-to-itinerary__status {
+  margin: 12px 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.add-to-itinerary__status--error {
+  color: #8A1424;
+}
+
+.add-to-itinerary__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.add-to-itinerary__create {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--color-forest);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-to-itinerary__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-to-itinerary__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.add-to-itinerary__item:hover:not(:disabled) {
+  background: var(--color-sand);
+  border-color: var(--color-forest);
+}
+
+.add-to-itinerary__item:disabled {
+  cursor: default;
+}
+
+.add-to-itinerary__item--added {
+  background: var(--color-sand);
+}
+
+.add-to-itinerary__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.add-to-itinerary__item-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-to-itinerary__item-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+
+.add-to-itinerary__badge {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-forest);
+}
+
+.add-to-itinerary__badge--plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-forest);
+  color: #fff;
+}
