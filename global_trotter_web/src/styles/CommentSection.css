@@ -217,6 +217,38 @@
   color: #8A1424;
 }
 
+.comment-section__vote-trigger {
+  border: none;
+  background: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-forest);
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.comment-section__vote-trigger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.comment-section__vote-trigger--active {
+  opacity: 1;
+}
+
+.comment-section__vote-trigger--like.comment-section__vote-trigger--active {
+  color: #2E6B3E;
+}
+
+.comment-section__vote-trigger--dislike.comment-section__vote-trigger--active {
+  color: #8A1424;
+}
+
 .comment-section__edit-form,
 .comment-section__reply-form {
   margin-top: 10px;

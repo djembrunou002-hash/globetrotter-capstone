@@ -30,3 +30,27 @@ export function deleteComment(destinationId, commentId) {
     method: 'DELETE'
   })
 }
+
+export function likeComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/like`, {
+    method: 'POST'
+  })
+}
+
+export function unlikeComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/like`, {
+    method: 'DELETE'
+  })
+}
+
+export function dislikeComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/dislike`, {
+    method: 'POST'
+  })
+}
+
+export function undislikeComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/dislike`, {
+    method: 'DELETE'
+  })
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getComments, addComment, replyToComment, editComment, deleteComment } from '../services/commentService.js'
+import { getComments, addComment, replyToComment, editComment, deleteComment, likeComment, unlikeComment, dislikeComment, undislikeComment } from '../services/commentService.js'
 import { getUser } from '../services/tokenStorage.js'
 import '../styles/CommentSection.css'
 
@@ -112,7 +112,14 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   const [editSubmitting, setEditSubmitting] = useState(false)
 
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [likeSubmitting, setLikeSubmitting] = useState(false)
+  const [dislikeSubmitting, setDislikeSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
+
+  const likeCount = node.like_count || 0
+  const likedByMe = !!node.liked_by_me
+  const dislikeCount = node.dislike_count || 0
+  const dislikedByMe = !!node.disliked_by_me
 
   const isOwner = isAuthenticated && currentUserId && node.author?.id === currentUserId
   const withinEditWindow = Date.now() - new Date(node.created_at).getTime() <= EDIT_WINDOW_MS
@@ -149,6 +156,88 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
       setLocalError(err.message)
     } finally {
       setReplySubmitting(false)
+    }
+  }
+
+  async function handleToggleLike() {
+    if (!requireAuth()) return
+    if (likeSubmitting) return
+
+    const nextLiked = !likedByMe
+    const nextLikeCount = Math.max(likeCount + (nextLiked ? 1 : -1), 0)
+    const nextDislikeCount = nextLiked && dislikedByMe ? Math.max(dislikeCount - 1, 0) : dislikeCount
+    const nextDisliked = nextLiked ? false : dislikedByMe
+
+    setLikeSubmitting(true)
+    setLocalError('')
+    onCommentUpdated(node.id, {
+      liked_by_me: nextLiked,
+      like_count: nextLikeCount,
+      disliked_by_me: nextDisliked,
+      dislike_count: nextDislikeCount
+    })
+
+    try {
+      const response = nextLiked
+        ? await likeComment(destinationId, node.id)
+        : await unlikeComment(destinationId, node.id)
+      onCommentUpdated(node.id, {
+        liked_by_me: response.liked_by_me,
+        like_count: response.like_count,
+        disliked_by_me: response.disliked_by_me,
+        dislike_count: response.dislike_count
+      })
+    } catch (err) {
+      onCommentUpdated(node.id, {
+        liked_by_me: likedByMe,
+        like_count: likeCount,
+        disliked_by_me: dislikedByMe,
+        dislike_count: dislikeCount
+      })
+      setLocalError(err.message)
+    } finally {
+      setLikeSubmitting(false)
+    }
+  }
+
+  async function handleToggleDislike() {
+    if (!requireAuth()) return
+    if (dislikeSubmitting) return
+
+    const nextDisliked = !dislikedByMe
+    const nextDislikeCount = Math.max(dislikeCount + (nextDisliked ? 1 : -1), 0)
+    const nextLikeCount = nextDisliked && likedByMe ? Math.max(likeCount - 1, 0) : likeCount
+    const nextLiked = nextDisliked ? false : likedByMe
+
+    setDislikeSubmitting(true)
+    setLocalError('')
+    onCommentUpdated(node.id, {
+      disliked_by_me: nextDisliked,
+      dislike_count: nextDislikeCount,
+      liked_by_me: nextLiked,
+      like_count: nextLikeCount
+    })
+
+    try {
+      const response = nextDisliked
+        ? await dislikeComment(destinationId, node.id)
+        : await undislikeComment(destinationId, node.id)
+      onCommentUpdated(node.id, {
+        disliked_by_me: response.disliked_by_me,
+        dislike_count: response.dislike_count,
+        liked_by_me: response.liked_by_me,
+        like_count: response.like_count
+      })
+    } catch (err) {
+      onCommentUpdated(node.id, {
+        disliked_by_me: dislikedByMe,
+        dislike_count: dislikeCount,
+        liked_by_me: likedByMe,
+        like_count: likeCount
+      })
+      setLocalError(err.message)
+    } finally {
+      setDislikeSubmitting(false)
     }
   }
 
@@ -236,6 +325,26 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
 
         {!isEditing && (
           <div className="comment-section__actions">
+            <button
+              type="button"
+              className={`comment-section__vote-trigger comment-section__vote-trigger--like ${likedByMe ? 'comment-section__vote-trigger--active' : ''}`}
+              onClick={handleToggleLike}
+              disabled={likeSubmitting}
+              aria-pressed={likedByMe}
+              aria-label="Like this comment"
+            >
+              <span aria-hidden="true">👍</span>{likeCount > 0 ? ` ${likeCount}` : ''}
+            </button>
+            <button
+              type="button"
+              className={`comment-section__vote-trigger comment-section__vote-trigger--dislike ${dislikedByMe ? 'comment-section__vote-trigger--active' : ''}`}
+              onClick={handleToggleDislike}
+              disabled={dislikeSubmitting}
+              aria-pressed={dislikedByMe}
+              aria-label="Dislike this comment"
+            >
+              <span aria-hidden="true">👎</span>{dislikeCount > 0 ? ` ${dislikeCount}` : ''}
+            </button>
             <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
               Reply
             </button>
