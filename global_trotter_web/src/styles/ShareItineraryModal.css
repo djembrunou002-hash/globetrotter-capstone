@@ -1,0 +1,94 @@
+.share-modal__list {
+  margin-top: 28px;
+  border-top: 1px solid #E7DFC9;
+  padding-top: 20px;
+}
+
+.share-modal__list-heading {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0 0 12px;
+}
+
+.share-modal__list-status {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.share-modal__users {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-modal__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-modal__user-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-forest);
+  color: var(--color-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.share-modal__user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.share-modal__user-name {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.share-modal__user-contact {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-modal__user-remove {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #E7DFC9;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #8A1424;
+  cursor: pointer;
+}
+
+.share-modal__user-remove:hover:not(:disabled) {
+  background: #FBE7E9;
+}
+
+.share-modal__user-remove:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

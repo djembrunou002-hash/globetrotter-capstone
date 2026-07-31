@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { getItineraries } from '../services/itineraryService.js'
+import { getItineraries, getSharedUsers } from '../services/itineraryService.js'
 import {
   getDestinations,
   getFavorites,
@@ -12,6 +12,7 @@ import { getToken } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
 
 function formatDate(dateString) {
@@ -34,6 +35,8 @@ function ItineraryDetails() {
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeType, setActiveType] = useState(null)
+  const [sharedUsers, setSharedUsers] = useState([])
+  const [shareModalOpen, setShareModalOpen] = useState(false)
 
   useEffect(() => {
     if (!getToken()) {
@@ -64,6 +67,44 @@ function ItineraryDetails() {
 
     loadData()
   }, [id, navigate])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadSharedUsers() {
+      if (!itinerary || itinerary.is_owner === false) {
+        if (active) setSharedUsers([])
+        return
+      }
+
+      try {
+        const response = await getSharedUsers(itinerary.id)
+        if (active) setSharedUsers(response.shared_users)
+      } catch (err) {
+        if (active) setError(err.message)
+      }
+    }
+
+    loadSharedUsers()
+
+    return () => {
+      active = false
+    }
+  }, [itinerary])
+
+  function handleOpenShare() {
+    setShareModalOpen(true)
+  }
+
+  async function handleCloseShare() {
+    setShareModalOpen(false)
+    try {
+      const response = await getSharedUsers(itinerary.id)
+      setSharedUsers(response.shared_users)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   async function handleToggleFavorite(destinationId) {
     const isCurrentlyFavorite = favoriteIds.has(destinationId)
@@ -156,7 +197,29 @@ function ItineraryDetails() {
 
         {!loading && !error && itinerary && (
           <>
-            <h1 className="itinerary-details__title">{itinerary.title}</h1>
+            {itinerary.is_owner === false && (
+              <p className="itinerary-details__shared-note">Shared by {itinerary.owner_name}</p>
+            )}
+
+            {itinerary.is_owner !== false && sharedUsers.length > 0 && (
+              <p className="itinerary-details__shared-note">
+                Shared with {sharedUsers.map(user => user.name).join(', ')}
+              </p>
+            )}
+
+            <div className="itinerary-details__title-row">
+              <h1 className="itinerary-details__title">{itinerary.title}</h1>
+              {itinerary.is_owner !== false && (
+                <button
+                  type="button"
+                  className="itinerary-details__share-button"
+                  onClick={handleOpenShare}
+                >
+                  Share
+                </button>
+              )}
+            </div>
+
             <p className="itinerary-details__dates">
               {formatDate(itinerary.start_date)} – {formatDate(itinerary.end_date)}
             </p>
@@ -249,6 +312,10 @@ function ItineraryDetails() {
           </>
         )}
       </main>
+
+      {shareModalOpen && itinerary && (
+        <ShareItineraryModal itinerary={itinerary} onClose={handleCloseShare} />
+      )}
 
       <BottomNav />
     </div>

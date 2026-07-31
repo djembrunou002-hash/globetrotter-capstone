@@ -9,6 +9,7 @@ import BottomNav from '../components/Bottomnav.jsx'
 import ItineraryCard from '../components/Itinerarycard.jsx'
 import AddItineraryModal from '../components/Additinerarymodal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import '../styles/Itineraries.css'
 
 function Itineraries() {
@@ -27,6 +28,8 @@ function Itineraries() {
   const [confirmTarget, setConfirmTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  const [shareTarget, setShareTarget] = useState(null)
 
   useEffect(() => {
     if (!getToken()) {
@@ -65,7 +68,7 @@ function Itineraries() {
     setSubmitError('')
     try {
       const response = await createItinerary(payload)
-      setItineraries(prev => [response.itinerary, ...prev])
+      setItineraries(prev => [{ ...response.itinerary, is_owner: true }, ...prev])
       closeForm()
     } catch (err) {
       setSubmitError(err.message)
@@ -132,6 +135,14 @@ function Itineraries() {
     }
   }
 
+  function handleRequestShare(itinerary) {
+    setShareTarget(itinerary)
+  }
+
+  function handleCloseShare() {
+    setShareTarget(null)
+  }
+
   return (
     <div className="itineraries">
       <header className="itineraries__header">
@@ -189,6 +200,7 @@ function Itineraries() {
                 selected={selectedForDeletion.includes(itinerary.id)}
                 onToggleSelect={toggleSelectForDeletion}
                 onRequestDelete={handleRequestSingleDelete}
+                onRequestShare={handleRequestShare}
               />
             ))}
           </div>
@@ -224,6 +236,10 @@ function Itineraries() {
           submitting={deleting}
           error={deleteError}
         />
+      )}
+
+      {shareTarget && (
+        <ShareItineraryModal itinerary={shareTarget} onClose={handleCloseShare} />
       )}
 
       <BottomNav />

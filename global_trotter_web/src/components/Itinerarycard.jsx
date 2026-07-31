@@ -1,10 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-function ItineraryCard({ itinerary, coverImage, selectable = false, selected = false, onToggleSelect, onRequestDelete }) {
+function ItineraryCard({
+  itinerary,
+  coverImage,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+  onRequestDelete,
+  onRequestShare
+}) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
+
+  const isOwner = itinerary.is_owner !== false
 
   function handleOpen() {
     navigate(`/itineraries/${itinerary.id}`)
@@ -20,6 +30,11 @@ function ItineraryCard({ itinerary, coverImage, selectable = false, selected = f
   function handleRequestDelete() {
     setMenuOpen(false)
     onRequestDelete(itinerary.id)
+  }
+
+  function handleRequestShare() {
+    setMenuOpen(false)
+    onRequestShare(itinerary)
   }
 
   return (
@@ -43,7 +58,7 @@ function ItineraryCard({ itinerary, coverImage, selectable = false, selected = f
           <div className="itinerary-card__image itinerary-card__image--placeholder" aria-hidden="true" />
         )}
 
-        {selectable ? (
+        {selectable && isOwner && (
           <button
             type="button"
             className={`itinerary-card__checkbox ${selected ? 'itinerary-card__checkbox--checked' : ''}`}
@@ -60,7 +75,9 @@ function ItineraryCard({ itinerary, coverImage, selectable = false, selected = f
               </svg>
             )}
           </button>
-        ) : (
+        )}
+
+        {!selectable && isOwner && (
           <>
             <button
               type="button"
@@ -88,13 +105,20 @@ function ItineraryCard({ itinerary, coverImage, selectable = false, selected = f
                   }}
                 />
                 <div className="itinerary-card__menu" onClick={e => e.stopPropagation()}>
-                  <button type="button" className="itinerary-card__menu-item" onClick={handleRequestDelete}>
+                  <button type="button" className="itinerary-card__menu-item" onClick={handleRequestShare}>
+                    Share itinerary
+                  </button>
+                  <button type="button" className="itinerary-card__menu-item itinerary-card__menu-item--danger" onClick={handleRequestDelete}>
                     Delete itinerary
                   </button>
                 </div>
               </>
             )}
           </>
+        )}
+
+        {!isOwner && (
+          <span className="itinerary-card__shared-badge">Shared by {itinerary.owner_name}</span>
         )}
 
         <div className="itinerary-card__overlay">

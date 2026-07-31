@@ -42,11 +42,31 @@
   color: #8A1424;
 }
 
+.itinerary-details__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .itinerary-details__title {
   font-family: var(--font-display);
   font-size: 1.6rem;
   color: var(--color-ink);
   margin: 0;
+}
+
+.itinerary-details__share-button {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-forest);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
 }
 
 .itinerary-details__dates {
@@ -146,4 +166,16 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 24px;
+}
+
+.itinerary-details__shared-note {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: #EAF1EC;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin: 0 0 10px;
 }

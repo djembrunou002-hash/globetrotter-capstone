@@ -9,6 +9,17 @@ from services.storage import load_json, save_json
 itineraries_bp = Blueprint("itineraries", __name__)
 
 
+def _find_user_by_contact(users, email, number):
+    return next(
+        (u for u in users if (email and u.get("email") == email) or (number and u.get("number") == number)),
+        None,
+    )
+
+
+def _public_user(user):
+    return {"id": user["id"], "name": user["name"], "email": user.get("email"), "number": user.get("number")}
+
+
 @itineraries_bp.route("/itineraries", methods=["POST"])
 @jwt_required()
 def create_itinerary():
@@ -56,8 +67,21 @@ def create_itinerary():
 def get_itineraries():
     user_id = get_jwt_identity()
     data = load_json("itineraries.json")
-    user_itineraries = [i for i in data["itineraries"] if i["user_id"] == user_id]
-    return jsonify({"itineraries": user_itineraries}), 200
+    users_by_id = {u["id"]: u for u in load_json("users.json")["users"]}
+
+    result = []
+    for itinerary in data["itineraries"]:
+        if itinerary["user_id"] == user_id:
+            result.append({**itinerary, "is_owner": True})
+        elif user_id in itinerary.get("shared_with", []):
+            owner = users_by_id.get(itinerary["user_id"])
+            result.append({
+                **itinerary,
+                "is_owner": False,
+                "owner_name": owner["name"] if owner else "Unknown",
+            })
+
+    return jsonify({"itineraries": result}), 200
 
 
 @itineraries_bp.route("/itineraries/<itinerary_id>/destinations", methods=["PUT"])
@@ -95,6 +119,89 @@ def add_destination(itinerary_id):
     save_json("itineraries.json", data)
 
     return jsonify({"itinerary": itinerary}), 200
+
+
+@itineraries_bp.route("/itineraries/<itinerary_id>/share", methods=["POST"])
+@jwt_required()
+def share_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+    email = body.get("email")
+    number = body.get("number")
+
+    if not email and not number:
+        return jsonify({"error": "email or number is required"}), 400
+
+    data = load_json("itineraries.json")
+    itinerary = next(
+        (i for i in data["itineraries"] if i["id"] == itinerary_id and i["user_id"] == user_id),
+        None,
+    )
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    users = load_json("users.json")["users"]
+    target = _find_user_by_contact(users, email, number)
+    if not target:
+        return jsonify({"error": "no user found with that email or number"}), 404
+
+    if target["id"] == user_id:
+        return jsonify({"error": "you can't share an itinerary with yourself"}), 400
+
+    shared_with = itinerary.setdefault("shared_with", [])
+    if target["id"] in shared_with:
+        return jsonify({"error": "itinerary is already shared with this user"}), 409
+
+    shared_with.append(target["id"])
+    itinerary["updated_at"] = datetime.now(timezone.utc).isoformat()
+    save_json("itineraries.json", data)
+
+    return jsonify({"itinerary": itinerary, "shared_user": _public_user(target)}), 200
+
+
+@itineraries_bp.route("/itineraries/<itinerary_id>/share/<shared_user_id>", methods=["DELETE"])
+@jwt_required()
+def unshare_itinerary(itinerary_id, shared_user_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next(
+        (i for i in data["itineraries"] if i["id"] == itinerary_id and i["user_id"] == user_id),
+        None,
+    )
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    shared_with = itinerary.get("shared_with", [])
+    if shared_user_id in shared_with:
+        shared_with.remove(shared_user_id)
+        itinerary["updated_at"] = datetime.now(timezone.utc).isoformat()
+        save_json("itineraries.json", data)
+
+    return jsonify({"itinerary": itinerary}), 200
+
+
+@itineraries_bp.route("/itineraries/<itinerary_id>/shared-users", methods=["GET"])
+@jwt_required()
+def list_shared_users(itinerary_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next(
+        (i for i in data["itineraries"] if i["id"] == itinerary_id and i["user_id"] == user_id),
+        None,
+    )
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    users_by_id = {u["id"]: u for u in load_json("users.json")["users"]}
+    shared_users = [
+        _public_user(users_by_id[uid])
+        for uid in itinerary.get("shared_with", [])
+        if uid in users_by_id
+    ]
+
+    return jsonify({"shared_users": shared_users}), 200
 
 
 @itineraries_bp.route("/itineraries/<itinerary_id>", methods=["DELETE"])

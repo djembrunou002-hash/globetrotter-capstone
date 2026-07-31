@@ -168,6 +168,7 @@ and filters
 - favorites page(`Favorites.jsx`) and dedicated testing file
 - SelectStyle.jsx + dedicated testing file
 - (`Select style.jsx`)
+- (`shareitinerariesmodal.jsx`)
 
 ## Changed
 
@@ -176,3 +177,4 @@ and filters
 - itinerarypage(`itinerarypage.jsx`)
 - Profile page
 - Profile page
+- itineraries related files

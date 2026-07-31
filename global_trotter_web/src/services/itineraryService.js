@@ -33,3 +33,20 @@ export function deleteItineraries(itineraryIds) {
     body: JSON.stringify({ ids: itineraryIds })
   })
 }
+
+export function shareItinerary(itineraryId, contact) {
+  return apiRequest(`/itineraries/${itineraryId}/share`, {
+    method: 'POST',
+    body: JSON.stringify(contact)
+  })
+}
+
+export function unshareItinerary(itineraryId, sharedUserId) {
+  return apiRequest(`/itineraries/${itineraryId}/share/${sharedUserId}`, {
+    method: 'DELETE'
+  })
+}
+
+export function getSharedUsers(itineraryId) {
+  return apiRequest(`/itineraries/${itineraryId}/shared-users`)
+}
