@@ -37,6 +37,7 @@ def register():
         "password_hash": generate_password_hash(password, method="pbkdf2:sha256"),
         "favorites": [],
         "preferences": {"travel_style": []},
+        "role": "user",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 

@@ -148,6 +148,26 @@ function Profile() {
                   </dd>
                 </Link>
               )}
+
+              {user.role === 'admin' ? (
+                <Link to="/admin" className="profile__info-row profile__info-row--link">
+                  <dt>Admin dashboard</dt>
+                  <dd className="profile__favorites-value">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </dd>
+                </Link>
+              ) : (
+                <Link to="/my-destinations" className="profile__info-row profile__info-row--link">
+                  <dt>Manage your destinations</dt>
+                  <dd className="profile__favorites-value">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </dd>
+                </Link>
+              )}
             </dl>
 
             <button type="button" className="profile__logout" onClick={handleLogout}>

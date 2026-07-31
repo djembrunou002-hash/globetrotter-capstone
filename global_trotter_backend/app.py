@@ -3,9 +3,11 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 
 from config import Config
+from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes.comments import comments_bp
 from routes.destinations import destinations_bp
+from routes.my_destinations import my_destinations_bp
 from routes.recommendations import recommendations_bp
 from routes.itineraries import itineraries_bp
 from routes.uploads import uploads_bp
@@ -19,9 +21,11 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": Config.ALLOWED_ORIGINS}})
     JWTManager(app)
 
+    app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(comments_bp)
     app.register_blueprint(destinations_bp)
+    app.register_blueprint(my_destinations_bp)
     app.register_blueprint(recommendations_bp)
     app.register_blueprint(itineraries_bp)
     app.register_blueprint(uploads_bp)

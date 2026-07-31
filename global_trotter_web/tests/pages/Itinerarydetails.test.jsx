@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import ItineraryDetails from '../../src/pages/itineraryDetails.jsx'
-import { getItineraries } from '../../src/services/itineraryService.js'
+import { getItineraries, getSharedUsers } from '../../src/services/itineraryService.js'
 import {
   getDestinations,
   getFavorites,
@@ -67,6 +67,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   getToken.mockReturnValue('fake-token')
   getItineraries.mockResolvedValue({ itineraries: [ITINERARY] })
+  getSharedUsers.mockResolvedValue({ shared_users: [] })
   getDestinations.mockResolvedValue({ destinations: [MARCHE, MONT_FEBE] })
   getFavorites.mockResolvedValue({ favorites: [] })
   addFavorite.mockResolvedValue({ favorites: [] })

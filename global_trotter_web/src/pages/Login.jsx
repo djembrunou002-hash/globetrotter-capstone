@@ -63,7 +63,7 @@ function Login() {
       const response = await loginUser(payload)
       setToken(response.token)
       setUser(response.user)
-      navigate('/home')
+      navigate(response.user.role === 'admin' ? '/admin' : '/home')
     } catch (err) {
       setError(err.message)
     } finally {

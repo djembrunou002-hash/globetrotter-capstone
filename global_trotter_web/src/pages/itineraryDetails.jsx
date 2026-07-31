@@ -22,6 +22,15 @@ function formatDate(dateString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function loadVisitedIds(itineraryId) {
+  try {
+    const stored = localStorage.getItem(`itinerary-visited:${itineraryId}`)
+    return new Set(stored ? JSON.parse(stored) : [])
+  } catch {
+    return new Set()
+  }
+}
+
 function ItineraryDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -30,13 +39,22 @@ function ItineraryDetails() {
   const [itinerary, setItinerary] = useState(null)
   const [destinations, setDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
-  const [visitedIds, setVisitedIds] = useState(new Set())
+  const [visitedIds, setVisitedIds] = useState(() => loadVisitedIds(id))
+  const [visitedIdsLoadedFor, setVisitedIdsLoadedFor] = useState(id)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeType, setActiveType] = useState(null)
   const [sharedUsers, setSharedUsers] = useState([])
   const [shareModalOpen, setShareModalOpen] = useState(false)
+
+  // Keep visitedIds in sync with the current itinerary id. This runs during
+  // render (not in an effect) since it's just adjusting state to match a
+  // changed prop, per https://react.dev/learn/you-might-not-need-an-effect
+  if (id !== visitedIdsLoadedFor) {
+    setVisitedIdsLoadedFor(id)
+    setVisitedIds(loadVisitedIds(id))
+  }
 
   useEffect(() => {
     if (!getToken()) {
@@ -141,9 +159,9 @@ function ItineraryDetails() {
     }
   }
 
-  // NOTE: "visited" is local-only for now -- the backend doesn't yet have a
-  // place to persist this per itinerary/destination. Revisit once there's an
-  // endpoint for it.
+  // "Visited" is tracked locally (per browser) since there's no backend
+  // endpoint for it yet. It's persisted to localStorage, keyed by itinerary,
+  // so it survives navigating to a destination's detail page and back.
   function handleToggleVisited(destinationId) {
     setVisitedIds(prev => {
       const next = new Set(prev)
@@ -151,6 +169,11 @@ function ItineraryDetails() {
         next.delete(destinationId)
       } else {
         next.add(destinationId)
+      }
+      try {
+        localStorage.setItem(`itinerary-visited:${id}`, JSON.stringify([...next]))
+      } catch {
+        // ignore storage errors (e.g. private browsing / storage full)
       }
       return next
     })

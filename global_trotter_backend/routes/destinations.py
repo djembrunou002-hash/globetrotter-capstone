@@ -1,6 +1,16 @@
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from services.auth_helpers import get_current_user, is_admin
+from services.destination_requests import (
+    create_admin_action_request,
+    create_request,
+    has_pending_request_for_destination,
+    parse_destination_form,
+)
+from services.images import delete_destination_image
 from services.storage import load_json, save_json
 
 destinations_bp = Blueprint("destinations", __name__)
@@ -64,6 +74,91 @@ def get_destinations():
         ]
 
     return jsonify({"destinations": _with_comment_counts(results)}), 200
+
+
+@destinations_bp.route("/destinations", methods=["POST"])
+@jwt_required()
+def submit_destination():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    payload, errors = parse_destination_form(request.form, request.files)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    request_obj = create_request("create", user["id"], payload)
+    return jsonify({"request": request_obj}), 201
+
+
+@destinations_bp.route("/destinations/<destination_id>", methods=["PUT"])
+@jwt_required()
+def update_destination(destination_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    data = load_json("destinations.json")
+    destination = next((d for d in data["destinations"] if d["id"] == destination_id), None)
+    if not destination:
+        return jsonify({"error": "destination not found"}), 404
+
+    admin = is_admin(user)
+    is_owner = destination.get("owner_id") == user["id"]
+    if not admin and not is_owner:
+        return jsonify({"error": "not authorized to edit this destination"}), 403
+
+    payload, errors = parse_destination_form(request.form, request.files, existing=destination)
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    if admin:
+        destination.update(payload)
+        destination["last_updated"] = datetime.now(timezone.utc).isoformat()
+        save_json("destinations.json", data)
+        if destination.get("owner_id") and destination["owner_id"] != user["id"]:
+            create_admin_action_request("edit", destination, user["id"])
+        return jsonify({"destination": _with_absolute_images(destination)}), 200
+
+    if has_pending_request_for_destination(destination_id):
+        return jsonify({"error": "a review request is already pending for this destination"}), 409
+
+    request_obj = create_request("edit", user["id"], payload, destination_id=destination_id)
+    return jsonify({"request": request_obj}), 201
+
+
+@destinations_bp.route("/destinations/<destination_id>", methods=["DELETE"])
+@jwt_required()
+def delete_destination(destination_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    data = load_json("destinations.json")
+    destination = next((d for d in data["destinations"] if d["id"] == destination_id), None)
+    if not destination:
+        return jsonify({"error": "destination not found"}), 404
+
+    admin = is_admin(user)
+    is_owner = destination.get("owner_id") == user["id"]
+    if not admin and not is_owner:
+        return jsonify({"error": "not authorized to delete this destination"}), 403
+
+    if admin:
+        owner_id = destination.get("owner_id")
+        for image in destination.get("images", []):
+            delete_destination_image(image)
+        data["destinations"] = [d for d in data["destinations"] if d["id"] != destination_id]
+        save_json("destinations.json", data)
+        if owner_id and owner_id != user["id"]:
+            create_admin_action_request("delete", destination, user["id"])
+        return jsonify({"deleted": destination_id}), 200
+
+    if has_pending_request_for_destination(destination_id):
+        return jsonify({"error": "a review request is already pending for this destination"}), 409
+
+    request_obj = create_request("delete", user["id"], dict(destination), destination_id=destination_id)
+    return jsonify({"request": request_obj}), 201
 
 
 @destinations_bp.route("/destinations/<destination_id>/rating", methods=["POST"])

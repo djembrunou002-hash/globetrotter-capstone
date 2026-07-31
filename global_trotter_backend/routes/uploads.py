@@ -15,9 +15,3 @@ def serve_destination_image(filename):
         abort(404)
 
     return send_from_directory(DESTINATION_IMAGES_DIR, filename)
-
-
-# Later, when you let users upload their own destination photos, add a
-# POST route here (e.g. POST /images/destinations) that validates the
-# file type/size and saves into DESTINATION_IMAGES_DIR with a generated
-# filename, then stores that filename on the destination record.

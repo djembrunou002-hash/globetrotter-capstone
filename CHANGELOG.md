@@ -65,116 +65,113 @@
 
 ### Added
 - Itineraries page + dedicated test files
-- Navigation Bar
-- Itinerarycard component
-- Itinerary Form
-- Destination Selection
-- Itinenary detail page
+- Navigation bar
+- `Itinerarycard.jsx` component
+- Itinerary form
+- Destination selection (for building an itinerary)
+- Itinerary detail page
 - Checkbox status on destination cards
 
-## Changed
-- Logo(`Logo.jsx`) to render as text after login
+### Changed
+- `Logo.jsx` to render as text after login
 
 ## [26-07-2026]
 
 ### Added
-- Destiantions page(`Destiantions.jsx`) and its dedicated test file
+- Destinations page (`Destinations.jsx`) + dedicated test file
 
-
-## Changed
-- NavBar to add destination page route
-- Destinations page(`Destiantions.jsx/.css`)and dedicated testing file to add search bar
-- Destinatons page(`Destiantions.jsx/.css`)and dedicated testing file to add filters 
+### Changed
+- Nav bar to add the destinations page route
+- Destinations page (`Destinations.jsx`/`.css`) + dedicated test file, to add a search bar
+- Destinations page (`Destinations.jsx`/`.css`) + dedicated test file, to add filters
 
 ## [27-07-2026]
 
-## Added 
+### Added
 - Destination images
 - Additional images
-- Destination detail page (`Destinationdetails.jsx`) and its dedicated testing files
+- Destination detail page (`Destinationdetails.jsx`) + dedicated test file
 
-
-## Changed 
-- Destination.json to add destinations
-- Itineraries detail page(`itineraryDetails.jsx`) to add search bar and filters
-- additinerarymodal(`Additinerarymodal`) inorder to route to destination page then add a search bar
-and filters
-- Destinations page(`Destinations`) to route to destination details page
-- `auth.py` and dedicated testing file to return user object
-- `tokenstorage.js`
-- `login.jsx` store the returned user object
-- bottomnav (`bottomnav.jsx`) to add profile
-- profile page (`profile.jsx`)
+### Changed
+- `destinations.json` to add destinations
+- Itinerary detail page (`itineraryDetails.jsx`) to add a search bar and filters
+- `Additinerarymodal.jsx` to route to the destination page, and to add a search bar and filters
+- Destinations page (`Destinations.jsx`) to route to the destination detail page
+- `auth.py` + dedicated test file, to return the user object
+- `tokenStorage.js`
+- `Login.jsx` to store the returned user object
+- `Bottomnav.jsx` to add a profile tab
+- Profile page (`Profile.jsx`)
 
 ## [28-07-2026]
 
-## Added
-- Recommendationservice(`recommendationService.jsx`) and dedicated testing file
-- .env.production
-- web app icon 
+### Added
+- Recommendation service (`recommendationService.js`) + dedicated test file
+- `.env.production`
+- Web app icon
 
-
-## Changed
-- Home page(`Home.jsx`) to include recommendations
-- Star rating(`Starrating.jsx`) 
-- `Destinationcard.css` to update stars UI to your actual vote
+### Changed
+- Home page (`Home.jsx`) to include recommendations
+- `Starrating.jsx`
+- `DestinationCard.css` to update the star UI to reflect your actual vote
 - `destinations.json`
 - `users.json`
-- itinerary details page(`itineraryDetails.jsx`) adding search bar and filters
-- api(`api.js`)
+- Itinerary detail page (`itineraryDetails.jsx`), adding a search bar and filters
+- `api.js`
 
 ## [29-07-2026]
 
-# Added
-- comments data(`comments.json`)
-- comments route(`comments.py`) + dedicated test file
+### Added
+- Comments data (`comments.json`)
+- Comments route (`comments.py`) + dedicated test file
 - Comment section (`CommentSection.jsx`)
 
-
-## Changed 
-- Destination details page(`Destinationdetails.jsx`) + css and test file
-- destination route(`destination.py`)
+### Changed
+- Destination detail page (`Destinationdetails.jsx`) + CSS + test file
+- `destinations.py`
 - `app.py`
 
 ## [30-07-2026]
 
-## Added
-- Add to itinerary button(`AddToItineraryButton.jsx`)
-- destinationDisplay(`utils/destinationDisplay.js`)
+### Added
+- "Add to itinerary" button (`AddToItineraryButton.jsx`)
+- `utils/destinationDisplay.js`
 
-
-
-## Changed
-
-- Destinationcard (`Destinationcard.jsx`)
+### Changed
+- `DestinationCard.jsx`
 - `comments.py`
-- `confest.py`
+- `conftest.py`
 - `destinations.py`
-- comment section(`CommentSection.jsx`)
-- comment section(`CommentSection.jsx`)
-- comment section styling(`CommentSection.css`)
-- destination card page(`destinationcard.jsx`)
-- destination detail page(`destinationdetails.jsx`)
-- destination data(`destinations.json`)
-
+- `CommentSection.jsx` + `CommentSection.css`
+- `Destinationcard.jsx`
+- `Destinationdetails.jsx`
+- `destinations.json`
 
 ## [31-07-2026]
 
-## Added
+### Added
+- `uploads/destinations/` images folder
+- `uploads.py` — serves uploaded destination images
+- Confirm dialog when deleting an itinerary (`Confirmdialog.jsx`)
+- Favorites page (`Favorites.jsx`) + dedicated test file
+- `SelectStyle.jsx` + dedicated test file
+- `ShareItineraryModal.jsx`
+- Destination submission & moderation workflow — non-admins now go through a review flow instead of editing live data directly:
+  - `POST /destinations` — submit a new destination for review
+  - `PUT /destinations/<id>` / `DELETE /destinations/<id>` — request an edit/deletion (admin edits/deletes apply immediately instead)
+  - `services/destination_requests.py` — request creation, approval, and rejection logic
+  - `routes/admin.py` — `GET /admin/requests`, `POST /admin/requests/<id>/approve`, `POST /admin/requests/<id>/reject`, `DELETE /admin/requests/<id>`
+- "My Destinations" page — lets a user see and manage the spots they've submitted:
+  - `GET /my-destinations`, `DELETE /my-destinations/requests/<id>` (discard a rejected/approved-delete/admin-edit notice)
+  - `MyDestinations.jsx`, `DestinationManageCard.jsx`
+- Itinerary sharing & management routes: `PUT /itineraries/<id>/destinations`, `POST /itineraries/<id>/share`, `DELETE /itineraries/<id>/share/<user_id>`, `GET /itineraries/<id>/shared-users`, `DELETE /itineraries/<id>`, `DELETE /itineraries`
+- `PUT /users/preferences` — updating a user's travel-style preferences (backs `SelectStyle.jsx`/Profile page above)
+- Admin notifications for direct edits/deletes on a user's spot: when an admin edits or deletes a destination directly (no review needed), the owner now sees the change reflected on their "My Destinations" card — an "Edited by admin" badge (dismissible) for edits, and a "Deleted" card with a "Discard" option for deletions
 
-- uploads/destinations/ `images`
-- (`uploads.py`)
-- confirmdialog when deleting itinerary (`confirmdialog.jsx`)
-- favorites page(`Favorites.jsx`) and dedicated testing file
-- SelectStyle.jsx + dedicated testing file
-- (`Select style.jsx`)
-- (`shareitinerariesmodal.jsx`)
-
-## Changed
-
-- public/images (deleted images)
-- commentsection(`Commentsection.jsx`)
-- itinerarypage(`itinerarypage.jsx`)
+### Changed
+- `public/images` (deleted unused images)
+- `CommentSection.jsx`
+- Itinerary page(s)
 - Profile page
-- Profile page
-- itineraries related files
+- Itinerary-related files
+- Persisted the itinerary "visited" checkbox to `localStorage` per itinerary, fixing a bug where a destination card would lose its "visited" (greyed-out) state after opening its detail page and navigating back
