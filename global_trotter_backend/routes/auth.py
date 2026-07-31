@@ -34,7 +34,7 @@ def register():
         "name": name,
         "email": email,
         "number": number,
-        "password_hash": generate_password_hash(password),
+        "password_hash": generate_password_hash(password, method="pbkdf2:sha256"),
         "favorites": [],
         "created_at": datetime.now(timezone.utc).isoformat(),
     }

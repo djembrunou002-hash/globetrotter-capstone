@@ -95,3 +95,49 @@ def add_destination(itinerary_id):
     save_json("itineraries.json", data)
 
     return jsonify({"itinerary": itinerary}), 200
+
+
+@itineraries_bp.route("/itineraries/<itinerary_id>", methods=["DELETE"])
+@jwt_required()
+def delete_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next(
+        (i for i in data["itineraries"] if i["id"] == itinerary_id and i["user_id"] == user_id),
+        None,
+    )
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    data["itineraries"] = [i for i in data["itineraries"] if i["id"] != itinerary_id]
+    save_json("itineraries.json", data)
+
+    return jsonify({"deleted_id": itinerary_id}), 200
+
+
+@itineraries_bp.route("/itineraries", methods=["DELETE"])
+@jwt_required()
+def delete_itineraries():
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+    ids = body.get("ids")
+
+    if not isinstance(ids, list) or not ids:
+        return jsonify({"error": "ids must be a non-empty list"}), 400
+
+    data = load_json("itineraries.json")
+    ids_set = set(ids)
+
+    deleted_ids = [
+        i["id"] for i in data["itineraries"]
+        if i["id"] in ids_set and i["user_id"] == user_id
+    ]
+
+    data["itineraries"] = [
+        i for i in data["itineraries"]
+        if not (i["id"] in ids_set and i["user_id"] == user_id)
+    ]
+    save_json("itineraries.json", data)
+
+    return jsonify({"deleted_ids": deleted_ids}), 200

@@ -22,6 +22,80 @@
   white-space: nowrap;
 }
 
+.itineraries__header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.itineraries__delete-trigger {
+  flex-shrink: 0;
+  background: none;
+  color: #8A1424;
+  border: 1px solid #E7DFC9;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.itineraries__delete-trigger:hover {
+  background: #FBF3E7;
+}
+
+@media (max-width: 480px) {
+  .itineraries__header-actions {
+    width: 100%;
+  }
+
+  .itineraries__add-button,
+  .itineraries__delete-trigger {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+.itineraries__selection-bar {
+  position: fixed;
+  top: 20px;
+  right: clamp(20px, 5vw, 48px);
+  z-index: 30;
+}
+
+.itineraries__selection-cancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(11, 61, 36, 0.12);
+}
+
+.itineraries__confirm-delete {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: #8A1424;
+  color: #fff;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.25);
+}
+
 .itineraries__add-button {
   flex-shrink: 0;
   background: var(--color-forest);
@@ -178,8 +252,34 @@
   padding: 10px 14px;
   font-size: 0.85rem;
   color: #B0522B;
-  cursor: not-allowed;
-  opacity: 0.6;
+  cursor: pointer;
+}
+
+.itinerary-card__menu-item:hover {
+  background: #FBF3E7;
+}
+
+.itinerary-card__checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid #fff;
+  background: rgba(11, 61, 36, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+}
+
+.itinerary-card__checkbox--checked {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  color: var(--color-forest);
 }
 
 .itinerary-card__overlay {

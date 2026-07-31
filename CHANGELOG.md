@@ -141,7 +141,7 @@ and filters
 ## Added
 - Add to itinerary button(`AddToItineraryButton.jsx`)
 - destinationDisplay(`utils/destinationDisplay.js`)
-- uploads/destinations/ `images`
+
 
 
 ## Changed
@@ -156,6 +156,18 @@ and filters
 - destination card page(`destinationcard.jsx`)
 - destination detail page(`destinationdetails.jsx`)
 - destination data(`destinations.json`)
+
+
+## [31-07-2026]
+
+## Added
+
+- uploads/destinations/ `images`
+- (`uploads.py`)
+- confirmdialog when deleting itinerary (`confirmdialog.jsx`)
+
+## Changed
+
 - public/images (deleted images)
-
-
+- commentsection(`Commentsection.jsx`)
+- itinerarypage(`itinerarypage.jsx`)

@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import Itineraries from '../../src/pages/Itineraries.jsx'
 import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 import { useItineraryDraft } from '../../src/hooks/useItineraryDraft.js'
-import { getItineraries, createItinerary } from '../../src/services/itineraryService.js'
+import { getItineraries, createItinerary, deleteItinerary } from '../../src/services/itineraryService.js'
 import { getDestinations } from '../../src/services/destinationService.js'
 import { getToken } from '../../src/services/tokenStorage.js'
 
@@ -120,15 +120,31 @@ describe('Itineraries', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/destinations')
   })
 
-  test('the itineraries options menu shows a disabled delete action', async () => {
+  test('the itineraries options menu opens a delete confirmation dialog', async () => {
     getItineraries.mockResolvedValue({ itineraries: [ITINERARY] })
     renderItineraries()
 
     await screen.findByText('Weekend in Yaounde')
     fireEvent.click(screen.getByRole('button', { name: /itinerary options/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete itinerary/i }))
 
-    const deleteButton = screen.getByRole('button', { name: /delete itinerary/i })
-    expect(deleteButton).toBeDisabled()
+    expect(screen.getByRole('alertdialog', { name: /delete itinerary\?/i })).toBeInTheDocument()
+  })
+
+  test('confirming delete removes the itinerary and calls the delete service', async () => {
+    getItineraries.mockResolvedValue({ itineraries: [ITINERARY] })
+    deleteItinerary.mockResolvedValue({})
+    renderItineraries()
+
+    await screen.findByText('Weekend in Yaounde')
+    fireEvent.click(screen.getByRole('button', { name: /itinerary options/i }))
+    fireEvent.click(screen.getByRole('button', { name: /delete itinerary/i }))
+
+    const dialog = screen.getByRole('alertdialog', { name: /delete itinerary\?/i })
+    fireEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }))
+
+    await waitFor(() => expect(deleteItinerary).toHaveBeenCalledWith('itin_001'))
+    await waitFor(() => expect(screen.queryByText('Weekend in Yaounde')).not.toBeInTheDocument())
   })
 
   test('renders the bottom nav', async () => {

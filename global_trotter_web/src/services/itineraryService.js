@@ -20,3 +20,16 @@ export function addDestinationToItinerary(itineraryId, destinationId, time) {
     })
   })
 }
+
+export function deleteItinerary(itineraryId) {
+  return apiRequest(`/itineraries/${itineraryId}`, {
+    method: 'DELETE'
+  })
+}
+
+export function deleteItineraries(itineraryIds) {
+  return apiRequest('/itineraries', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids: itineraryIds })
+  })
+}

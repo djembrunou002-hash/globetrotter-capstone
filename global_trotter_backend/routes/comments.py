@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required, verify_jwt_in_request
 
 from services.storage import load_json, save_json
 
@@ -37,8 +37,10 @@ def _count_descendants(node_id, children_by_parent):
     return total
 
 
-def _serialize_node(node, children_by_parent):
+def _serialize_node(node, children_by_parent, current_user_id=None):
     children = sorted(children_by_parent.get(node["id"], []), key=lambda c: c["created_at"])
+    likes = node.get("likes", [])
+    dislikes = node.get("dislikes", [])
     return {
         "id": node["id"],
         "destination_id": node["destination_id"],
@@ -48,12 +50,18 @@ def _serialize_node(node, children_by_parent):
         "updated_at": node.get("updated_at"),
         "edited": bool(node.get("updated_at")) and not node["deleted"],
         "deleted": node["deleted"],
+        "like_count": len(likes),
+        "liked_by_me": bool(current_user_id) and current_user_id in likes,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": bool(current_user_id) and current_user_id in dislikes,
         "reply_count": _count_descendants(node["id"], children_by_parent),
-        "replies": [_serialize_node(child, children_by_parent) for child in children],
+        "replies": [_serialize_node(child, children_by_parent, current_user_id) for child in children],
     }
 
 
-def _serialize_flat(node):
+def _serialize_flat(node, current_user_id=None):
+    likes = node.get("likes", [])
+    dislikes = node.get("dislikes", [])
     return {
         "id": node["id"],
         "destination_id": node["destination_id"],
@@ -63,6 +71,10 @@ def _serialize_flat(node):
         "updated_at": node.get("updated_at"),
         "edited": bool(node.get("updated_at")) and not node["deleted"],
         "deleted": node["deleted"],
+        "like_count": len(likes),
+        "liked_by_me": bool(current_user_id) and current_user_id in likes,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": bool(current_user_id) and current_user_id in dislikes,
     }
 
 
@@ -70,6 +82,9 @@ def _serialize_flat(node):
 def get_comments(destination_id):
     if not _get_destination(destination_id):
         return jsonify({"error": "destination not found"}), 404
+
+    verify_jwt_in_request(optional=True)
+    current_user_id = get_jwt_identity()
 
     data = load_json("comments.json")
     all_nodes = [c for c in data["comments"] if c["destination_id"] == destination_id]
@@ -80,7 +95,9 @@ def get_comments(destination_id):
 
     roots = sorted(children_by_parent.get(None, []), key=lambda c: c["created_at"], reverse=True)
 
-    return jsonify({"comments": [_serialize_node(root, children_by_parent) for root in roots]}), 200
+    return jsonify({
+        "comments": [_serialize_node(root, children_by_parent, current_user_id) for root in roots]
+    }), 200
 
 
 @comments_bp.route("/destinations/<destination_id>/comments", methods=["POST"])
@@ -105,13 +122,15 @@ def add_comment(destination_id):
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None,
         "deleted": False,
+        "likes": [],
+        "dislikes": [],
     }
 
     data = load_json("comments.json")
     data["comments"].append(comment)
     save_json("comments.json", data)
 
-    return jsonify({"comment": _serialize_node(comment, {})}), 201
+    return jsonify({"comment": _serialize_node(comment, {}, user_id)}), 201
 
 
 @comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/replies", methods=["POST"])
@@ -141,12 +160,14 @@ def add_reply(destination_id, comment_id):
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None,
         "deleted": False,
+        "likes": [],
+        "dislikes": [],
     }
 
     data["comments"].append(reply)
     save_json("comments.json", data)
 
-    return jsonify({"reply": _serialize_flat(reply)}), 201
+    return jsonify({"reply": _serialize_flat(reply, user_id)}), 201
 
 
 @comments_bp.route("/destinations/<destination_id>/comments/<comment_id>", methods=["PATCH"])
@@ -180,7 +201,119 @@ def edit_comment(destination_id, comment_id):
     node["updated_at"] = datetime.now(timezone.utc).isoformat()
     save_json("comments.json", data)
 
-    return jsonify({"comment": _serialize_flat(node)}), 200
+    return jsonify({"comment": _serialize_flat(node, user_id)}), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/like", methods=["POST"])
+@jwt_required()
+def like_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node or node["deleted"]:
+        return jsonify({"error": "comment not found"}), 404
+
+    user_id = get_jwt_identity()
+    likes = node.setdefault("likes", [])
+    dislikes = node.setdefault("dislikes", [])
+    if user_id in dislikes:
+        dislikes.remove(user_id)
+    if user_id not in likes:
+        likes.append(user_id)
+    save_json("comments.json", data)
+
+    return jsonify({
+        "comment_id": comment_id,
+        "like_count": len(likes),
+        "liked_by_me": True,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": False,
+    }), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/like", methods=["DELETE"])
+@jwt_required()
+def unlike_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node:
+        return jsonify({"error": "comment not found"}), 404
+
+    user_id = get_jwt_identity()
+    likes = node.setdefault("likes", [])
+    dislikes = node.setdefault("dislikes", [])
+    if user_id in likes:
+        likes.remove(user_id)
+        save_json("comments.json", data)
+
+    return jsonify({
+        "comment_id": comment_id,
+        "like_count": len(likes),
+        "liked_by_me": False,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": user_id in dislikes,
+    }), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/dislike", methods=["POST"])
+@jwt_required()
+def dislike_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node or node["deleted"]:
+        return jsonify({"error": "comment not found"}), 404
+
+    user_id = get_jwt_identity()
+    likes = node.setdefault("likes", [])
+    dislikes = node.setdefault("dislikes", [])
+    if user_id in likes:
+        likes.remove(user_id)
+    if user_id not in dislikes:
+        dislikes.append(user_id)
+    save_json("comments.json", data)
+
+    return jsonify({
+        "comment_id": comment_id,
+        "like_count": len(likes),
+        "liked_by_me": False,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": True,
+    }), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/dislike", methods=["DELETE"])
+@jwt_required()
+def undislike_comment(destination_id, comment_id):
+    if not _get_destination(destination_id):
+        return jsonify({"error": "destination not found"}), 404
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node:
+        return jsonify({"error": "comment not found"}), 404
+
+    user_id = get_jwt_identity()
+    likes = node.setdefault("likes", [])
+    dislikes = node.setdefault("dislikes", [])
+    if user_id in dislikes:
+        dislikes.remove(user_id)
+        save_json("comments.json", data)
+
+    return jsonify({
+        "comment_id": comment_id,
+        "like_count": len(likes),
+        "liked_by_me": user_id in likes,
+        "dislike_count": len(dislikes),
+        "disliked_by_me": False,
+    }), 200
 
 
 @comments_bp.route("/destinations/<destination_id>/comments/<comment_id>", methods=["DELETE"])

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getItineraries, createItinerary } from '../services/itineraryService.js'
+import { getItineraries, createItinerary, deleteItinerary, deleteItineraries } from '../services/itineraryService.js'
 import { getDestinations } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
@@ -8,6 +8,7 @@ import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import ItineraryCard from '../components/Itinerarycard.jsx'
 import AddItineraryModal from '../components/Additinerarymodal.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import '../styles/Itineraries.css'
 
 function Itineraries() {
@@ -20,6 +21,12 @@ function Itineraries() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedForDeletion, setSelectedForDeletion] = useState([])
+  const [confirmTarget, setConfirmTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     if (!getToken()) {
@@ -67,17 +74,96 @@ function Itineraries() {
     }
   }
 
+  function handleStartDeleteMode() {
+    setDeleteMode(true)
+    setSelectedForDeletion([])
+  }
+
+  function handleCancelDeleteMode() {
+    setDeleteMode(false)
+    setSelectedForDeletion([])
+  }
+
+  function toggleSelectForDeletion(itineraryId) {
+    setSelectedForDeletion(prev =>
+      prev.includes(itineraryId)
+        ? prev.filter(id => id !== itineraryId)
+        : [...prev, itineraryId]
+    )
+  }
+
+  function handleRequestSingleDelete(itineraryId) {
+    setDeleteError('')
+    setConfirmTarget({ type: 'single', ids: [itineraryId] })
+  }
+
+  function handleRequestBulkDelete() {
+    if (selectedForDeletion.length === 0) return
+    setDeleteError('')
+    setConfirmTarget({ type: 'bulk', ids: selectedForDeletion })
+  }
+
+  function handleCancelConfirm() {
+    if (deleting) return
+    setConfirmTarget(null)
+  }
+
+  async function handleConfirmDelete() {
+    if (!confirmTarget) return
+
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      if (confirmTarget.type === 'single') {
+        await deleteItinerary(confirmTarget.ids[0])
+        setItineraries(prev => prev.filter(i => i.id !== confirmTarget.ids[0]))
+      } else {
+        await deleteItineraries(confirmTarget.ids)
+        const idsSet = new Set(confirmTarget.ids)
+        setItineraries(prev => prev.filter(i => !idsSet.has(i.id)))
+        setDeleteMode(false)
+        setSelectedForDeletion([])
+      }
+      setConfirmTarget(null)
+    } catch (err) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="itineraries">
       <header className="itineraries__header">
         <Logo theme="dark" />
         <h1 className="itineraries__title">Itineraries</h1>
-        {itineraries.length > 0 && (
-          <button type="button" className="itineraries__add-button" onClick={openForm}>
-            + Add itinerary
-          </button>
+        {itineraries.length > 0 && !deleteMode && (
+          <div className="itineraries__header-actions">
+            <button type="button" className="itineraries__add-button" onClick={openForm}>
+              + Add itinerary
+            </button>
+            <button type="button" className="itineraries__delete-trigger" onClick={handleStartDeleteMode}>
+              Delete
+            </button>
+          </div>
         )}
       </header>
+
+      {deleteMode && (
+        <div className="itineraries__selection-bar">
+          <button
+            type="button"
+            className="itineraries__selection-cancel"
+            onClick={handleCancelDeleteMode}
+            aria-label="Cancel itinerary selection"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12H19" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <main className="itineraries__content">
         {loading && <p className="itineraries__status">Loading itineraries...</p>}
@@ -99,11 +185,21 @@ function Itineraries() {
                 key={itinerary.id}
                 itinerary={itinerary}
                 coverImage={findCoverImage(itinerary)}
+                selectable={deleteMode}
+                selected={selectedForDeletion.includes(itinerary.id)}
+                onToggleSelect={toggleSelectForDeletion}
+                onRequestDelete={handleRequestSingleDelete}
               />
             ))}
           </div>
         )}
       </main>
+
+      {deleteMode && selectedForDeletion.length > 0 && (
+        <button type="button" className="itineraries__confirm-delete" onClick={handleRequestBulkDelete}>
+          Delete selected ({selectedForDeletion.length})
+        </button>
+      )}
 
       {formOpen && (
         <AddItineraryModal
@@ -112,6 +208,21 @@ function Itineraries() {
           onSubmit={handleCreate}
           submitting={submitting}
           submitError={submitError}
+        />
+      )}
+
+      {confirmTarget && (
+        <ConfirmDialog
+          title={confirmTarget.type === 'bulk' ? 'Delete itineraries?' : 'Delete itinerary?'}
+          message={
+            confirmTarget.type === 'bulk'
+              ? `Are you sure you want to delete ${confirmTarget.ids.length} itinerar${confirmTarget.ids.length > 1 ? 'ies' : 'y'}? This can't be undone.`
+              : "Are you sure you want to delete this itinerary? This can't be undone."
+          }
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelConfirm}
+          submitting={deleting}
+          error={deleteError}
         />
       )}
 
