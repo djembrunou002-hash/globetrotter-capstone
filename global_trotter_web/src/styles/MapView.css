@@ -42,3 +42,46 @@
   border-radius: 10px;
   padding: 10px 12px;
 }
+
+.map-marker-user {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-marker-user__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2461A6;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(11, 61, 36, 0.35);
+}
+
+.map-marker-user__pulse {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(36, 97, 166, 0.35);
+  animation: map-marker-user-pulse 2s ease-out infinite;
+}
+
+@keyframes map-marker-user-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.maplibregl-ctrl-bottom-right {
+  margin-bottom: 88px;
+  margin-right: 12px;
+}

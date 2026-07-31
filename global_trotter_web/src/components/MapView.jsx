@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { CATEGORY_META } from '../utils/mapCategories.js'
@@ -21,19 +21,61 @@ function createMarkerElement(category, label) {
   return el
 }
 
-function MapView({
+function createUserMarkerElement() {
+  const el = document.createElement('div')
+  el.className = 'map-marker-user'
+  const pulse = document.createElement('span')
+  pulse.className = 'map-marker-user__pulse'
+  const dot = document.createElement('span')
+  dot.className = 'map-marker-user__dot'
+  el.appendChild(pulse)
+  el.appendChild(dot)
+  return el
+}
+
+const MapView = forwardRef(function MapView({
   destinations = [],
   nearbyPlaces = [],
   searchedPlace = null,
   route = null,
+  routeIsFallback = false,
+  userLocation = null,
   onDestinationClick,
   center,
   zoom = 12
-}) {
+}, ref) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const userMarkerRef = useRef(null)
   const readyRef = useRef(false)
+
+  useImperativeHandle(ref, () => ({
+    flyToUser() {
+      const map = mapRef.current
+      if (!map || !userLocation) return
+      map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 800 })
+    },
+    flyToDestinations() {
+      const map = mapRef.current
+      if (!map) return
+      const bounds = new maplibregl.LngLatBounds()
+      let hasPoint = false
+
+      destinations.forEach(d => {
+        bounds.extend([d.lng, d.lat])
+        hasPoint = true
+      })
+      if (searchedPlace) {
+        bounds.extend([searchedPlace.lng, searchedPlace.lat])
+        hasPoint = true
+      }
+
+      if (hasPoint) {
+        map.fitBounds(bounds, { padding: 72, maxZoom: 15, duration: 600 })
+      }
+    }
+  }), [destinations, searchedPlace, userLocation])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -45,10 +87,10 @@ function MapView({
       zoom
     })
 
-    map.addControl(new maplibregl.NavigationControl(), 'top-right')
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
     map.on('load', () => {
       readyRef.current = true
-      applyRoute(map, route)
+      applyRoute(map, route, routeIsFallback)
     })
 
     mapRef.current = map
@@ -121,16 +163,37 @@ function MapView({
     if (!map) return
 
     if (readyRef.current) {
-      applyRoute(map, route)
+      applyRoute(map, route, routeIsFallback)
     } else {
-      map.once('load', () => applyRoute(map, route))
+      map.once('load', () => applyRoute(map, route, routeIsFallback))
     }
-  }, [route])
+  }, [route, routeIsFallback])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    if (!userLocation) {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove()
+        userMarkerRef.current = null
+      }
+      return
+    }
+
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = new maplibregl.Marker({ element: createUserMarkerElement(), anchor: 'center' })
+        .setLngLat([userLocation.lng, userLocation.lat])
+        .addTo(map)
+    } else {
+      userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat])
+    }
+  }, [userLocation])
 
   return <div ref={containerRef} className="map-view" />
-}
+})
 
-function applyRoute(map, route) {
+function applyRoute(map, route, isFallback) {
   if (map.getLayer('itinerary-route-casing')) map.removeLayer('itinerary-route-casing')
   if (map.getLayer('itinerary-route-line')) map.removeLayer('itinerary-route-line')
   if (map.getSource('itinerary-route')) map.removeSource('itinerary-route')
@@ -152,7 +215,11 @@ function applyRoute(map, route) {
     type: 'line',
     source: 'itinerary-route',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#0B3D24', 'line-width': 4 }
+    paint: {
+      'line-color': isFallback ? '#8A8372' : '#0B3D24',
+      'line-width': 4,
+      ...(isFallback ? { 'line-dasharray': [2, 2] } : {})
+    }
   })
 }
 

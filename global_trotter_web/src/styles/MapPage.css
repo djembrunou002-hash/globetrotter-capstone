@@ -1,67 +1,119 @@
 .map-page {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
   background: var(--color-sand);
 }
 
-.map-page__header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px clamp(20px, 5vw, 48px) 8px;
-  flex-shrink: 0;
-}
-
-.map-page__back {
+.map-page__status {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  color: var(--color-ink);
-  background: #fff;
-  border: 1px solid #E7DFC9;
-  flex-shrink: 0;
-}
-
-.map-page__title {
-  margin: 0;
-  padding: 0 clamp(20px, 5vw, 48px) 12px;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  color: var(--color-ink);
-  flex-shrink: 0;
-}
-
-.map-page__body {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-.map-page__status {
-  padding: 24px clamp(20px, 5vw, 48px);
+  padding: 24px;
   font-family: var(--font-body);
   color: var(--color-muted);
+  text-align: center;
 }
 
 .map-page__status--error {
   color: #8A1424;
 }
 
-.map-page__panel {
+.map-page__menu-trigger,
+.map-page__search-trigger {
   position: absolute;
-  top: 14px;
-  left: 14px;
-  right: 14px;
-  z-index: 5;
+  top: 16px;
+  z-index: 20;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-ink);
+  border: 1px solid #E7DFC9;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.18);
+}
+
+.map-page__menu-trigger {
+  left: 16px;
+}
+
+.map-page__search-trigger {
+  right: 16px;
+}
+
+.map-page__menu {
+  position: absolute;
+  top: 64px;
+  left: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(11, 61, 36, 0.18);
+  padding: 6px;
+  gap: 2px;
+}
+
+.map-page__menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-page__menu button:hover:not(:disabled) {
+  background: #F5EFE0;
+}
+
+.map-page__menu button:disabled {
+  color: #B8B1A0;
+  cursor: not-allowed;
+}
+
+.map-page__menu button.is-active {
+  background: var(--color-forest);
+  color: #fff;
+}
+
+.map-page__menu-select {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #E7DFC9;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  background: #fff;
+}
+
+.map-page__search-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 20;
   background: #fff;
   border-radius: 16px;
   border: 1px solid #E7DFC9;
-  box-shadow: 0 8px 24px rgba(11, 61, 36, 0.16);
-  padding: 10px;
+  box-shadow: 0 8px 24px rgba(11, 61, 36, 0.18);
+  padding: 6px;
 }
 
 .map-page__search {
@@ -82,7 +134,8 @@
   background: transparent;
 }
 
-.map-page__search-clear {
+.map-page__search-clear,
+.map-page__search-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,7 +152,7 @@
   list-style: none;
   margin: 0;
   padding: 4px 0 0;
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
   border-top: 1px solid #EFE9D8;
 }
@@ -122,48 +175,11 @@
   background: #F5EFE0;
 }
 
-.map-page__controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding: 8px 10px 4px;
-  border-top: 1px solid #EFE9D8;
-  margin-top: 4px;
-}
-
-.map-page__toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  color: var(--color-ink);
-  cursor: pointer;
-}
-
-.map-page__toggle input {
-  accent-color: var(--color-forest);
-  width: 15px;
-  height: 15px;
-}
-
-.map-page__itinerary-select {
-  width: 100%;
-  margin-top: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #E7DFC9;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--color-ink);
-  background: #fff;
-}
-
 .map-page__legend {
   position: absolute;
-  left: 14px;
-  bottom: 100px;
-  z-index: 5;
+  left: 16px;
+  bottom: 96px;
+  z-index: 15;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -172,7 +188,7 @@
   border-radius: 14px;
   padding: 10px 12px;
   box-shadow: 0 8px 20px rgba(11, 61, 36, 0.14);
-  max-height: 40vh;
+  max-height: 32vh;
   overflow-y: auto;
 }
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from services.geoapify import get_route, nearby_places, search_places
 
@@ -70,8 +70,10 @@ def route():
     try:
         geojson = get_route(waypoints, mode=mode)
     except RuntimeError as err:
+        current_app.logger.warning("routing unavailable: %s", err)
         return jsonify({"error": str(err)}), 503
-    except Exception:
+    except Exception as err:
+        current_app.logger.error("routing failed: %s", err)
         return jsonify({"error": "routing failed"}), 502
 
     return jsonify(geojson), 200

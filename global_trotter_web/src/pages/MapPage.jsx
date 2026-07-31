@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getDestinations } from '../services/destinationService.js'
 import { getItineraries } from '../services/itineraryService.js'
 import { searchPlaces, getNearbyPlaces, getRoute } from '../services/mapService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useGeolocation } from '../hooks/useGeolocation.js'
 import { CATEGORY_META, buildStraightLineGeoJson } from '../utils/mapCategories.js'
-import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import MapView from '../components/MapView.jsx'
 import '../styles/MapPage.css'
@@ -23,6 +23,8 @@ function MapPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isAuthenticated = Boolean(getToken())
+  const mapViewRef = useRef(null)
+  const { position: userLocation } = useGeolocation()
 
   const destinationParam = searchParams.get('destination')
   const itineraryParam = searchParams.get('itinerary')
@@ -37,10 +39,14 @@ function MapPage() {
   const [showServices, setShowServices] = useState(true)
   const [nearbyPlaces, setNearbyPlaces] = useState([])
   const [route, setRoute] = useState(null)
+  const [routeIsFallback, setRouteIsFallback] = useState(false)
 
+  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searchedPlace, setSearchedPlace] = useState(null)
+
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -117,9 +123,16 @@ function MapPage() {
       const points = destinationMarkers.map(marker => [marker.lat, marker.lng])
       try {
         const geojson = await getRoute(points, 'drive')
-        if (active) setRoute(geojson)
-      } catch {
-        if (active) setRoute(buildStraightLineGeoJson(points))
+        if (active) {
+          setRoute(geojson)
+          setRouteIsFallback(false)
+        }
+      } catch (err) {
+        console.error('Falling back to a straight-line route:', err.message)
+        if (active) {
+          setRoute(buildStraightLineGeoJson(points))
+          setRouteIsFallback(true)
+        }
       }
     }
 
@@ -182,6 +195,7 @@ function MapPage() {
     setSearchedPlace(result)
     setSearchResults([])
     setSearchQuery(result.name)
+    setSearchOpen(false)
   }
 
   function handleClearSearch() {
@@ -190,8 +204,31 @@ function MapPage() {
     setSearchResults([])
   }
 
+  function handleCloseSearch() {
+    setSearchOpen(false)
+    handleClearSearch()
+  }
+
   function handleDestinationMarkerClick(marker) {
     navigate(`/destinations/${marker.id}`)
+  }
+
+  function handleMenuOptionMe() {
+    setMenuOpen(false)
+    mapViewRef.current?.flyToUser()
+  }
+
+  function handleMenuOptionDestination() {
+    setMenuOpen(false)
+    mapViewRef.current?.flyToDestinations()
+  }
+
+  function handleMenuOptionItinerary() {
+    setShowRoute(prev => !prev)
+  }
+
+  function handleMenuOptionServices() {
+    setShowServices(prev => !prev)
   }
 
   const presentCategories = useMemo(() => {
@@ -202,48 +239,104 @@ function MapPage() {
     return [...set]
   }, [destinationMarkers, searchedPlace, visibleNearbyPlaces])
 
-  const pageTitle = itineraryParam && activeItinerary
-    ? activeItinerary.title
-    : focusDestination
-      ? focusDestination.name
-      : 'Explore the map'
-
   const canToggleRoute = Boolean(itineraryParam) || containingItineraries.length > 0
 
   return (
     <div className="map-page">
-      <header className="map-page__header">
-        <button
-          type="button"
-          className="map-page__back"
-          aria-label="Go back"
-          onClick={() => navigate(-1)}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5" />
-            <path d="M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <Logo theme="dark" />
-      </header>
+      {loading && <p className="map-page__status">Loading map...</p>}
+      {error && <p className="map-page__status map-page__status--error">{error}</p>}
 
-      <p className="map-page__title">{pageTitle}</p>
+      {!loading && !error && (
+        <>
+          <MapView
+            ref={mapViewRef}
+            destinations={destinationMarkers}
+            nearbyPlaces={visibleNearbyPlaces}
+            searchedPlace={searchedPlace}
+            route={visibleRoute}
+            routeIsFallback={routeIsFallback}
+            userLocation={userLocation}
+            onDestinationClick={handleDestinationMarkerClick}
+          />
 
-      <div className="map-page__body">
-        {loading && <p className="map-page__status">Loading map...</p>}
-        {error && <p className="map-page__status map-page__status--error">{error}</p>}
+          <button
+            type="button"
+            className="map-page__menu-trigger"
+            aria-label="Map options"
+            onClick={() => setMenuOpen(prev => !prev)}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <circle cx="12" cy="5" r="1.8" />
+              <circle cx="12" cy="12" r="1.8" />
+              <circle cx="12" cy="19" r="1.8" />
+            </svg>
+          </button>
 
-        {!loading && !error && (
-          <>
-            <MapView
-              destinations={destinationMarkers}
-              nearbyPlaces={visibleNearbyPlaces}
-              searchedPlace={searchedPlace}
-              route={visibleRoute}
-              onDestinationClick={handleDestinationMarkerClick}
-            />
+          {menuOpen && (
+            <div className="map-page__menu">
+              <button type="button" onClick={handleMenuOptionMe} disabled={!userLocation}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v3M12 19v3M22 12h-3M5 12H2" />
+                </svg>
+                My location
+              </button>
+              <button type="button" onClick={handleMenuOptionDestination} disabled={destinationMarkers.length === 0}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
+                  <circle cx="12" cy="10" r="2.5" />
+                </svg>
+                Destination
+              </button>
+              {canToggleRoute && (
+                <button type="button" className={showRoute ? 'is-active' : ''} onClick={handleMenuOptionItinerary}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 19c4-8 12-8 16 0" />
+                    <circle cx="4" cy="19" r="1.6" />
+                    <circle cx="20" cy="19" r="1.6" />
+                  </svg>
+                  {showRoute ? 'Hide itinerary path' : 'Show itinerary path'}
+                </button>
+              )}
+              <button type="button" className={showServices ? 'is-active' : ''} onClick={handleMenuOptionServices}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 3" />
+                </svg>
+                {showServices ? 'Hide nearby services' : 'Show nearby services'}
+              </button>
 
-            <div className="map-page__panel">
+              {!itineraryParam && showRoute && containingItineraries.length > 1 && (
+                <select
+                  className="map-page__menu-select"
+                  value={selectedItineraryId || ''}
+                  onChange={e => setSelectedItineraryId(e.target.value)}
+                  aria-label="Choose which itinerary to show"
+                >
+                  {containingItineraries.map(itinerary => (
+                    <option key={itinerary.id} value={itinerary.id}>{itinerary.title}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {!searchOpen && (
+            <button
+              type="button"
+              className="map-page__search-trigger"
+              aria-label="Search a place"
+              onClick={() => setSearchOpen(true)}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </button>
+          )}
+
+          {searchOpen && (
+            <div className="map-page__search-panel">
               <div className="map-page__search">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="7" />
@@ -256,6 +349,7 @@ function MapPage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   aria-label="Search a place on the map"
+                  autoFocus
                 />
                 {(searchQuery || searchedPlace) && (
                   <button
@@ -269,6 +363,16 @@ function MapPage() {
                     </svg>
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="map-page__search-close"
+                  onClick={handleCloseSearch}
+                  aria-label="Close search"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
               </div>
 
               {visibleSearchResults.length > 0 && (
@@ -282,59 +386,24 @@ function MapPage() {
                   ))}
                 </ul>
               )}
-
-              <div className="map-page__controls">
-                {canToggleRoute && (
-                  <label className="map-page__toggle">
-                    <input
-                      type="checkbox"
-                      checked={showRoute}
-                      onChange={e => setShowRoute(e.target.checked)}
-                    />
-                    <span>Show itinerary route</span>
-                  </label>
-                )}
-
-                <label className="map-page__toggle">
-                  <input
-                    type="checkbox"
-                    checked={showServices}
-                    onChange={e => setShowServices(e.target.checked)}
-                  />
-                  <span>Show nearby services</span>
-                </label>
-              </div>
-
-              {!itineraryParam && showRoute && containingItineraries.length > 1 && (
-                <select
-                  className="map-page__itinerary-select"
-                  value={selectedItineraryId || ''}
-                  onChange={e => setSelectedItineraryId(e.target.value)}
-                  aria-label="Choose which itinerary to show"
-                >
-                  {containingItineraries.map(itinerary => (
-                    <option key={itinerary.id} value={itinerary.id}>{itinerary.title}</option>
-                  ))}
-                </select>
-              )}
             </div>
+          )}
 
-            {presentCategories.length > 0 && (
-              <div className="map-page__legend">
-                {presentCategories.map(category => (
-                  <span key={category} className="map-page__legend-item">
-                    <span
-                      className="map-page__legend-dot"
-                      style={{ background: CATEGORY_META[category]?.color || CATEGORY_META.other.color }}
-                    />
-                    {CATEGORY_META[category]?.label || 'Other service'}
-                  </span>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          {presentCategories.length > 0 && (
+            <div className="map-page__legend">
+              {presentCategories.map(category => (
+                <span key={category} className="map-page__legend-item">
+                  <span
+                    className="map-page__legend-dot"
+                    style={{ background: CATEGORY_META[category]?.color || CATEGORY_META.other.color }}
+                  />
+                  {CATEGORY_META[category]?.label || 'Other service'}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <BottomNav />
     </div>

@@ -111,4 +111,17 @@ def get_route(waypoints, mode="drive"):
 
     response = requests.get(GEOAPIFY_ROUTING_URL, params=params, timeout=15)
     response.raise_for_status()
-    return response.json()
+    data = response.json()
+
+    features = data.get("features")
+    if not features:
+        raise RuntimeError("routing service returned no route for these waypoints")
+
+    for feature in features:
+        geometry = feature.get("geometry", {})
+        if geometry.get("type") not in ("LineString", "MultiLineString"):
+            raise RuntimeError("routing service returned an unexpected geometry")
+        if not geometry.get("coordinates"):
+            raise RuntimeError("routing service returned an empty route")
+
+    return data
