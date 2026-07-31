@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { getFavorites } from '../services/destinationService.js'
-import { getToken, getUser, clearToken, clearUser } from '../services/tokenStorage.js'
+import { updatePreferences } from '../services/userService.js'
+import { getToken, getUser, setUser, clearToken, clearUser } from '../services/tokenStorage.js'
+import { TRAVEL_STYLES } from '../constants/travelStyles.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import PreferencesModal from '../components/PreferencesModal.jsx'
 import '../styles/Profile.css'
+
+const STYLE_BY_VALUE = TRAVEL_STYLES.reduce((map, style) => {
+  map[style.value] = style
+  return map
+}, {})
 
 function formatMemberSince(dateString) {
   if (!dateString) return ''
@@ -25,8 +33,8 @@ function Profile() {
   const navigate = useNavigate()
   const [favoriteCount, setFavoriteCount] = useState(null)
   const [error, setError] = useState('')
-
-  const user = getUser()
+  const [user, setUserState] = useState(getUser())
+  const [showPreferences, setShowPreferences] = useState(false)
 
   useEffect(() => {
     if (!getToken()) {
@@ -56,6 +64,15 @@ function Profile() {
     navigate('/login')
   }
 
+  async function handleSavePreferences(selectedStyles) {
+    const response = await updatePreferences(selectedStyles)
+    setUser(response.user)
+    setUserState(response.user)
+    setShowPreferences(false)
+  }
+
+  const travelStyles = user?.preferences?.travel_style || []
+
   return (
     <div className="profile">
       <header className="profile__header">
@@ -71,6 +88,32 @@ function Profile() {
           <>
             <div className="profile__avatar">{(user.name || '?').charAt(0).toUpperCase()}</div>
             <h2 className="profile__name">{user.name}</h2>
+
+            <div className="profile__bio">
+              {travelStyles.length > 0 ? (
+                <div className="profile__bio-chips">
+                  {travelStyles.map(styleValue => {
+                    const style = STYLE_BY_VALUE[styleValue]
+                    return (
+                      <span key={styleValue} className="profile__bio-chip">
+                        {style ? `${style.emoji} ${style.label}` : styleValue}
+                      </span>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    className="profile__bio-edit"
+                    onClick={() => setShowPreferences(true)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="profile__bio-empty" onClick={() => setShowPreferences(true)}>
+                  + Add your travel style
+                </button>
+              )}
+            </div>
 
             <dl className="profile__info">
               {user.email && (
@@ -113,6 +156,14 @@ function Profile() {
           </>
         )}
       </main>
+
+      {showPreferences && (
+        <PreferencesModal
+          initialSelected={travelStyles}
+          onSave={handleSavePreferences}
+          onCancel={() => setShowPreferences(false)}
+        />
+      )}
 
       <BottomNav />
     </div>

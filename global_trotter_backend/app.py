@@ -9,6 +9,7 @@ from routes.destinations import destinations_bp
 from routes.recommendations import recommendations_bp
 from routes.itineraries import itineraries_bp
 from routes.uploads import uploads_bp
+from routes.users import users_bp
 
 
 def create_app():
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(recommendations_bp)
     app.register_blueprint(itineraries_bp)
     app.register_blueprint(uploads_bp)
+    app.register_blueprint(users_bp)
 
     return app
 

@@ -36,14 +36,16 @@ def register():
         "number": number,
         "password_hash": generate_password_hash(password, method="pbkdf2:sha256"),
         "favorites": [],
+        "preferences": {"travel_style": []},
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
     users.append(user)
     save_json("users.json", data)
 
+    token = create_access_token(identity=user["id"])
     public_user = {k: v for k, v in user.items() if k != "password_hash"}
-    return jsonify({"user": public_user}), 201
+    return jsonify({"token": token, "user": public_user}), 201
 
 
 @auth_bp.route("/login", methods=["POST"])

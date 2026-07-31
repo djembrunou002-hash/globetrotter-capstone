@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '../services/authService.js'
+import { setToken, setUser } from '../services/tokenStorage.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
 import PhoneInput from '../components/Phoneinput.jsx'
@@ -67,8 +68,10 @@ function Register() {
 
     setLoading(true)
     try {
-      await registerUser(payload)
-      navigate('/login')
+      const response = await registerUser(payload)
+      setToken(response.token)
+      setUser(response.user)
+      navigate('/select-style')
     } catch (err) {
       setError(err.message)
     } finally {

@@ -295,3 +295,26 @@
     display: none;
   }
 }
+
+.auth__skip {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #DED6C2;
+  border-radius: 10px;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.auth__skip:hover:not(:disabled) {
+  background: #F1EBDA;
+  color: var(--color-ink);
+}
+
+.auth__skip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -100,7 +100,10 @@ describe('Register', () => {
   })
 
   test('submits with the +237 prefix combined into the phone number', async () => {
-    registerUser.mockResolvedValueOnce({ id: 'user_001' })
+    registerUser.mockResolvedValueOnce({
+      token: 'mock-token',
+      user: { id: 'user_001', name: 'Jane Doe', preferences: { travel_style: [] } }
+    })
     renderRegister()
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'Jane Doe')
@@ -119,7 +122,7 @@ describe('Register', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login')
+      expect(mockNavigate).toHaveBeenCalledWith('/select-style')
     })
   })
 

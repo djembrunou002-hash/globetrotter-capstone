@@ -129,3 +129,69 @@
 .profile__logout:hover {
   background: #F3C6CB;
 }
+
+.profile__info-row--button {
+  width: 100%;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile__bio {
+  margin: 0 0 24px;
+}
+
+.profile__bio-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.profile__bio-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #F1EBDA;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.profile__bio-edit {
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-ember);
+  cursor: pointer;
+}
+
+.profile__bio-edit:hover {
+  text-decoration: underline;
+}
+
+.profile__bio-empty {
+  background: none;
+  border: 1px dashed #DED6C2;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.profile__bio-empty:hover {
+  border-color: var(--color-gold);
+  color: var(--color-ink);
+}

@@ -165,9 +165,14 @@ and filters
 - uploads/destinations/ `images`
 - (`uploads.py`)
 - confirmdialog when deleting itinerary (`confirmdialog.jsx`)
+- favorites page(`Favorites.jsx`) and dedicated testing file
+- SelectStyle.jsx + dedicated testing file
+- (`Select style.jsx`)
 
 ## Changed
 
 - public/images (deleted images)
 - commentsection(`Commentsection.jsx`)
 - itinerarypage(`itinerarypage.jsx`)
+- Profile page
+- Profile page
