@@ -64,6 +64,15 @@ describe('Profile', () => {
     expect(await screen.findByText('2')).toBeInTheDocument()
   })
 
+  test('the favorite destinations row links to the dedicated favorites page', async () => {
+    renderProfile()
+
+    await screen.findByText('Jane Doe')
+    const favoritesLabel = await screen.findByText('Favorite destinations')
+
+    expect(favoritesLabel.closest('a')).toHaveAttribute('href', '/favorites')
+  })
+
   test('shows a fallback message when no user info is stored', async () => {
     getUser.mockReturnValue(null)
     renderProfile()

@@ -9,6 +9,7 @@ import DestinationDetails from './pages/Destinationdetails.jsx'
 import Itineraries from './pages/Itineraries.jsx'
 import ItineraryDetails from './pages/itineraryDetails.jsx'
 import Profile from './pages/Profile.jsx'
+import Favorites from './pages/Favorites.jsx'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/itineraries" element={<Itineraries />} />
           <Route path="/itineraries/:id" element={<ItineraryDetails />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/favorites" element={<Favorites />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ItineraryDraftProvider>

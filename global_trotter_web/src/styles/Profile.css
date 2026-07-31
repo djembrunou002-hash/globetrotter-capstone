@@ -96,6 +96,22 @@
   text-align: right;
 }
 
+.profile__info-row--link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.profile__info-row--link:hover {
+  background: #FAF6EA;
+}
+
+.profile__favorites-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .profile__logout {
   width: 100%;
   padding: 14px;
