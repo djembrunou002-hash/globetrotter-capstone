@@ -10,3 +10,4 @@ class Config:
         "ALLOWED_ORIGINS",
         "http://localhost:5173"
     ).split(",")
+    GEOAPIFY_API_KEY = os.environ.get("GEOAPIFY_API_KEY", "")

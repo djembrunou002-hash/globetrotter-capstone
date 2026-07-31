@@ -129,10 +129,16 @@
   border-radius: 999px;
   border: 1px solid #E7DFC9;
   background: #fff;
-  color: var(--color-muted);
+  color: var(--color-forest);
   font-family: var(--font-body);
   font-size: 0.85rem;
-  cursor: not-allowed;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.destination-details__location:hover {
+  background: #F5EFE0;
+  border-color: var(--color-forest);
 }
 
 .destination-details__favorite {

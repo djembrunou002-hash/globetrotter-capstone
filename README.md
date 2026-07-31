@@ -155,6 +155,7 @@ itnerary details page
 destination detail page
 destination choose page
 favorites page
+map page
 
 
 ### Setup

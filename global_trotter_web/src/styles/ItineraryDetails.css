@@ -56,6 +56,13 @@
   margin: 0;
 }
 
+.itinerary-details__title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .itinerary-details__share-button {
   flex-shrink: 0;
   font-family: var(--font-body);
@@ -67,6 +74,28 @@
   padding: 8px 16px;
   border-radius: 999px;
   cursor: pointer;
+}
+
+.itinerary-details__map-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.itinerary-details__map-button:hover {
+  background: #F5EFE0;
+  border-color: var(--color-forest);
 }
 
 .itinerary-details__dates {

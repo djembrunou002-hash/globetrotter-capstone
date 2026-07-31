@@ -53,10 +53,11 @@ describe('DestinationCard', () => {
     expect(screen.getByText(/7:00 AM - 6:30 PM/i)).toBeInTheDocument()
   })
 
-  test('the location button is disabled', () => {
+  test('clicking the location button navigates to the map for this destination', () => {
     renderCard()
 
-    expect(screen.getByRole('button', { name: /location/i })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /location/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/map?destination=dest_001')
   })
 
   test('calls onToggleFavorite with the destination id', () => {

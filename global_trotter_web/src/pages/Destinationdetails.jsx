@@ -187,8 +187,8 @@ function DestinationDetails() {
                 <button
                   type="button"
                   className="destination-details__location"
-                  disabled
-                  title="Map view coming soon"
+                  onClick={() => navigate(`/map?destination=${id}`)}
+                  title="View on map"
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />

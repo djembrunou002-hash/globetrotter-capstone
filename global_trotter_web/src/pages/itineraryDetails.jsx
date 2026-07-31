@@ -232,15 +232,29 @@ function ItineraryDetails() {
 
             <div className="itinerary-details__title-row">
               <h1 className="itinerary-details__title">{itinerary.title}</h1>
-              {itinerary.is_owner !== false && (
+              <div className="itinerary-details__title-actions">
                 <button
                   type="button"
-                  className="itinerary-details__share-button"
-                  onClick={handleOpenShare}
+                  className="itinerary-details__map-button"
+                  onClick={() => navigate(`/map?itinerary=${itinerary.id}`)}
                 >
-                  Share
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
+                    <path d="M9 4v14" />
+                    <path d="M15 6v14" />
+                  </svg>
+                  Show itinerary
                 </button>
-              )}
+                {itinerary.is_owner !== false && (
+                  <button
+                    type="button"
+                    className="itinerary-details__share-button"
+                    onClick={handleOpenShare}
+                  >
+                    Share
+                  </button>
+                )}
+              </div>
             </div>
 
             <p className="itinerary-details__dates">

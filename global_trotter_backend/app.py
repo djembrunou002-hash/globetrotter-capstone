@@ -8,6 +8,7 @@ from routes.auth import auth_bp
 from routes.comments import comments_bp
 from routes.destinations import destinations_bp
 from routes.my_destinations import my_destinations_bp
+from routes.places import places_bp
 from routes.recommendations import recommendations_bp
 from routes.itineraries import itineraries_bp
 from routes.uploads import uploads_bp
@@ -26,6 +27,7 @@ def create_app():
     app.register_blueprint(comments_bp)
     app.register_blueprint(destinations_bp)
     app.register_blueprint(my_destinations_bp)
+    app.register_blueprint(places_bp)
     app.register_blueprint(recommendations_bp)
     app.register_blueprint(itineraries_bp)
     app.register_blueprint(uploads_bp)

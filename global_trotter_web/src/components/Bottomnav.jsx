@@ -7,6 +7,18 @@ function BottomNav() {
   return (
     <nav className="bottom-nav">
       <Link
+        to="/map"
+        className={`bottom-nav__item ${location.pathname === '/map' ? 'bottom-nav__item--active' : ''}`}
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
+          <path d="M9 4v14" />
+          <path d="M15 6v14" />
+        </svg>
+        <span>Map</span>
+      </Link>
+
+      <Link
         to="/destinations"
         className={`bottom-nav__item ${location.pathname === '/destinations' ? 'bottom-nav__item--active' : ''}`}
       >

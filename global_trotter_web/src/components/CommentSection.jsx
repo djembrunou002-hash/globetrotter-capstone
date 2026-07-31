@@ -121,8 +121,16 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   const dislikeCount = node.dislike_count || 0
   const dislikedByMe = !!node.disliked_by_me
 
+  const [withinEditWindow, setWithinEditWindow] = useState(false)
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setWithinEditWindow(Date.now() - new Date(node.created_at).getTime() <= EDIT_WINDOW_MS)
+    }, 0)
+    return () => clearTimeout(timeoutId)
+  }, [node.created_at])
+
   const isOwner = isAuthenticated && currentUserId && node.author?.id === currentUserId
-  const withinEditWindow = Date.now() - new Date(node.created_at).getTime() <= EDIT_WINDOW_MS
   const canEdit = isOwner && withinEditWindow
   const canDelete = isOwner
 

@@ -105,11 +105,12 @@ describe('DestinationDetails', () => {
     expect(await screen.findByText('Destination not found.')).toBeInTheDocument()
   })
 
-  test('the location button is disabled', async () => {
+  test('clicking the location button navigates to the map for this destination', async () => {
     renderDestinationDetails()
 
     await screen.findByText('Marche Central')
-    expect(screen.getByRole('button', { name: /location/i })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: /location/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/map?destination=dest_001')
   })
 
   test('redirects to /login when favoriting while logged out', async () => {
