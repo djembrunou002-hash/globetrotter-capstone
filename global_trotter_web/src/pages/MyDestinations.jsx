@@ -12,6 +12,22 @@ import DestinationManageCard from '../components/DestinationManageCard.jsx'
 import ConfirmDialog from '../components/Confirmdialog.jsx'
 import '../styles/MyDestinations.css'
 
+const EDITABLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_review']
+const DISCARDABLE_STATUSES = ['rejected', 'deleted']
+const CANCELABLE_STATUSES = ['pending_review', 'pending_edit', 'pending_delete']
+
+const CANCEL_LABELS = {
+  pending_review: 'Cancel submission',
+  pending_edit: 'Cancel edit',
+  pending_delete: 'Cancel deletion'
+}
+
+const CANCEL_MESSAGES = {
+  pending_review: 'This will withdraw your submission. You can add it again anytime.',
+  pending_edit: 'This will cancel your pending edit. The destination stays as it is now published.',
+  pending_delete: 'This will cancel your pending deletion request. The destination stays published.'
+}
+
 function MyDestinations() {
   const navigate = useNavigate()
 
@@ -63,14 +79,12 @@ function MyDestinations() {
     navigate(`/my-destinations/${destination.id}/edit`)
   }
 
-  const DISCARDABLE_STATUSES = ['rejected', 'deleted']
-
   function handleDeleteClick(destination) {
     setDialogError('')
-    setPendingAction({
-      type: DISCARDABLE_STATUSES.includes(destination.status) ? 'discard' : 'delete',
-      destination
-    })
+    let type = 'delete'
+    if (DISCARDABLE_STATUSES.includes(destination.status)) type = 'discard'
+    else if (CANCELABLE_STATUSES.includes(destination.status)) type = 'cancel'
+    setPendingAction({ type, destination })
   }
 
   async function handleConfirmAction() {
@@ -78,7 +92,7 @@ function MyDestinations() {
     setSubmitting(true)
     setDialogError('')
     try {
-      if (pendingAction.type === 'discard') {
+      if (pendingAction.type === 'discard' || pendingAction.type === 'cancel') {
         await discardSubmission(pendingAction.destination.request_id)
       } else {
         await requestDestinationDelete(pendingAction.destination.id)
@@ -131,9 +145,16 @@ function MyDestinations() {
         {!loading && destinations.length > 0 && (
           <div className="my-destinations__grid">
             {destinations.map(destination => {
-              const editableStatuses = ['published', 'edited']
-              const editDisabled = !editableStatuses.includes(destination.status)
-              const canDelete = editableStatuses.includes(destination.status) || DISCARDABLE_STATUSES.includes(destination.status)
+              const editDisabled = !EDITABLE_STATUSES.includes(destination.status)
+              const canDelete =
+                EDITABLE_STATUSES.includes(destination.status) ||
+                DISCARDABLE_STATUSES.includes(destination.status) ||
+                CANCELABLE_STATUSES.includes(destination.status)
+              const deleteLabel = CANCELABLE_STATUSES.includes(destination.status)
+                ? CANCEL_LABELS[destination.status]
+                : DISCARDABLE_STATUSES.includes(destination.status)
+                  ? 'Discard'
+                  : 'Delete'
               return (
                 <DestinationManageCard
                   key={destination.id}
@@ -142,7 +163,7 @@ function MyDestinations() {
                   onEdit={editDisabled ? null : handleEdit}
                   onDelete={canDelete ? handleDeleteClick : null}
                   onAcknowledge={destination.status === 'edited' ? handleAcknowledgeEdit : null}
-                  deleteLabel={DISCARDABLE_STATUSES.includes(destination.status) ? 'Discard' : 'Delete'}
+                  deleteLabel={deleteLabel}
                 />
               )
             })}
@@ -152,15 +173,25 @@ function MyDestinations() {
 
       {pendingAction && (
         <ConfirmDialog
-          title={pendingAction.type === 'discard' ? 'Remove this card?' : 'Delete this destination?'}
+          title={
+            pendingAction.type === 'discard'
+              ? 'Remove this card?'
+              : pendingAction.type === 'cancel'
+                ? 'Cancel this request?'
+                : 'Delete this destination?'
+          }
           message={
             pendingAction.type === 'discard'
               ? pendingAction.destination.status === 'deleted'
                 ? 'This destination was deleted by an admin. Removing the card will clear it from your page for good.'
                 : 'This will remove the rejected submission for good.'
-              : "This will send a deletion request to an admin. Your destination stays published until it's approved."
+              : pendingAction.type === 'cancel'
+                ? CANCEL_MESSAGES[pendingAction.destination.status]
+                : "This will send a deletion request to an admin. Your destination stays published until it's approved."
           }
-          confirmLabel={pendingAction.type === 'discard' ? 'Remove' : 'Send request'}
+          confirmLabel={
+            pendingAction.type === 'discard' ? 'Remove' : pendingAction.type === 'cancel' ? 'Cancel request' : 'Send request'
+          }
           submitting={submitting}
           error={dialogError}
           onConfirm={handleConfirmAction}

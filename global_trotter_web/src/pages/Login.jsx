@@ -94,7 +94,7 @@ function Login() {
   }, [navigate])
 
   return (
-    <AuthLayout tagline="Pick up where you left off.">
+    <AuthLayout tagline="Pick up where you left off." forceLogoLink>
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
         <span className="auth__eyebrow">Welcome back</span>
         <h1>Log in to GlobalTrotter</h1>

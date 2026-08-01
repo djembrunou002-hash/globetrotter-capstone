@@ -214,6 +214,9 @@
   - `services/google_auth_service.py` — wraps `google-auth`'s `id_token.verify_oauth2_token`; returns a clear error if `GOOGLE_CLIENT_ID` isn't configured yet
   - `GoogleButton.jsx` — renders Google's own sign-in button via Google Identity Services (popup mode, no redirect/callback route needed); added to `Login.jsx` and `Register.jsx`; stays hidden until `VITE_GOOGLE_CLIENT_ID` is set
 - `verified`, `auth_provider`, `google_id` fields on user records
+- `PUT /my-destinations/requests/<request_id>` — lets a user edit the details of their own destination submission while it's still awaiting review (`pending`, `create` requests only), instead of only being able to cancel and resubmit it from scratch
+  - `update_pending_payload()` in `services/destination_requests.py`
+  - `updateSubmission()` in `myDestinationService.js`
 
 ### Fixed
 - Toggling "Hide itinerary path" wiped every stop from the map, which looked like a reset. `destinationMarkers` was gated on `showRoute`, so the toggle controlled both the markers and the path. Markers now follow the selected itinerary, and `showRoute` only draws the polyline
@@ -232,6 +235,9 @@
 - `components/ScrollToTop.jsx` — resets scroll position on route change, mounted inside `BrowserRouter` in `App.jsx`. React Router doesn't reset scroll on navigation, so every page was inheriting the previous page's scroll offset
 - The map's 3-dots and search buttons were invisible when the map was opened from the "Location" button or "Show itinerary" — but not when opened from the bottom nav. Both entry points are on scrollable pages, so `/map` loaded with the previous page's scroll offset still applied. `.map-page` was `position: relative; height: 100vh`, and since `100vh` exceeds the visible viewport on mobile, the document stayed scrollable and everything absolutely positioned inside slid up with it — enough to push the two controls (42px tall, at `top: 16px`, or ~57px on a notched phone once `env(safe-area-inset-top)` applies) entirely above the fold. The map canvas filled the screen either way, which is why nothing else looked wrong
 - Backend test suite depended on ambient developer secrets: `tests/conftest.py`'s `client` fixture now forces `BREVO_API_KEY` and `GOOGLE_CLIENT_ID` to empty on the test app instance regardless of what's in the real `.env`, so `/register` always echoes `dev_otp` and `/auth/google` always hits its "not configured" branch during tests — the suite no longer breaks when real credentials are added for local/manual testing
+- Clicking the "GlobalTrotter" logo on the login, register, or verify-code pages did nothing whenever a stale or expired token was still sitting in storage, since `Logo.jsx` renders as plain (non-clickable) text for anyone it considers authenticated. Those three pages now force the logo to always link back to the landing page, regardless of token state
+- A destination submission still awaiting admin review (`pending_review`) could be cancelled but not edited — the "Edit" tab was missing even though the intent (tweak a typo, swap a photo) was reasonable before anyone had reviewed it. `pending_review` is now an editable status, routed through the new `PUT /my-destinations/requests/<request_id>` endpoint above rather than the published-destination edit endpoint
+- Action buttons on `DestinationCard.jsx`, `DestinationManageCard.jsx`, and `PendingRequestCard.jsx` sat at inconsistent heights within a grid row whenever cards had differing amounts of content above them (tags, admin notes, submitter info, etc.), since the button row simply followed the content instead of anchoring to the bottom of the card
 
 ### Changed
 - `MapPage.jsx`, `MapView.jsx`, `useGeolocation.js`, `mapCategories.js`, `MapPage.css`, `MapView.css` — rewritten for the above
@@ -258,3 +264,9 @@
 - `Login.jsx` — redirects an unverified account to `/verify-otp` instead of just showing an error; renders `GoogleButton`
 - `AuthForm.css` — styles for the Google button divider, OTP code input, resend link, and dev-mode code hint
 - Existing accounts in `data/users.json` backfilled with `verified: true`, `auth_provider: "local"`, `google_id: null` so pre-OTP accounts aren't locked out of the new `/login` verification check
+- `Logo.jsx` — accepts a `forceLink` prop to render as a link to `/` even when the viewer looks authenticated, overriding the default "authenticated users get plain text" behaviour
+- `Authlayout.jsx` — accepts and forwards a `forceLogoLink` prop to `Logo`
+- `Login.jsx`, `Register.jsx`, `VerifyOtp.jsx` — pass `forceLogoLink` to `AuthLayout` so their logo always routes to the landing page
+- `MyDestinations.jsx` — `EDITABLE_STATUSES` now includes `pending_review`
+- `DestinationForm.jsx` — tracks whether the destination being edited is a still-pending submission (`isPendingSubmission`) and, when it is, submits through `updateSubmission` instead of `requestDestinationUpdate`, with an adjusted submit label ("Update submission") and hint text
+- `DestinationManageCard.css`, `PendingRequestCard.css`, `DestinationCard.css` — card body sections now stretch to fill the card (`flex: 1`), and their action rows use `margin-top: auto` so buttons stay pinned to the bottom of the card regardless of how much content sits above them

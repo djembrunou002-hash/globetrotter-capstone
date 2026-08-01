@@ -92,6 +92,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 .manage-card__name {
@@ -109,9 +110,31 @@
   text-transform: capitalize;
 }
 
+.manage-card__admin-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8A6200;
+  background: #FCF0D0;
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin: 0 0 12px;
+  width: fit-content;
+}
+
+.manage-card__admin-note--danger {
+  color: #8A1424;
+  background: #FBE7E9;
+}
+
 .manage-card__actions {
   display: flex;
   gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .manage-card__edit,

@@ -110,7 +110,7 @@ function Register() {
   }, [navigate])
 
   return (
-    <AuthLayout tagline="Your journey through Cameroon starts here.">
+    <AuthLayout tagline="Your journey through Cameroon starts here." forceLogoLink>
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
         <span className="auth__eyebrow">Create account</span>
         <h1>Join GlobalTrotter</h1>

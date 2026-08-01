@@ -10,8 +10,18 @@ export function approveRequest(requestId) {
   return apiRequest(`/admin/requests/${requestId}/approve`, { method: 'POST' })
 }
 
-export function rejectRequest(requestId) {
-  return apiRequest(`/admin/requests/${requestId}/reject`, { method: 'POST' })
+export function rejectRequest(requestId, note) {
+  return apiRequest(`/admin/requests/${requestId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ note })
+  })
+}
+
+export function saveRequestNote(requestId, note) {
+  return apiRequest(`/admin/requests/${requestId}/note`, {
+    method: 'PATCH',
+    body: JSON.stringify({ note })
+  })
 }
 
 export function deleteRequest(requestId) {

@@ -65,6 +65,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 .pending-card__name {
@@ -99,7 +100,8 @@
 .pending-card__actions {
   display: flex;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .pending-card__approve,

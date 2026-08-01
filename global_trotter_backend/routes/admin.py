@@ -8,6 +8,7 @@ from services.destination_requests import (
     find_request,
     load_requests,
     reject_request,
+    set_admin_note,
 )
 from services.storage import load_json
 
@@ -103,7 +104,32 @@ def reject(request_id):
     if req["status"] != "pending":
         return jsonify({"error": "only pending requests can be rejected"}), 409
 
-    updated = reject_request(req)
+    note = (request.get_json(silent=True) or {}).get("note", "")
+    note = note.strip() if isinstance(note, str) else ""
+    if not note:
+        return jsonify({"error": "a note explaining the rejection is required"}), 400
+
+    updated = reject_request(req, note)
+    return jsonify({"request": updated}), 200
+
+
+@admin_bp.route("/admin/requests/<request_id>/note", methods=["PATCH"])
+@jwt_required()
+def update_request_note(request_id):
+    _, error = _require_admin()
+    if error:
+        return error
+
+    req, _ = find_request(request_id)
+    if not req:
+        return jsonify({"error": "request not found"}), 404
+    if req["status"] != "pending":
+        return jsonify({"error": "only pending requests can be annotated"}), 409
+
+    note = (request.get_json(silent=True) or {}).get("note", "")
+    note = note.strip() if isinstance(note, str) else ""
+
+    updated = set_admin_note(req, note)
     return jsonify({"request": updated}), 200
 
 

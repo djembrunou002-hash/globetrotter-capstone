@@ -2,7 +2,13 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from services.auth_helpers import get_current_user
-from services.destination_requests import delete_request, find_request, load_requests
+from services.destination_requests import (
+    delete_request,
+    find_request,
+    load_requests,
+    parse_destination_form,
+    update_pending_payload,
+)
 from services.storage import load_json
 
 my_destinations_bp = Blueprint("my_destinations", __name__)
@@ -81,6 +87,7 @@ def list_my_destinations():
                 "images": _with_absolute_images(destination),
                 "status": status,
                 "request_id": relevant["id"] if relevant else None,
+                "admin_note": relevant.get("admin_note") if relevant else None,
             }
         )
 
@@ -93,6 +100,7 @@ def list_my_destinations():
             card["images"] = _with_absolute_images(card)
             card["status"] = "pending_review" if req["status"] == "pending" else "rejected"
             card["request_id"] = req["id"]
+            card["admin_note"] = req.get("admin_note")
             cards.append(card)
 
         elif req["type"] == "delete" and req["status"] == "approved" and req["destination_id"] not in published_ids:
@@ -101,11 +109,34 @@ def list_my_destinations():
             card["images"] = _with_absolute_images(card)
             card["status"] = "deleted"
             card["request_id"] = req["id"]
+            card["admin_note"] = req.get("admin_note")
             cards.append(card)
 
     cards.sort(key=lambda c: c.get("id", ""), reverse=True)
 
     return jsonify({"destinations": cards}), 200
+
+
+@my_destinations_bp.route("/my-destinations/requests/<request_id>", methods=["PUT"])
+@jwt_required()
+def update_pending_request(request_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    req, _ = find_request(request_id)
+    if not req or req["submitted_by"] != user["id"]:
+        return jsonify({"error": "request not found"}), 404
+
+    if req["type"] != "create" or req["status"] != "pending":
+        return jsonify({"error": "this submission can no longer be edited"}), 409
+
+    payload, errors = parse_destination_form(request.form, request.files, existing=req["payload"])
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    updated = update_pending_payload(req, payload)
+    return jsonify({"request": updated}), 200
 
 
 @my_destinations_bp.route("/my-destinations/requests/<request_id>", methods=["DELETE"])
@@ -120,7 +151,8 @@ def discard_request(request_id):
         return jsonify({"error": "request not found"}), 404
 
     can_discard = (
-        req["status"] == "rejected"
+        req["status"] == "pending"
+        or req["status"] == "rejected"
         or (req["type"] == "delete" and req["status"] == "approved")
         or (req["type"] == "edit" and req["status"] == "approved" and req.get("admin_action"))
     )

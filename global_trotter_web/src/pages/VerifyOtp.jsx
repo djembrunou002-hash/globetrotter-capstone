@@ -63,7 +63,7 @@ function VerifyOtp() {
   }
 
   return (
-    <AuthLayout tagline="Just one more step.">
+    <AuthLayout tagline="Just one more step." onBack={() => navigate(-1)} forceLogoLink>
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
         <span className="auth__eyebrow">Verify your account</span>
         <h1>Enter your code</h1>

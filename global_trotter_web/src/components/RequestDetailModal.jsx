@@ -42,8 +42,31 @@ function buildChanges(payload, current) {
   return changes
 }
 
-function RequestDetailModal({ request, onClose, onApprove, onReject, onDelete, submitting = false }) {
+function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote, onDelete, submitting = false }) {
   const [activeImage, setActiveImage] = useState(0)
+  const [note, setNote] = useState(request.admin_note || '')
+  const [noteError, setNoteError] = useState('')
+  const [noteSaved, setNoteSaved] = useState(false)
+
+  function handleNoteChange(e) {
+    setNote(e.target.value)
+    setNoteSaved(false)
+    if (noteError) setNoteError('')
+  }
+
+  function handleSaveNote() {
+    onSaveNote(request, note.trim())
+    setNoteSaved(true)
+  }
+
+  function handleRejectClick() {
+    const trimmed = note.trim()
+    if (!trimmed) {
+      setNoteError('Add a note explaining why this request is being rejected.')
+      return
+    }
+    onReject(request, trimmed)
+  }
 
   const display = request.display || {}
   const current = display.current || null
@@ -166,6 +189,40 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onDelete, s
             </div>
           )}
 
+          {request.status === 'pending' && (
+            <div className="request-modal__section">
+              <h3 className="request-modal__section-title">Note to submitter</h3>
+              <p className="request-modal__text request-modal__text--muted">
+                Let the user know what to fix or confirm to get this published. Required if you reject.
+              </p>
+              <textarea
+                className="request-modal__note-input"
+                rows={3}
+                value={note}
+                onChange={handleNoteChange}
+                placeholder="e.g. Please add a clearer main photo and double-check the opening hours."
+                disabled={submitting}
+              />
+              {noteError && <p className="request-modal__note-error">{noteError}</p>}
+              {noteSaved && !noteError && <p className="request-modal__note-saved">Note saved.</p>}
+              <button
+                type="button"
+                className="request-modal__note-save"
+                onClick={handleSaveNote}
+                disabled={submitting || !note.trim()}
+              >
+                Save note
+              </button>
+            </div>
+          )}
+
+          {request.status === 'rejected' && request.admin_note && (
+            <div className="request-modal__section">
+              <h3 className="request-modal__section-title">Rejection note</h3>
+              <p className="request-modal__text">{request.admin_note}</p>
+            </div>
+          )}
+
           {changes.length > 0 && (
             <div className="request-modal__section">
               <h3 className="request-modal__section-title">What's changing</h3>
@@ -186,7 +243,7 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onDelete, s
         <div className="request-modal__footer">
           {request.status === 'pending' && (
             <>
-              <button type="button" className="request-modal__reject" onClick={() => onReject(request)} disabled={submitting}>
+              <button type="button" className="request-modal__reject" onClick={handleRejectClick} disabled={submitting}>
                 Reject
               </button>
               <button type="button" className="request-modal__approve" onClick={() => onApprove(request)} disabled={submitting}>

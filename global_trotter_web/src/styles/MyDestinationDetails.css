@@ -45,6 +45,11 @@
   font-size: 0.88rem;
 }
 
+.my-destination-details__notice--danger {
+  background: #FBE7E9;
+  color: #8A1424;
+}
+
 .my-destination-details__notice-dismiss {
   flex-shrink: 0;
   border: none;

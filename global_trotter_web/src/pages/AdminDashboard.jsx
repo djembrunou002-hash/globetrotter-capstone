@@ -4,6 +4,7 @@ import {
   getPendingRequests,
   approveRequest,
   rejectRequest,
+  saveRequestNote,
   deleteRequest,
   getAllDestinations,
   adminDeleteDestination
@@ -86,13 +87,27 @@ function AdminDashboard() {
     }
   }
 
-  async function handleReject(request) {
+  async function handleReject(request, note) {
     setRowSubmitting(request.id)
     setError('')
     try {
-      const response = await rejectRequest(request.id)
-      setRequests(prev => prev.map(r => (r.id === request.id ? { ...r, status: response.request.status } : r)))
-      setViewingRequest(prev => (prev && prev.id === request.id ? { ...prev, status: response.request.status } : prev))
+      const response = await rejectRequest(request.id, note)
+      setRequests(prev => prev.map(r => (r.id === request.id ? { ...r, ...response.request } : r)))
+      setViewingRequest(prev => (prev && prev.id === request.id ? { ...prev, ...response.request } : prev))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRowSubmitting(null)
+    }
+  }
+
+  async function handleSaveNote(request, note) {
+    setRowSubmitting(request.id)
+    setError('')
+    try {
+      const response = await saveRequestNote(request.id, note)
+      setRequests(prev => prev.map(r => (r.id === request.id ? { ...r, ...response.request } : r)))
+      setViewingRequest(prev => (prev && prev.id === request.id ? { ...prev, ...response.request } : prev))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -196,7 +211,7 @@ function AdminDashboard() {
                 request={request}
                 onView={handleViewRequest}
                 onApprove={handleApprove}
-                onReject={handleReject}
+                onReject={handleViewRequest}
                 onDelete={handleDeleteRequest}
                 submitting={rowSubmitting === request.id}
               />
@@ -224,10 +239,12 @@ function AdminDashboard() {
 
       {viewingRequest && (
         <RequestDetailModal
+          key={viewingRequest.id}
           request={viewingRequest}
           onClose={() => setViewingRequest(null)}
           onApprove={handleApprove}
           onReject={handleReject}
+          onSaveNote={handleSaveNote}
           onDelete={handleDeleteRequest}
           submitting={rowSubmitting === viewingRequest.id}
         />

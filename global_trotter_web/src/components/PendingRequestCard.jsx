@@ -81,7 +81,7 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
                 onClick={() => onReject(request)}
                 disabled={submitting}
               >
-                Reject
+                Review &amp; reject
               </button>
               <button
                 type="button"

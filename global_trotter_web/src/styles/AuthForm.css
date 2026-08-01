@@ -12,6 +12,24 @@
   z-index: 10;
 }
 
+.auth__back {
+  position: absolute;
+  top: 24px;
+  right: clamp(20px, 4vw, 48px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--color-ink);
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  cursor: pointer;
+  padding: 0;
+}
+
 .auth__visual {
   flex: 1 1 46%;
   background: var(--color-forest);

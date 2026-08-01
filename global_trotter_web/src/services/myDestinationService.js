@@ -51,6 +51,13 @@ export function requestDestinationUpdate(destinationId, fields, imageFiles) {
   })
 }
 
+export function updateSubmission(requestId, fields, imageFiles) {
+  return apiRequest(`/my-destinations/requests/${requestId}`, {
+    method: 'PUT',
+    body: buildDestinationFormData(fields, imageFiles)
+  })
+}
+
 export function requestDestinationDelete(destinationId) {
   return apiRequest(`/destinations/${destinationId}`, {
     method: 'DELETE'

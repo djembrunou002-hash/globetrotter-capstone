@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getMyDestinations, submitDestination, requestDestinationUpdate } from '../services/myDestinationService.js'
+import { getMyDestinations, submitDestination, requestDestinationUpdate, updateSubmission } from '../services/myDestinationService.js'
 import { getAllDestinations, adminUpdateDestination } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
@@ -74,6 +74,7 @@ function DestinationForm({ mode }) {
   const [loading, setLoading] = useState(isEdit)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isPendingSubmission, setIsPendingSubmission] = useState(false)
 
   useEffect(() => {
     if (!getToken()) {
@@ -106,6 +107,7 @@ function DestinationForm({ mode }) {
         setFields(destinationToFields(found))
         setNearbyServices(found.nearby_services || [])
         setExistingImages((found.images || []).concat([null, null, null, null]).slice(0, 4))
+        setIsPendingSubmission(found.status === 'pending_review')
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -168,7 +170,11 @@ function DestinationForm({ mode }) {
         await submitDestination(payload, imageFiles)
         navigate('/my-destinations')
       } else if (mode === 'edit') {
-        await requestDestinationUpdate(id, payload, imageFiles)
+        if (isPendingSubmission) {
+          await updateSubmission(id, payload, imageFiles)
+        } else {
+          await requestDestinationUpdate(id, payload, imageFiles)
+        }
         navigate('/my-destinations')
       } else {
         await adminUpdateDestination(id, payload, imageFiles)
@@ -196,7 +202,9 @@ function DestinationForm({ mode }) {
     mode === 'create'
       ? 'Submit for review'
       : mode === 'edit'
-        ? 'Send edit for review'
+        ? isPendingSubmission
+          ? 'Update submission'
+          : 'Send edit for review'
         : 'Save changes'
 
   return (
@@ -221,7 +229,9 @@ function DestinationForm({ mode }) {
 
             {mode === 'edit' && (
               <p className="destination-form__hint">
-                Changes you save here will be sent to an admin for review before they go live.
+                {isPendingSubmission
+                  ? "This submission hasn't been reviewed yet. You can keep changing it until an admin responds."
+                  : 'Changes you save here will be sent to an admin for review before they go live.'}
               </p>
             )}
 

@@ -84,6 +84,12 @@ function DestinationManageCard({
           {destination.area} · {destination.type}
         </p>
 
+        {destination.admin_note && (
+          <p className={`manage-card__admin-note ${destination.status === 'rejected' ? 'manage-card__admin-note--danger' : ''}`}>
+            {destination.status === 'rejected' ? 'Rejection note — open to view' : 'Note sent — open to view'}
+          </p>
+        )}
+
         <div className="manage-card__actions" onClick={e => e.stopPropagation()}>
           {onEdit && (
             <button type="button" className="manage-card__edit" onClick={() => onEdit(destination)} disabled={editDisabled}>

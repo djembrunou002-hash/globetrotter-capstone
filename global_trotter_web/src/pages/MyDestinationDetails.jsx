@@ -21,9 +21,22 @@ const STATUS_LABELS = {
   edited: { label: 'Edited by admin', tone: 'info' }
 }
 
-const EDITABLE_STATUSES = ['published', 'edited']
+const EDITABLE_STATUSES = ['published', 'edited', 'pending_edit']
 const DISCARDABLE_STATUSES = ['rejected', 'deleted']
+const CANCELABLE_STATUSES = ['pending_review', 'pending_edit', 'pending_delete']
 const MAP_ELIGIBLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_delete']
+
+const CANCEL_LABELS = {
+  pending_review: 'Cancel submission',
+  pending_edit: 'Cancel edit',
+  pending_delete: 'Cancel deletion'
+}
+
+const CANCEL_MESSAGES = {
+  pending_review: 'This will withdraw your submission. You can add it again anytime.',
+  pending_edit: 'This will cancel your pending edit. The destination stays as it is now published.',
+  pending_delete: 'This will cancel your pending deletion request. The destination stays published.'
+}
 
 function ExtraPhoto({ src, alt }) {
   const [failed, setFailed] = useState(false)
@@ -93,7 +106,13 @@ function MyDestinationDetails() {
 
   function handleDeleteClick() {
     setDialogError('')
-    setPendingAction(DISCARDABLE_STATUSES.includes(destination.status) ? 'discard' : 'delete')
+    if (DISCARDABLE_STATUSES.includes(destination.status)) {
+      setPendingAction('discard')
+    } else if (CANCELABLE_STATUSES.includes(destination.status)) {
+      setPendingAction('cancel')
+    } else {
+      setPendingAction('delete')
+    }
   }
 
   async function handleConfirmAction() {
@@ -101,7 +120,7 @@ function MyDestinationDetails() {
     setSubmitting(true)
     setDialogError('')
     try {
-      if (pendingAction === 'discard') {
+      if (pendingAction === 'discard' || pendingAction === 'cancel') {
         await discardSubmission(destination.request_id)
       } else {
         await requestDestinationDelete(destination.id)
@@ -127,9 +146,17 @@ function MyDestinationDetails() {
   const status = destination ? STATUS_LABELS[destination.status] : null
   const editDisabled = destination ? !EDITABLE_STATUSES.includes(destination.status) : true
   const canDelete = destination
-    ? EDITABLE_STATUSES.includes(destination.status) || DISCARDABLE_STATUSES.includes(destination.status)
+    ? EDITABLE_STATUSES.includes(destination.status) ||
+      DISCARDABLE_STATUSES.includes(destination.status) ||
+      CANCELABLE_STATUSES.includes(destination.status)
     : false
-  const deleteLabel = destination && DISCARDABLE_STATUSES.includes(destination.status) ? 'Discard' : 'Delete'
+  const deleteLabel = destination
+    ? CANCELABLE_STATUSES.includes(destination.status)
+      ? CANCEL_LABELS[destination.status]
+      : DISCARDABLE_STATUSES.includes(destination.status)
+        ? 'Discard'
+        : 'Delete'
+    : 'Delete'
   const canViewOnMap = destination ? MAP_ELIGIBLE_STATUSES.includes(destination.status) : false
 
   const image = destination?.images && destination.images[0]
@@ -199,6 +226,19 @@ function MyDestinationDetails() {
                   <button type="button" className="my-destination-details__notice-dismiss" onClick={handleAcknowledgeEdit}>
                     Got it
                   </button>
+                </div>
+              )}
+
+              {destination.admin_note && (
+                <div
+                  className={`my-destination-details__notice ${
+                    destination.status === 'rejected' ? 'my-destination-details__notice--danger' : ''
+                  }`}
+                >
+                  <span>
+                    <strong>{destination.status === 'rejected' ? 'Why it was rejected: ' : 'Admin note: '}</strong>
+                    {destination.admin_note}
+                  </span>
                 </div>
               )}
 
@@ -319,15 +359,23 @@ function MyDestinationDetails() {
 
       {pendingAction && (
         <ConfirmDialog
-          title={pendingAction === 'discard' ? 'Remove this card?' : 'Delete this destination?'}
+          title={
+            pendingAction === 'discard'
+              ? 'Remove this card?'
+              : pendingAction === 'cancel'
+                ? 'Cancel this request?'
+                : 'Delete this destination?'
+          }
           message={
             pendingAction === 'discard'
               ? destination.status === 'deleted'
                 ? 'This destination was deleted by an admin. Removing the card will clear it from your page for good.'
                 : 'This will remove the rejected submission for good.'
-              : "This will send a deletion request to an admin. Your destination stays published until it's approved."
+              : pendingAction === 'cancel'
+                ? CANCEL_MESSAGES[destination.status]
+                : "This will send a deletion request to an admin. Your destination stays published until it's approved."
           }
-          confirmLabel={pendingAction === 'discard' ? 'Remove' : 'Send request'}
+          confirmLabel={pendingAction === 'discard' ? 'Remove' : pendingAction === 'cancel' ? 'Cancel request' : 'Send request'}
           submitting={submitting}
           error={dialogError}
           onConfirm={handleConfirmAction}

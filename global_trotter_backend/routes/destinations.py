@@ -7,7 +7,8 @@ from services.auth_helpers import get_current_user, is_admin
 from services.destination_requests import (
     create_admin_action_request,
     create_request,
-    has_pending_request_for_destination,
+    delete_request,
+    load_requests,
     parse_destination_form,
 )
 from services.images import delete_destination_image
@@ -24,6 +25,21 @@ def _with_absolute_images(destination):
         for img in images
     ]
     return {**destination, "images": absolute_images}
+
+
+def _discard_pending_owner_request(destination_id, owner_id):
+    pending = next(
+        (
+            r
+            for r in load_requests()
+            if r["destination_id"] == destination_id
+            and r["submitted_by"] == owner_id
+            and r["status"] == "pending"
+        ),
+        None,
+    )
+    if pending:
+        delete_request(pending["id"])
 
 
 def _with_comment_counts(destinations):
@@ -120,8 +136,7 @@ def update_destination(destination_id):
             create_admin_action_request("edit", destination, user["id"])
         return jsonify({"destination": _with_absolute_images(destination)}), 200
 
-    if has_pending_request_for_destination(destination_id):
-        return jsonify({"error": "a review request is already pending for this destination"}), 409
+    _discard_pending_owner_request(destination_id, user["id"])
 
     request_obj = create_request("edit", user["id"], payload, destination_id=destination_id)
     return jsonify({"request": request_obj}), 201
@@ -154,8 +169,7 @@ def delete_destination(destination_id):
             create_admin_action_request("delete", destination, user["id"])
         return jsonify({"deleted": destination_id}), 200
 
-    if has_pending_request_for_destination(destination_id):
-        return jsonify({"error": "a review request is already pending for this destination"}), 409
+    _discard_pending_owner_request(destination_id, user["id"])
 
     request_obj = create_request("delete", user["id"], dict(destination), destination_id=destination_id)
     return jsonify({"request": request_obj}), 201

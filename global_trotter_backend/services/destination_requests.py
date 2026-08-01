@@ -167,6 +167,7 @@ def create_request(request_type, submitted_by, payload, destination_id=None):
         "payload": payload,
         "created_at": _now(),
         "reviewed_at": None,
+        "admin_note": None,
     }
     requests.append(request_obj)
     save_requests(requests)
@@ -193,6 +194,7 @@ def create_admin_action_request(request_type, destination, admin_id):
         "reviewed_at": _now(),
         "reviewed_by": admin_id,
         "admin_action": True,
+        "admin_note": None,
     }
     requests.append(request_obj)
     save_requests(requests)
@@ -247,9 +249,23 @@ def approve_request(request_obj):
     return request_obj
 
 
-def reject_request(request_obj):
+def reject_request(request_obj, note=None):
     request_obj["status"] = "rejected"
     request_obj["reviewed_at"] = _now()
+    if note is not None:
+        request_obj["admin_note"] = note
+    _persist_request(request_obj)
+    return request_obj
+
+
+def set_admin_note(request_obj, note):
+    request_obj["admin_note"] = note or None
+    _persist_request(request_obj)
+    return request_obj
+
+
+def update_pending_payload(request_obj, payload):
+    request_obj["payload"] = payload
     _persist_request(request_obj)
     return request_obj
 
