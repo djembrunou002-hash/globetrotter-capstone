@@ -123,17 +123,33 @@ def client(tmp_path, monkeypatch):
 
     app = create_app()
     app.config["TESTING"] = True
+
+    # Tests must not depend on whatever real secrets happen to be in the
+    # developer's .env. Force these off so /register always echoes back
+    # "dev_otp" (Brevo dev-mode fallback) and /auth/google always hits the
+    # "not configured" branch, regardless of local configuration.
+    app.config["BREVO_API_KEY"] = ""
+    app.config["GOOGLE_CLIENT_ID"] = ""
+
     return app.test_client()
 
 
 def register_and_login(client, email="test@example.com", password="pass1234", name="Test User"):
-    """Helper: register a fresh user and return their JWT token."""
-    client.post(
+    """
+    Helper: registers a fresh user through the 2-phase OTP flow and
+    returns their JWT token. Relies on BREVO_API_KEY being unset in
+    tests, so /register echoes the code back as "dev_otp".
+    """
+    reg = client.post(
         "/register",
         json={"name": name, "email": email, "password": password},
     )
-    resp = client.post("/login", json={"email": email, "password": password})
-    return resp.get_json()["token"]
+    code = reg.get_json()["dev_otp"]
+    verify = client.post(
+        "/verify-email",
+        json={"email": email, "code": code},
+    )
+    return verify.get_json()["token"]
 
 
 def auth_headers(token):

@@ -203,6 +203,17 @@
 - Comment pinning — a destination's owner can pin one top-level comment so it stays at the top of the thread (pinning a new one automatically unpins the previous one; replies can't be pinned)
   - `POST /destinations/<id>/comments/<comment_id>/pin`, `DELETE /destinations/<id>/comments/<comment_id>/pin`
   - Pin/Unpin controls and a "📌 Pinned" badge in `CommentSection.jsx`
+- OTP-based email verification (Brevo), replacing single-step registration for email sign-ups: `POST /register` now sends a 6-digit code and does not create the account until `POST /verify-email` succeeds
+  - `services/brevo_service.py` — Brevo transactional email + SMS API wrapper, with a dev-mode fallback: when `BREVO_API_KEY` is unset, the code is logged to the console and echoed back in the response as `dev_otp` instead of actually sending, so the full flow can be tested without a Brevo account
+  - `services/otp_service.py` — pending-registration and password-reset codes, stored in new `data/otp_pending.json` / `data/otp_reset.json`
+  - `utils/identifier.py` — normalizes the client's email/number pair into a single identifier, prioritizing email when both are given
+  - `POST /resend-otp` — issues a new code for a pending registration
+  - `POST /forgot-password`, `POST /verify-reset-code`, `POST /reset-password` — 3-step password reset by email OTP
+  - `VerifyOtp.jsx` (+ `/verify-otp` route) — OTP entry page shown after registering by email, with a resend button and, in dev mode, the code pre-filled
+- Google Sign-In / Sign-Up: `POST /auth/google` verifies a Google ID token server-side and creates (or logs into) an already-verified account
+  - `services/google_auth_service.py` — wraps `google-auth`'s `id_token.verify_oauth2_token`; returns a clear error if `GOOGLE_CLIENT_ID` isn't configured yet
+  - `GoogleButton.jsx` — renders Google's own sign-in button via Google Identity Services (popup mode, no redirect/callback route needed); added to `Login.jsx` and `Register.jsx`; stays hidden until `VITE_GOOGLE_CLIENT_ID` is set
+- `verified`, `auth_provider`, `google_id` fields on user records
 
 ### Fixed
 - Toggling "Hide itinerary path" wiped every stop from the map, which looked like a reset. `destinationMarkers` was gated on `showRoute`, so the toggle controlled both the markers and the path. Markers now follow the selected itinerary, and `showRoute` only draws the polyline
@@ -219,9 +230,8 @@
 - Route layers were removed and re-added on every route change, and could be lost on a style reload. The route now updates through `setData` on a persistent source, with layers re-created if the style drops them
 - Stop auto-advance ran as a side effect during render; moved into an effect
 - `components/ScrollToTop.jsx` — resets scroll position on route change, mounted inside `BrowserRouter` in `App.jsx`. React Router doesn't reset scroll on navigation, so every page was inheriting the previous page's scroll offset
-
-### Fixed
 - The map's 3-dots and search buttons were invisible when the map was opened from the "Location" button or "Show itinerary" — but not when opened from the bottom nav. Both entry points are on scrollable pages, so `/map` loaded with the previous page's scroll offset still applied. `.map-page` was `position: relative; height: 100vh`, and since `100vh` exceeds the visible viewport on mobile, the document stayed scrollable and everything absolutely positioned inside slid up with it — enough to push the two controls (42px tall, at `top: 16px`, or ~57px on a notched phone once `env(safe-area-inset-top)` applies) entirely above the fold. The map canvas filled the screen either way, which is why nothing else looked wrong
+- Backend test suite depended on ambient developer secrets: `tests/conftest.py`'s `client` fixture now forces `BREVO_API_KEY` and `GOOGLE_CLIENT_ID` to empty on the test app instance regardless of what's in the real `.env`, so `/register` always echoes `dev_otp` and `/auth/google` always hits its "not configured" branch during tests — the suite no longer breaks when real credentials are added for local/manual testing
 
 ### Changed
 - `MapPage.jsx`, `MapView.jsx`, `useGeolocation.js`, `mapCategories.js`, `MapPage.css`, `MapView.css` — rewritten for the above
@@ -237,3 +247,14 @@
 - `comments.py` — comment and reply records now track `pinned_at`; `GET /destinations/<id>/comments` sorts pinned root comments to the top
 - `.map-page` — now `position: fixed` with all four insets at `0` instead of `position: relative; height: 100vh`, so the map is anchored to the visible viewport and unaffected by scroll position. Added `overscroll-behavior: none` to stop pull-to-refresh triggering when dragging the map downward
 - `App.jsx` — mounts `ScrollToTop`
+- `routes/auth.py` rewritten: `/register` branches on identifier type — email goes through the OTP flow above; phone numbers skip OTP entirely (no SMS credits required) and create + log the user in immediately with `verified: true`
+- `/login` now rejects unverified accounts with a 403
+- `/forgot-password`, `/verify-reset-code`, `/reset-password` reject phone-number identifiers with a clear "not available yet" message instead of attempting an SMS send
+- `config.py` / `.env` (backend) — added `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`, `BREVO_SMS_SENDER`, `OTP_EXPIRY_MINUTES`, `GOOGLE_CLIENT_ID`
+- `.env.development` / `.env.production` (web) — added `VITE_GOOGLE_CLIENT_ID`
+- `requirements.txt` (backend) — added `google-auth`
+- `authService.js` — added `verifyOtp`, `resendOtp`, `loginWithGoogle`, `forgotPassword`, `verifyResetCode`, `resetPassword`
+- `Register.jsx` — routes email sign-ups to `/verify-otp`; phone sign-ups log in immediately (no OTP step); renders `GoogleButton`
+- `Login.jsx` — redirects an unverified account to `/verify-otp` instead of just showing an error; renders `GoogleButton`
+- `AuthForm.css` — styles for the Google button divider, OTP code input, resend link, and dev-mode code hint
+- Existing accounts in `data/users.json` backfilled with `verified: true`, `auth_provider: "local"`, `google_id: null` so pre-OTP accounts aren't locked out of the new `/login` verification check

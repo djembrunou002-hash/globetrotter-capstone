@@ -3,8 +3,10 @@ import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import Register from '../../src/pages/Register.jsx'
 import { registerUser } from '../../src/services/authService.js'
+import { setToken, setUser } from '../../src/services/tokenStorage.js'
 
 jest.mock('../../src/services/authService.js')
+jest.mock('../../src/services/tokenStorage.js')
 
 const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
@@ -99,10 +101,10 @@ describe('Register', () => {
     expect(registerUser).not.toHaveBeenCalled()
   })
 
-  test('submits with the +237 prefix combined into the phone number', async () => {
+  test('phone-only sign-up skips OTP and logs in immediately', async () => {
     registerUser.mockResolvedValueOnce({
-      token: 'mock-token',
-      user: { id: 'user_001', name: 'Jane Doe', preferences: { travel_style: [] } }
+      token: 'fake-jwt',
+      user: { id: 'usr_1', name: 'Jane Doe', number: '+237677123456', verified: true }
     })
     renderRegister()
 
@@ -119,6 +121,13 @@ describe('Register', () => {
         number: '+237677123456',
         password: STRONG_PASSWORD
       })
+    })
+
+    await waitFor(() => {
+      expect(setToken).toHaveBeenCalledWith('fake-jwt')
+      expect(setUser).toHaveBeenCalledWith(
+        expect.objectContaining({ number: '+237677123456' })
+      )
     })
 
     await waitFor(() => {

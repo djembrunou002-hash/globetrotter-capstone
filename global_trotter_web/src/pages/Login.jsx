@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginUser } from '../services/authService.js'
+import { loginUser, loginWithGoogle } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
 import PhoneInput from '../components/Phoneinput.jsx'
 import EmailField from '../components/Emailfield.jsx'
+import GoogleButton from '../components/GoogleButton.jsx'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -65,11 +66,32 @@ function Login() {
       setUser(response.user)
       navigate(response.user.role === 'admin' ? '/admin' : '/home')
     } catch (err) {
+      if (err.message === 'Please verify your account first') {
+        navigate('/verify-otp', {
+          state: { email: formData.email || undefined, number: formData.number || undefined },
+        })
+        return
+      }
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleGoogleCredential = useCallback(async (credential) => {
+    setError('')
+    setLoading(true)
+    try {
+      const response = await loginWithGoogle(credential)
+      setToken(response.token)
+      setUser(response.user)
+      navigate(response.user.role === 'admin' ? '/admin' : '/home')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [navigate])
 
   return (
     <AuthLayout tagline="Pick up where you left off.">
@@ -89,6 +111,8 @@ function Login() {
         <button type="submit" className="auth__submit" disabled={loading}>
           {loading ? 'Logging in...' : 'Log in'}
         </button>
+
+        <GoogleButton onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth__switch">
           Don't have an account? <Link to="/register">Sign up</Link>

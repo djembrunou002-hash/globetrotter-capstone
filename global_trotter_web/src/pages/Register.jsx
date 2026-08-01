@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { registerUser } from '../services/authService.js'
+import { registerUser, loginWithGoogle } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
 import PhoneInput from '../components/Phoneinput.jsx'
 import EmailField from '../components/Emailfield.jsx'
+import GoogleButton from '../components/GoogleButton.jsx'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
@@ -69,15 +70,44 @@ function Register() {
     setLoading(true)
     try {
       const response = await registerUser(payload)
-      setToken(response.token)
-      setUser(response.user)
-      navigate('/select-style')
+
+      // Phone-only sign-ups skip OTP and come back already logged in
+      // (no SMS credits required); email sign-ups still need the code.
+      if (response.token) {
+        setToken(response.token)
+        setUser(response.user)
+        navigate('/select-style')
+        return
+      }
+
+      navigate('/verify-otp', {
+        state: {
+          email: payload.email || undefined,
+          number: formData.number || undefined,
+          devOtp: response.dev_otp,
+        },
+      })
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleGoogleCredential = useCallback(async (credential) => {
+    setError('')
+    setLoading(true)
+    try {
+      const response = await loginWithGoogle(credential)
+      setToken(response.token)
+      setUser(response.user)
+      navigate(response.user.role === 'admin' ? '/admin' : '/home')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [navigate])
 
   return (
     <AuthLayout tagline="Your journey through Cameroon starts here.">
@@ -111,6 +141,8 @@ function Register() {
         <button type="submit" className="auth__submit" disabled={loading}>
           {loading ? 'Creating account...' : 'Sign up'}
         </button>
+
+        <GoogleButton onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth__switch">
           Already have an account? <Link to="/login">Log in</Link>
