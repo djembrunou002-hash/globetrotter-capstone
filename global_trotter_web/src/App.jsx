@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ItineraryDraftProvider from './context/ItineraryDraftProvider.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import Landing from './pages/Landing.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
@@ -13,12 +14,14 @@ import MapPage from './pages/MapPage.jsx'
 import Profile from './pages/Profile.jsx'
 import Favorites from './pages/Favorites.jsx'
 import MyDestinations from './pages/MyDestinations.jsx'
+import MyDestinationDetails from './pages/MyDestinationDetails.jsx'
 import DestinationForm from './pages/DestinationForm.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ItineraryDraftProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -36,6 +39,7 @@ function App() {
           <Route path="/my-destinations" element={<MyDestinations />} />
           <Route path="/my-destinations/new" element={<DestinationForm mode="create" />} />
           <Route path="/my-destinations/:id/edit" element={<DestinationForm mode="edit" />} />
+          <Route path="/my-destinations/:id" element={<MyDestinationDetails />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/destinations/:id/edit" element={<DestinationForm mode="admin-edit" />} />
           <Route path="*" element={<Navigate to="/" replace />} />

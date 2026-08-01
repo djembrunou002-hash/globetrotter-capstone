@@ -50,6 +50,7 @@ def _serialize_node(node, children_by_parent, current_user_id=None):
         "updated_at": node.get("updated_at"),
         "edited": bool(node.get("updated_at")) and not node["deleted"],
         "deleted": node["deleted"],
+        "pinned": bool(node.get("pinned_at")),
         "like_count": len(likes),
         "liked_by_me": bool(current_user_id) and current_user_id in likes,
         "dislike_count": len(dislikes),
@@ -71,6 +72,7 @@ def _serialize_flat(node, current_user_id=None):
         "updated_at": node.get("updated_at"),
         "edited": bool(node.get("updated_at")) and not node["deleted"],
         "deleted": node["deleted"],
+        "pinned": bool(node.get("pinned_at")),
         "like_count": len(likes),
         "liked_by_me": bool(current_user_id) and current_user_id in likes,
         "dislike_count": len(dislikes),
@@ -93,7 +95,9 @@ def get_comments(destination_id):
     for node in all_nodes:
         children_by_parent.setdefault(node["parent_id"], []).append(node)
 
-    roots = sorted(children_by_parent.get(None, []), key=lambda c: c["created_at"], reverse=True)
+    roots = children_by_parent.get(None, [])
+    roots = sorted(roots, key=lambda c: c["created_at"], reverse=True)
+    roots = sorted(roots, key=lambda c: bool(c.get("pinned_at")), reverse=True)
 
     return jsonify({
         "comments": [_serialize_node(root, children_by_parent, current_user_id) for root in roots]
@@ -122,6 +126,7 @@ def add_comment(destination_id):
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None,
         "deleted": False,
+        "pinned_at": None,
         "likes": [],
         "dislikes": [],
     }
@@ -160,6 +165,7 @@ def add_reply(destination_id, comment_id):
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None,
         "deleted": False,
+        "pinned_at": None,
         "likes": [],
         "dislikes": [],
     }
@@ -314,6 +320,57 @@ def undislike_comment(destination_id, comment_id):
         "dislike_count": len(dislikes),
         "disliked_by_me": False,
     }), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/pin", methods=["POST"])
+@jwt_required()
+def pin_comment(destination_id, comment_id):
+    destination = _get_destination(destination_id)
+    if not destination:
+        return jsonify({"error": "destination not found"}), 404
+
+    user_id = get_jwt_identity()
+    if destination.get("owner_id") != user_id:
+        return jsonify({"error": "only the destination owner can pin comments"}), 403
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node or node["deleted"]:
+        return jsonify({"error": "comment not found"}), 404
+
+    if node["parent_id"] is not None:
+        return jsonify({"error": "only top-level comments can be pinned"}), 400
+
+    now = datetime.now(timezone.utc).isoformat()
+    for other in data["comments"]:
+        if other["destination_id"] == destination_id and other["parent_id"] is None:
+            other["pinned_at"] = now if other["id"] == comment_id else None
+
+    save_json("comments.json", data)
+
+    return jsonify({"comment_id": comment_id, "pinned": True}), 200
+
+
+@comments_bp.route("/destinations/<destination_id>/comments/<comment_id>/pin", methods=["DELETE"])
+@jwt_required()
+def unpin_comment(destination_id, comment_id):
+    destination = _get_destination(destination_id)
+    if not destination:
+        return jsonify({"error": "destination not found"}), 404
+
+    user_id = get_jwt_identity()
+    if destination.get("owner_id") != user_id:
+        return jsonify({"error": "only the destination owner can unpin comments"}), 403
+
+    data = load_json("comments.json")
+    node = _find_node(data, destination_id, comment_id)
+    if not node:
+        return jsonify({"error": "comment not found"}), 404
+
+    node["pinned_at"] = None
+    save_json("comments.json", data)
+
+    return jsonify({"comment_id": comment_id, "pinned": False}), 200
 
 
 @comments_bp.route("/destinations/<destination_id>/comments/<comment_id>", methods=["DELETE"])

@@ -196,6 +196,13 @@
 - Full itinerary picker in the map options menu, so an itinerary can always be selected or cleared from the map itself
 - Accuracy circle around the user's position marker, scaled from the reported GPS accuracy in metres
 - `visited` entry in `CATEGORY_META`, so visited stops appear in the map legend
+- Admin request review modal (`RequestDetailModal.jsx`) — clicking a pending or rejected request card in `AdminDashboard.jsx` opens the full submitted details (gallery, tags, budget, hours, address, nearby services, description, advice) before an admin approves or rejects it, instead of judging from the card thumbnail alone. For edit requests, a "What's changing" section diffs the proposed values against the destination's current ones
+- Destination detail view for destination owners (`MyDestinationDetails.jsx`) — clicking a card on the "My Destinations" page now opens a detail page for that submission with Edit and Delete/Discard actions built in. Unlike the public destination page, it has no "Add to favorites" or "Add to itinerary" controls and shows the rating as read-only
+- `readOnly` prop on `StarRating.jsx`, so a rating can be displayed without being clickable
+- Comment ownership tag — comments and replies posted by a destination's owner are now labelled "Owner" in `CommentSection.jsx`, both on the public destination page and the owner's own detail view
+- Comment pinning — a destination's owner can pin one top-level comment so it stays at the top of the thread (pinning a new one automatically unpins the previous one; replies can't be pinned)
+  - `POST /destinations/<id>/comments/<comment_id>/pin`, `DELETE /destinations/<id>/comments/<comment_id>/pin`
+  - Pin/Unpin controls and a "📌 Pinned" badge in `CommentSection.jsx`
 
 ### Fixed
 - Toggling "Hide itinerary path" wiped every stop from the map, which looked like a reset. `destinationMarkers` was gated on `showRoute`, so the toggle controlled both the markers and the path. Markers now follow the selected itinerary, and `showRoute` only draws the polyline
@@ -211,9 +218,22 @@
 - "Reset map" left the camera and the cached nearby-services centre untouched. It now resets the view via a `resetView` handle and clears the cache
 - Route layers were removed and re-added on every route change, and could be lost on a style reload. The route now updates through `setData` on a persistent source, with layers re-created if the style drops them
 - Stop auto-advance ran as a side effect during render; moved into an effect
+- `components/ScrollToTop.jsx` — resets scroll position on route change, mounted inside `BrowserRouter` in `App.jsx`. React Router doesn't reset scroll on navigation, so every page was inheriting the previous page's scroll offset
+
+### Fixed
+- The map's 3-dots and search buttons were invisible when the map was opened from the "Location" button or "Show itinerary" — but not when opened from the bottom nav. Both entry points are on scrollable pages, so `/map` loaded with the previous page's scroll offset still applied. `.map-page` was `position: relative; height: 100vh`, and since `100vh` exceeds the visible viewport on mobile, the document stayed scrollable and everything absolutely positioned inside slid up with it — enough to push the two controls (42px tall, at `top: 16px`, or ~57px on a notched phone once `env(safe-area-inset-top)` applies) entirely above the fold. The map canvas filled the screen either way, which is why nothing else looked wrong
 
 ### Changed
 - `MapPage.jsx`, `MapView.jsx`, `useGeolocation.js`, `mapCategories.js`, `MapPage.css`, `MapView.css` — rewritten for the above
 - `itineraryDetails.jsx` — now uses `useVisitedStops` instead of its own `localStorage` reads and writes
 - `useGeolocation.js` — reports a specific reason when the page isn't a secure context, since `navigator.geolocation` is blocked over plain HTTP on a LAN IP (this is why location fails on a phone hitting the dev server directly, while working on `localhost`)
 - Route requests capped at 10 waypoints, and re-fetched only when the stop list changes or the origin moves more than 30 m; nearby-services re-fetched only after 400 m of movement
+- `PendingRequestCard.jsx` — the whole card is now clickable to open the new request detail modal; the accept/reject/remove buttons stop the click from bubbling up
+- `DestinationManageCard.jsx` — accepts an `onView` prop so a card can open a detail view on click, without affecting existing usages (like the admin's "Actual destinations" tab) that don't pass it
+- `AdminDashboard.jsx` — wires `PendingRequestCard` clicks into the new `RequestDetailModal`, and keeps it in sync as requests are approved, rejected, or removed
+- `MyDestinations.jsx` — card clicks now navigate to the new `/my-destinations/:id` detail view, passing the destination through router state
+- `Destinationdetails.jsx` — passes the destination's `owner_id` into `CommentSection` so the "Owner" tag shows up on the public page too
+- `App.jsx` — added the `/my-destinations/:id` route
+- `comments.py` — comment and reply records now track `pinned_at`; `GET /destinations/<id>/comments` sorts pinned root comments to the top
+- `.map-page` — now `position: fixed` with all four insets at `0` instead of `position: relative; height: 100vh`, so the map is anchored to the visible viewport and unaffected by scroll position. Added `overscroll-behavior: none` to stop pull-to-refresh triggering when dragging the map downward
+- `App.jsx` — mounts `ScrollToTop`

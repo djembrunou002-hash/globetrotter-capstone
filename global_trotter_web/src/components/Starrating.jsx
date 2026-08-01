@@ -1,12 +1,13 @@
 import { useState } from 'react'
 
-function StarRating({ average, count, isAuthenticated, onRate }) {
+function StarRating({ average, count, isAuthenticated, onRate, readOnly = false }) {
   const [hovered, setHovered] = useState(0)
   const [userRating, setUserRating] = useState(null)
   const rounded = Math.round(average)
   const displayedStars = hovered || userRating || rounded
 
   function handleClick(stars) {
+    if (readOnly) return
     if (!isAuthenticated) {
       onRate(null)
       return
@@ -18,17 +19,19 @@ function StarRating({ average, count, isAuthenticated, onRate }) {
   return (
     <div className="destination-card__rating">
       <div
-        className="destination-card__stars"
-        onMouseLeave={() => setHovered(0)}
+        className={`destination-card__stars ${readOnly ? 'destination-card__stars--readonly' : ''}`}
+        onMouseLeave={() => !readOnly && setHovered(0)}
       >
         {[1, 2, 3, 4, 5].map(star => (
           <button
             key={star}
             type="button"
             className="destination-card__star"
-            onMouseEnter={() => setHovered(star)}
+            onMouseEnter={() => !readOnly && setHovered(star)}
             onClick={() => handleClick(star)}
             aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+            disabled={readOnly}
+            tabIndex={readOnly ? -1 : 0}
           >
             <svg
               viewBox="0 0 24 24"

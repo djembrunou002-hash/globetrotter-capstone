@@ -14,7 +14,7 @@ function formatDate(iso) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function PendingRequestCard({ request, onApprove, onReject, onDelete, submitting = false }) {
+function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, submitting = false }) {
   const [imageFailed, setImageFailed] = useState(false)
   const display = request.display || {}
   const name = display.name || display.current?.name || 'Untitled destination'
@@ -22,8 +22,26 @@ function PendingRequestCard({ request, onApprove, onReject, onDelete, submitting
   const type = display.type || display.current?.type || ''
   const image = (display.images && display.images[0]) || (display.current?.images && display.current.images[0])
 
+  function handleCardClick() {
+    if (onView) onView(request)
+  }
+
+  function handleCardKeyDown(e) {
+    if (!onView) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onView(request)
+    }
+  }
+
   return (
-    <article className="pending-card">
+    <article
+      className={`pending-card ${onView ? 'pending-card--clickable' : ''}`}
+      role={onView ? 'button' : undefined}
+      tabIndex={onView ? 0 : undefined}
+      onClick={onView ? handleCardClick : undefined}
+      onKeyDown={onView ? handleCardKeyDown : undefined}
+    >
       <div className="pending-card__image-wrap">
         {image && !imageFailed ? (
           <img
@@ -54,7 +72,7 @@ function PendingRequestCard({ request, onApprove, onReject, onDelete, submitting
           <p className="pending-card__note">This user is requesting to delete this published destination.</p>
         )}
 
-        <div className="pending-card__actions">
+        <div className="pending-card__actions" onClick={e => e.stopPropagation()}>
           {request.status === 'pending' && (
             <>
               <button

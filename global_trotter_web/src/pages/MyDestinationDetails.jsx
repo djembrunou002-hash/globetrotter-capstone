@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import {
-  getDestinations,
-  getFavorites,
-  addFavorite,
-  removeFavorite,
-  rateDestination
-} from '../services/destinationService.js'
-import { getToken } from '../services/tokenStorage.js'
+import { getMyDestinations, requestDestinationDelete, discardSubmission } from '../services/myDestinationService.js'
+import { getToken, getUser } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
-import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import StarRating from '../components/Starrating.jsx'
+import ConfirmDialog from '../components/Confirmdialog.jsx'
 import CommentSection from '../components/CommentSection.jsx'
-import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
 import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
 import '../styles/DestinationDetails.css'
+import '../styles/MyDestinationDetails.css'
+
+const STATUS_LABELS = {
+  published: { label: 'Published', tone: 'success' },
+  pending_review: { label: 'Pending review', tone: 'pending' },
+  rejected: { label: 'Rejected', tone: 'danger' },
+  pending_edit: { label: 'Edit pending review', tone: 'pending' },
+  pending_delete: { label: 'Deletion pending review', tone: 'pending' },
+  deleted: { label: 'Deleted', tone: 'danger' },
+  edited: { label: 'Edited by admin', tone: 'info' }
+}
+
+const EDITABLE_STATUSES = ['published', 'edited']
+const DISCARDABLE_STATUSES = ['rejected', 'deleted']
+const MAP_ELIGIBLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_delete']
 
 function ExtraPhoto({ src, alt }) {
   const [failed, setFailed] = useState(false)
@@ -34,78 +43,94 @@ function ExtraPhoto({ src, alt }) {
   )
 }
 
-function DestinationDetails() {
+function MyDestinationDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const isAuthenticated = Boolean(getToken())
-  const focusComments = Boolean(location.state?.focusComments)
 
-  const [destination, setDestination] = useState(null)
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [destination, setDestination] = useState(location.state?.destination || null)
+  const [loading, setLoading] = useState(!location.state?.destination)
   const [error, setError] = useState('')
   const [imageFailed, setImageFailed] = useState(false)
+  const [pendingAction, setPendingAction] = useState(null)
+  const [dialogError, setDialogError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    async function loadData() {
+    if (!getToken()) {
+      navigate('/login')
+      return
+    }
+    if (destination) return
+    let cancelled = false
+    async function load() {
       setLoading(true)
       setError('')
       try {
-        const [destinationsResponse, favoritesResponse] = await Promise.all([
-          getDestinations(),
-          isAuthenticated ? getFavorites() : Promise.resolve({ favorites: [] })
-        ])
-
-        const found = destinationsResponse.destinations.find(d => d.id === id)
-        setDestination(found || null)
-        setIsFavorite(favoritesResponse.favorites.some(d => d.id === id))
+        const response = await getMyDestinations()
+        const found = response.destinations.find(d => d.id === id)
+        if (!cancelled) setDestination(found || null)
       } catch (err) {
-        setError(err.message)
+        if (!cancelled) setError(err.message)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
-
-    loadData()
-  }, [id, isAuthenticated])
-
-  async function handleToggleFavorite() {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
+    load()
+    return () => {
+      cancelled = true
     }
-
-    try {
-      if (isFavorite) {
-        await removeFavorite(id)
-        setIsFavorite(false)
-      } else {
-        await addFavorite(id)
-        setIsFavorite(true)
-      }
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  async function handleRate(stars) {
-    if (stars === null) {
-      navigate('/login')
-      return
-    }
-
-    try {
-      const response = await rateDestination(id, stars)
-      setDestination(prev => (prev ? { ...prev, rating: response.rating } : prev))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   function handleBack() {
     navigate(-1)
   }
+
+  function handleEdit() {
+    navigate(`/my-destinations/${destination.id}/edit`)
+  }
+
+  function handleDeleteClick() {
+    setDialogError('')
+    setPendingAction(DISCARDABLE_STATUSES.includes(destination.status) ? 'discard' : 'delete')
+  }
+
+  async function handleConfirmAction() {
+    if (!pendingAction) return
+    setSubmitting(true)
+    setDialogError('')
+    try {
+      if (pendingAction === 'discard') {
+        await discardSubmission(destination.request_id)
+      } else {
+        await requestDestinationDelete(destination.id)
+      }
+      setPendingAction(null)
+      navigate('/my-destinations')
+    } catch (err) {
+      setDialogError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleAcknowledgeEdit() {
+    try {
+      await discardSubmission(destination.request_id)
+      navigate('/my-destinations')
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const status = destination ? STATUS_LABELS[destination.status] : null
+  const editDisabled = destination ? !EDITABLE_STATUSES.includes(destination.status) : true
+  const canDelete = destination
+    ? EDITABLE_STATUSES.includes(destination.status) || DISCARDABLE_STATUSES.includes(destination.status)
+    : false
+  const deleteLabel = destination && DISCARDABLE_STATUSES.includes(destination.status) ? 'Discard' : 'Delete'
+  const canViewOnMap = destination ? MAP_ELIGIBLE_STATUSES.includes(destination.status) : false
 
   const image = destination?.images && destination.images[0]
   const extraPhotos = destination?.images ? destination.images.slice(1, 4) : []
@@ -160,9 +185,23 @@ function DestinationDetails() {
               >
                 {budgetDisplay.label}
               </span>
+              {status && (
+                <span className={`my-destination-details__status-badge my-destination-details__status-badge--${status.tone}`}>
+                  {status.label}
+                </span>
+              )}
             </div>
 
             <div className="destination-details__body">
+              {destination.status === 'edited' && (
+                <div className="my-destination-details__notice">
+                  An admin edited this spot's details.
+                  <button type="button" className="my-destination-details__notice-dismiss" onClick={handleAcknowledgeEdit}>
+                    Got it
+                  </button>
+                </div>
+              )}
+
               <h1 className="destination-details__name">{destination.name}</h1>
               <p className="destination-details__meta">
                 {destination.area} · {destination.type}
@@ -179,50 +218,36 @@ function DestinationDetails() {
               <StarRating
                 average={destination.rating?.average || 0}
                 count={destination.rating?.count || 0}
-                isAuthenticated={isAuthenticated}
-                onRate={handleRate}
+                readOnly
               />
 
               <div className="destination-details__actions">
-                <button
-                  type="button"
-                  className="destination-details__location"
-                  onClick={() => navigate(`/map?destination=${id}`)}
-                  title="View on map"
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
-                  Location
-                </button>
-
-                <button
-                  type="button"
-                  className={`destination-details__favorite ${
-                    isFavorite ? 'destination-details__favorite--active' : ''
-                  }`}
-                  onClick={handleToggleFavorite}
-                  aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    fill={isFavorite ? '#C8102E' : 'none'}
-                    stroke="#C8102E"
-                    strokeWidth="2"
+                {canViewOnMap && (
+                  <button
+                    type="button"
+                    className="destination-details__location"
+                    onClick={() => navigate(`/map?destination=${destination.id}`)}
+                    title="View on map"
                   >
-                    <path d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.5 4.5 6 4c2-.3 3.8.8 6 3.2C14.2 4.8 16 3.7 18 4c3.5.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" />
-                  </svg>
-                  {isFavorite ? 'Saved to favorites' : 'Add to favorites'}
-                </button>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
+                      <circle cx="12" cy="10" r="2.5" />
+                    </svg>
+                    Location
+                  </button>
+                )}
 
-                <AddToItineraryButton
-                  destinationId={id}
-                  isAuthenticated={isAuthenticated}
-                  variant="pill"
-                />
+                {!editDisabled && (
+                  <button type="button" className="my-destination-details__edit" onClick={handleEdit}>
+                    Edit
+                  </button>
+                )}
+
+                {canDelete && (
+                  <button type="button" className="my-destination-details__delete" onClick={handleDeleteClick}>
+                    {deleteLabel}
+                  </button>
+                )}
               </div>
 
               <div className="destination-details__info-grid">
@@ -280,20 +305,39 @@ function DestinationDetails() {
                 <p className="destination-details__advice">{advice}</p>
               </div>
 
-              <CommentSection
-                destinationId={id}
-                ownerId={destination.owner_id}
-                isAuthenticated={isAuthenticated}
-                focusOnMount={focusComments}
-              />
+              {canViewOnMap && (
+                <CommentSection
+                  destinationId={destination.id}
+                  ownerId={destination.owner_id || getUser()?.id}
+                  isAuthenticated
+                />
+              )}
             </div>
           </>
         )}
       </main>
+
+      {pendingAction && (
+        <ConfirmDialog
+          title={pendingAction === 'discard' ? 'Remove this card?' : 'Delete this destination?'}
+          message={
+            pendingAction === 'discard'
+              ? destination.status === 'deleted'
+                ? 'This destination was deleted by an admin. Removing the card will clear it from your page for good.'
+                : 'This will remove the rejected submission for good.'
+              : "This will send a deletion request to an admin. Your destination stays published until it's approved."
+          }
+          confirmLabel={pendingAction === 'discard' ? 'Remove' : 'Send request'}
+          submitting={submitting}
+          error={dialogError}
+          onConfirm={handleConfirmAction}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
 
       <BottomNav />
     </div>
   )
 }
 
-export default DestinationDetails
+export default MyDestinationDetails

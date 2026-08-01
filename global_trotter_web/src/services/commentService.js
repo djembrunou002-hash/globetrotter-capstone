@@ -54,3 +54,15 @@ export function undislikeComment(destinationId, commentId) {
     method: 'DELETE'
   })
 }
+
+export function pinComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/pin`, {
+    method: 'POST'
+  })
+}
+
+export function unpinComment(destinationId, commentId) {
+  return apiRequest(`/destinations/${destinationId}/comments/${commentId}/pin`, {
+    method: 'DELETE'
+  })
+}

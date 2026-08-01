@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getComments, addComment, replyToComment, editComment, deleteComment, likeComment, unlikeComment, dislikeComment, undislikeComment } from '../services/commentService.js'
+import { getComments, addComment, replyToComment, editComment, deleteComment, likeComment, unlikeComment, dislikeComment, undislikeComment, pinComment, unpinComment } from '../services/commentService.js'
 import { getUser } from '../services/tokenStorage.js'
 import '../styles/CommentSection.css'
 
@@ -100,7 +100,7 @@ function removeNode(nodes, targetId) {
   return removeNodeRec(nodes, targetId)[0]
 }
 
-function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, isReply, replyingTo, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
+function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentUserId, isReply, replyingTo, canPin, onPinToggled, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
   const navigate = useNavigate()
 
   const [isReplying, setIsReplying] = useState(false)
@@ -114,6 +114,7 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
   const [likeSubmitting, setLikeSubmitting] = useState(false)
   const [dislikeSubmitting, setDislikeSubmitting] = useState(false)
+  const [pinSubmitting, setPinSubmitting] = useState(false)
   const [localError, setLocalError] = useState('')
 
   const likeCount = node.like_count || 0
@@ -133,6 +134,7 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   const isOwner = isAuthenticated && currentUserId && node.author?.id === currentUserId
   const canEdit = isOwner && withinEditWindow
   const canDelete = isOwner
+  const isDestinationOwner = ownerId && node.author?.id === ownerId
 
   function requireAuth() {
     if (!isAuthenticated) {
@@ -146,6 +148,22 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
     if (!requireAuth()) return
     setIsReplying(true)
     setReplyText('')
+  }
+
+  async function handleTogglePin() {
+    if (pinSubmitting) return
+    setPinSubmitting(true)
+    setLocalError('')
+    try {
+      const response = node.pinned
+        ? await unpinComment(destinationId, node.id)
+        : await pinComment(destinationId, node.id)
+      onPinToggled(node.id, response.pinned)
+    } catch (err) {
+      setLocalError(err.message)
+    } finally {
+      setPinSubmitting(false)
+    }
   }
 
   async function handleSubmitReply(e) {
@@ -285,13 +303,15 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   }
 
   return (
-    <div className="comment-section__comment">
+    <div className={`comment-section__comment ${node.pinned ? 'comment-section__comment--pinned' : ''}`}>
       <div className={`comment-section__avatar ${isReply ? 'comment-section__avatar--small' : ''}`}>
         {(node.author?.name || '?').charAt(0).toUpperCase()}
       </div>
       <div className="comment-section__body">
         <div className="comment-section__meta">
+          {node.pinned && <span className="comment-section__pinned-tag">📌 Pinned</span>}
           <span className="comment-section__author">{node.author?.name || 'Traveler'}</span>
+          {isDestinationOwner && <span className="comment-section__owner-tag">Owner</span>}
           <span className="comment-section__date">{formatDate(node.created_at)}</span>
           {node.edited && <span className="comment-section__edited-tag">(edited)</span>}
         </div>
@@ -356,6 +376,16 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
             <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
               Reply
             </button>
+            {canPin && (
+              <button
+                type="button"
+                className="comment-section__reply-trigger"
+                onClick={handleTogglePin}
+                disabled={pinSubmitting}
+              >
+                {pinSubmitting ? 'Saving...' : node.pinned ? 'Unpin' : 'Pin'}
+              </button>
+            )}
             {canEdit && (
               <button type="button" className="comment-section__reply-trigger" onClick={handleStartEdit}>
                 Edit
@@ -403,7 +433,7 @@ function CommentBubble({ node, destinationId, isAuthenticated, currentUserId, is
   )
 }
 
-function RootComment({ comment, destinationId, isAuthenticated, currentUserId, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
+function RootComment({ comment, destinationId, ownerId, isAuthenticated, currentUserId, canPin, onPinToggled, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
   const [repliesExpanded, setRepliesExpanded] = useState(false)
   const [visibleReplyCount, setVisibleReplyCount] = useState(REPLY_PAGE_SIZE)
 
@@ -427,9 +457,12 @@ function RootComment({ comment, destinationId, isAuthenticated, currentUserId, o
       <CommentBubble
         node={comment}
         destinationId={destinationId}
+        ownerId={ownerId}
         isAuthenticated={isAuthenticated}
         currentUserId={currentUserId}
         isReply={false}
+        canPin={canPin}
+        onPinToggled={onPinToggled}
         onReplyPosted={handleReplyPosted}
         onCommentUpdated={onCommentUpdated}
         onCommentDeleted={onCommentDeleted}
@@ -453,6 +486,7 @@ function RootComment({ comment, destinationId, isAuthenticated, currentUserId, o
                 key={reply.id}
                 node={reply}
                 destinationId={destinationId}
+                ownerId={ownerId}
                 isAuthenticated={isAuthenticated}
                 currentUserId={currentUserId}
                 isReply
@@ -479,11 +513,19 @@ function RootComment({ comment, destinationId, isAuthenticated, currentUserId, o
   )
 }
 
-function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
+function sortRoots(nodes) {
+  return [...nodes].sort((a, b) => {
+    if (!!a.pinned === !!b.pinned) return 0
+    return a.pinned ? -1 : 1
+  })
+}
+
+function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount }) {
   const navigate = useNavigate()
   const sectionRef = useRef(null)
   const textareaRef = useRef(null)
   const currentUserId = getUser()?.id || null
+  const canPin = Boolean(isAuthenticated && ownerId && currentUserId === ownerId)
 
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -498,7 +540,7 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
       setError('')
       try {
         const response = await getComments(destinationId)
-        setComments(response.comments || [])
+        setComments(sortRoots(response.comments || []))
       } catch (err) {
         setError(err.message)
       } finally {
@@ -531,7 +573,7 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
     setError('')
     try {
       const response = await addComment(destinationId, trimmed)
-      setComments(prev => [{ ...response.comment, replies: response.comment.replies || [], reply_count: 0 }, ...prev])
+      setComments(prev => sortRoots([{ ...response.comment, replies: response.comment.replies || [], reply_count: 0 }, ...prev]))
       setCommentText('')
     } catch (err) {
       setError(err.message)
@@ -550,6 +592,17 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
 
   function handleCommentDeleted(id) {
     setComments(prev => removeNode(prev, id))
+  }
+
+  function handlePinToggled(commentId, pinned) {
+    setComments(prev =>
+      sortRoots(
+        prev.map(node => ({
+          ...node,
+          pinned: node.id === commentId ? pinned : pinned ? false : node.pinned
+        }))
+      )
+    )
   }
 
   const totalCount = countAllNodes(comments)
@@ -598,8 +651,11 @@ function CommentSection({ destinationId, isAuthenticated, focusOnMount }) {
               <RootComment
                 comment={comment}
                 destinationId={destinationId}
+                ownerId={ownerId}
                 isAuthenticated={isAuthenticated}
                 currentUserId={currentUserId}
+                canPin={canPin}
+                onPinToggled={handlePinToggled}
                 onReplyPosted={handleReplyPosted}
                 onCommentUpdated={handleCommentUpdated}
                 onCommentDeleted={handleCommentDeleted}

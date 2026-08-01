@@ -151,3 +151,13 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.pending-card--clickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.pending-card--clickable:hover {
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.12);
+  transform: translateY(-2px);
+}

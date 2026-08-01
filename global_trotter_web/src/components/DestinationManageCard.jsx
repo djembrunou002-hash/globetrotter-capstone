@@ -16,6 +16,7 @@ function DestinationManageCard({
   onEdit,
   onDelete,
   onAcknowledge,
+  onView,
   deleteLabel = 'Delete',
   editDisabled = false,
   deleteDisabled = false
@@ -24,8 +25,26 @@ function DestinationManageCard({
   const image = destination.images && destination.images[0]
   const status = STATUS_LABELS[destination.status] || null
 
+  function handleCardClick() {
+    if (onView) onView(destination)
+  }
+
+  function handleCardKeyDown(e) {
+    if (!onView) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onView(destination)
+    }
+  }
+
   return (
-    <article className="manage-card">
+    <article
+      className={`manage-card ${onView ? 'manage-card--clickable' : ''}`}
+      role={onView ? 'button' : undefined}
+      tabIndex={onView ? 0 : undefined}
+      onClick={onView ? handleCardClick : undefined}
+      onKeyDown={onView ? handleCardKeyDown : undefined}
+    >
       <div className="manage-card__image-wrap">
         {image && !imageFailed ? (
           <img
@@ -44,7 +63,14 @@ function DestinationManageCard({
           <div className="manage-card__notice">
             An admin edited this spot's details.
             {onAcknowledge && (
-              <button type="button" className="manage-card__notice-dismiss" onClick={() => onAcknowledge(destination)}>
+              <button
+                type="button"
+                className="manage-card__notice-dismiss"
+                onClick={e => {
+                  e.stopPropagation()
+                  onAcknowledge(destination)
+                }}
+              >
                 Got it
               </button>
             )}
@@ -58,7 +84,7 @@ function DestinationManageCard({
           {destination.area} · {destination.type}
         </p>
 
-        <div className="manage-card__actions">
+        <div className="manage-card__actions" onClick={e => e.stopPropagation()}>
           {onEdit && (
             <button type="button" className="manage-card__edit" onClick={() => onEdit(destination)} disabled={editDisabled}>
               Edit

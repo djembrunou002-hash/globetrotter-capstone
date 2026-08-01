@@ -1,0 +1,91 @@
+.my-destination-details__status-badge {
+  position: absolute;
+  bottom: 16px;
+  right: clamp(20px, 5vw, 48px);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.my-destination-details__status-badge--success {
+  background: #E3F1E6;
+  color: #1D6B34;
+}
+
+.my-destination-details__status-badge--pending {
+  background: #FCF0D0;
+  color: #8A6200;
+}
+
+.my-destination-details__status-badge--danger {
+  background: #FBE7E9;
+  color: #8A1424;
+}
+
+.my-destination-details__status-badge--info {
+  background: #E3ECF6;
+  color: #1B4E8A;
+}
+
+.my-destination-details__notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #E3ECF6;
+  color: #1B4E8A;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+}
+
+.my-destination-details__notice-dismiss {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #1B4E8A;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.my-destination-details__edit,
+.my-destination-details__delete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.my-destination-details__edit {
+  border: 1px solid #E7DFC9;
+  background: #F1EBDA;
+  color: var(--color-ink);
+}
+
+.my-destination-details__edit:hover {
+  background: #E7DFC9;
+}
+
+.my-destination-details__delete {
+  border: 1px solid #F3C6CB;
+  background: #FBE7E9;
+  color: #8A1424;
+}
+
+.my-destination-details__delete:hover {
+  background: #F3C6CB;
+}

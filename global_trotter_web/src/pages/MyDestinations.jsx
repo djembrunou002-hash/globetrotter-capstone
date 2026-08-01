@@ -55,6 +55,10 @@ function MyDestinations() {
     navigate(-1)
   }
 
+  function handleView(destination) {
+    navigate(`/my-destinations/${destination.id}`, { state: { destination } })
+  }
+
   function handleEdit(destination) {
     navigate(`/my-destinations/${destination.id}/edit`)
   }
@@ -134,6 +138,7 @@ function MyDestinations() {
                 <DestinationManageCard
                   key={destination.id}
                   destination={destination}
+                  onView={handleView}
                   onEdit={editDisabled ? null : handleEdit}
                   onDelete={canDelete ? handleDeleteClick : null}
                   onAcknowledge={destination.status === 'edited' ? handleAcknowledgeEdit : null}

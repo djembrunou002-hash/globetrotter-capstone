@@ -308,3 +308,35 @@
   color: var(--color-forest);
   cursor: pointer;
 }
+
+.comment-section__owner-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-forest);
+  border: 1px solid var(--color-forest);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.comment-section__pinned-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8A6200;
+  background: #FCF0D0;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.comment-section__comment--pinned {
+  background: #FCF6E6;
+  border: 1px solid #F0DFA0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0 -12px 4px;
+}

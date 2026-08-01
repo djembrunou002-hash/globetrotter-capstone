@@ -14,6 +14,7 @@ import BottomNav from '../components/Bottomnav.jsx'
 import PendingRequestCard from '../components/PendingRequestCard.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
 import ConfirmDialog from '../components/Confirmdialog.jsx'
+import RequestDetailModal from '../components/RequestDetailModal.jsx'
 import '../styles/AdminDashboard.css'
 
 function AdminDashboard() {
@@ -28,6 +29,7 @@ function AdminDashboard() {
   const [pendingDelete, setPendingDelete] = useState(null)
   const [dialogError, setDialogError] = useState('')
   const [dialogSubmitting, setDialogSubmitting] = useState(false)
+  const [viewingRequest, setViewingRequest] = useState(null)
 
   const loadTab = useCallback(async tab => {
     setLoading(true)
@@ -76,6 +78,7 @@ function AdminDashboard() {
     try {
       await approveRequest(request.id)
       setRequests(prev => prev.filter(r => r.id !== request.id))
+      setViewingRequest(prev => (prev && prev.id === request.id ? null : prev))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -89,6 +92,7 @@ function AdminDashboard() {
     try {
       const response = await rejectRequest(request.id)
       setRequests(prev => prev.map(r => (r.id === request.id ? { ...r, status: response.request.status } : r)))
+      setViewingRequest(prev => (prev && prev.id === request.id ? { ...prev, status: response.request.status } : prev))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -102,11 +106,16 @@ function AdminDashboard() {
     try {
       await deleteRequest(request.id)
       setRequests(prev => prev.filter(r => r.id !== request.id))
+      setViewingRequest(prev => (prev && prev.id === request.id ? null : prev))
     } catch (err) {
       setError(err.message)
     } finally {
       setRowSubmitting(null)
     }
+  }
+
+  function handleViewRequest(request) {
+    setViewingRequest(request)
   }
 
   function handleEditDestination(destination) {
@@ -185,6 +194,7 @@ function AdminDashboard() {
               <PendingRequestCard
                 key={request.id}
                 request={request}
+                onView={handleViewRequest}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onDelete={handleDeleteRequest}
@@ -211,6 +221,17 @@ function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {viewingRequest && (
+        <RequestDetailModal
+          request={viewingRequest}
+          onClose={() => setViewingRequest(null)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onDelete={handleDeleteRequest}
+          submitting={rowSubmitting === viewingRequest.id}
+        />
+      )}
 
       {pendingDelete && (
         <ConfirmDialog
