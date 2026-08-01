@@ -121,6 +121,34 @@ def add_destination(itinerary_id):
     return jsonify({"itinerary": itinerary}), 200
 
 
+@itineraries_bp.route("/itineraries/<itinerary_id>/order", methods=["PUT"])
+@jwt_required()
+def reorder_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+    ordered_ids = body.get("destinations")
+
+    if not isinstance(ordered_ids, list) or not ordered_ids:
+        return jsonify({"error": "destinations must be a non-empty list"}), 400
+
+    data = load_json("itineraries.json")
+    itinerary = next(
+        (i for i in data["itineraries"] if i["id"] == itinerary_id and i["user_id"] == user_id),
+        None,
+    )
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    if set(ordered_ids) != set(itinerary["destinations"]):
+        return jsonify({"error": "destinations must match the itinerary's current destinations"}), 400
+
+    itinerary["destinations"] = ordered_ids
+    itinerary["updated_at"] = datetime.now(timezone.utc).isoformat()
+    save_json("itineraries.json", data)
+
+    return jsonify({"itinerary": itinerary}), 200
+
+
 @itineraries_bp.route("/itineraries/<itinerary_id>/share", methods=["POST"])
 @jwt_required()
 def share_itinerary(itinerary_id):

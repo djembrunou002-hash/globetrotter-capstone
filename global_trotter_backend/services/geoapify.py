@@ -105,9 +105,11 @@ def nearby_places(lat, lng, radius=1200, categories=None, limit=20):
     return results
 
 
-def get_route(waypoints, mode="drive"):
+def get_route(waypoints, mode="drive", route_type="short"):
     waypoints_param = "|".join(f"{lat},{lng}" for lat, lng in waypoints)
     params = {"waypoints": waypoints_param, "mode": mode, "apiKey": _get_api_key()}
+    if route_type:
+        params["type"] = route_type
 
     response = requests.get(GEOAPIFY_ROUTING_URL, params=params, timeout=15)
     response.raise_for_status()

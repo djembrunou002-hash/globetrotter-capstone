@@ -51,6 +51,7 @@ def nearby():
 def route():
     points_param = request.args.get("points", "")
     mode = request.args.get("mode", default="drive")
+    route_type = request.args.get("type", default="short")
 
     waypoints = []
     for pair in points_param.split("|"):
@@ -68,7 +69,7 @@ def route():
         return jsonify({"error": "at least 2 points are required"}), 400
 
     try:
-        geojson = get_route(waypoints, mode=mode)
+        geojson = get_route(waypoints, mode=mode, route_type=route_type)
     except RuntimeError as err:
         current_app.logger.warning("routing unavailable: %s", err)
         return jsonify({"error": str(err)}), 503

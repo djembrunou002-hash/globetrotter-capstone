@@ -16,8 +16,8 @@ export function getNearbyPlaces(lat, lng, { radius, categories } = {}) {
   return apiRequest(`/places/nearby?${params.toString()}`)
 }
 
-export function getRoute(points, mode = 'drive') {
+export function getRoute(points, mode = 'drive', type = 'short') {
   const pointsParam = points.map(([lat, lng]) => `${lat},${lng}`).join('|')
-  const params = new URLSearchParams({ points: pointsParam, mode })
+  const params = new URLSearchParams({ points: pointsParam, mode, type })
   return apiRequest(`/places/route?${params.toString()}`)
 }

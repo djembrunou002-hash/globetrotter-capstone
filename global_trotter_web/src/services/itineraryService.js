@@ -21,6 +21,13 @@ export function addDestinationToItinerary(itineraryId, destinationId, time) {
   })
 }
 
+export function reorderItinerary(itineraryId, orderedDestinationIds) {
+  return apiRequest(`/itineraries/${itineraryId}/order`, {
+    method: 'PUT',
+    body: JSON.stringify({ destinations: orderedDestinationIds })
+  })
+}
+
 export function deleteItinerary(itineraryId) {
   return apiRequest(`/itineraries/${itineraryId}`, {
     method: 'DELETE'

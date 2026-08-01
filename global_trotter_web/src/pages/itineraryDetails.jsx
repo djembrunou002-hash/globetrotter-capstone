@@ -13,6 +13,7 @@ import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
+import ReorderItineraryModal from '../components/ReorderItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
 
 function formatDate(dateString) {
@@ -47,6 +48,7 @@ function ItineraryDetails() {
   const [activeType, setActiveType] = useState(null)
   const [sharedUsers, setSharedUsers] = useState([])
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [reorderModalOpen, setReorderModalOpen] = useState(false)
 
   // Keep visitedIds in sync with the current itinerary id. This runs during
   // render (not in an effect) since it's just adjusting state to match a
@@ -236,7 +238,7 @@ function ItineraryDetails() {
                 <button
                   type="button"
                   className="itinerary-details__map-button"
-                  onClick={() => navigate(`/map?itinerary=${itinerary.id}`)}
+                  onClick={() => setReorderModalOpen(true)}
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
@@ -352,6 +354,14 @@ function ItineraryDetails() {
 
       {shareModalOpen && itinerary && (
         <ShareItineraryModal itinerary={itinerary} onClose={handleCloseShare} />
+      )}
+
+      {reorderModalOpen && itinerary && (
+        <ReorderItineraryModal
+          itinerary={itinerary}
+          destinations={itineraryDestinations}
+          onClose={() => setReorderModalOpen(false)}
+        />
       )}
 
       <BottomNav />

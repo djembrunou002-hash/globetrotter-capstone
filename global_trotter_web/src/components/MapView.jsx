@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { CATEGORY_META } from '../utils/mapCategories.js'
@@ -6,16 +6,31 @@ import '../styles/MapView.css'
 
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 const DEFAULT_CENTER = [11.5021, 3.848]
+const DEFAULT_ZOOM = 12
 
-function createMarkerElement(category, label) {
+const ROUTE_SOURCE_ID = 'itinerary-route'
+const ROUTE_CASING_LAYER_ID = 'itinerary-route-casing'
+const ROUTE_LINE_LAYER_ID = 'itinerary-route-line'
+
+const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] }
+
+const MARKER_Z = {
+  nearby: '3',
+  destination: '6',
+  searched: '7',
+  user: '10'
+}
+
+function createMarkerElement(category, { label, visited } = {}) {
   const meta = CATEGORY_META[category] || CATEGORY_META.other
   const el = document.createElement('div')
   el.className = `map-marker map-marker--${category === 'destination' ? 'large' : 'small'}`
-  el.style.setProperty('--marker-color', meta.color)
-  if (label) {
+  if (visited) el.classList.add('map-marker--visited')
+  el.style.setProperty('--marker-color', visited ? CATEGORY_META.visited.color : meta.color)
+  if (label != null) {
     const badge = document.createElement('span')
     badge.className = 'map-marker__badge'
-    badge.textContent = label
+    badge.textContent = String(label)
     el.appendChild(badge)
   }
   return el
@@ -24,61 +39,106 @@ function createMarkerElement(category, label) {
 function createUserMarkerElement() {
   const el = document.createElement('div')
   el.className = 'map-marker-user'
+
+  const accuracy = document.createElement('span')
+  accuracy.className = 'map-marker-user__accuracy'
+
+  const heading = document.createElement('span')
+  heading.className = 'map-marker-user__heading'
+  const beam = document.createElement('span')
+  beam.className = 'map-marker-user__beam'
+  heading.appendChild(beam)
+
   const pulse = document.createElement('span')
   pulse.className = 'map-marker-user__pulse'
+
   const dot = document.createElement('span')
   dot.className = 'map-marker-user__dot'
+
+  el.appendChild(accuracy)
+  el.appendChild(heading)
   el.appendChild(pulse)
   el.appendChild(dot)
   return el
 }
 
-const MapView = forwardRef(function MapView({
-  destinations = [],
-  nearbyPlaces = [],
-  searchedPlace = null,
-  route = null,
-  routeIsFallback = false,
-  userLocation = null,
-  onDestinationClick,
-  center,
-  zoom = 12
-}, ref) {
+function metersPerPixel(latitude, zoom) {
+  return (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / Math.pow(2, zoom)
+}
+
+function ensureRouteLayers(map) {
+  if (!map.getSource(ROUTE_SOURCE_ID)) {
+    map.addSource(ROUTE_SOURCE_ID, { type: 'geojson', data: EMPTY_COLLECTION })
+  }
+  if (!map.getLayer(ROUTE_CASING_LAYER_ID)) {
+    map.addLayer({
+      id: ROUTE_CASING_LAYER_ID,
+      type: 'line',
+      source: ROUTE_SOURCE_ID,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#F7F2E4', 'line-width': 7 }
+    })
+  }
+  if (!map.getLayer(ROUTE_LINE_LAYER_ID)) {
+    map.addLayer({
+      id: ROUTE_LINE_LAYER_ID,
+      type: 'line',
+      source: ROUTE_SOURCE_ID,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#0B3D24', 'line-width': 4 }
+    })
+  }
+}
+
+function applyRoute(map, route, isFallback) {
+  ensureRouteLayers(map)
+
+  const source = map.getSource(ROUTE_SOURCE_ID)
+  if (source) source.setData(route || EMPTY_COLLECTION)
+
+  map.setPaintProperty(ROUTE_LINE_LAYER_ID, 'line-color', isFallback ? '#8A8372' : '#0B3D24')
+  map.setPaintProperty(ROUTE_LINE_LAYER_ID, 'line-dasharray', isFallback ? [2, 2] : [1, 0])
+
+  const visibility = route ? 'visible' : 'none'
+  map.setLayoutProperty(ROUTE_CASING_LAYER_ID, 'visibility', visibility)
+  map.setLayoutProperty(ROUTE_LINE_LAYER_ID, 'visibility', visibility)
+}
+
+const MapView = forwardRef(function MapView(
+  {
+    destinations = [],
+    nearbyPlaces = [],
+    searchedPlace = null,
+    route = null,
+    routeIsFallback = false,
+    userLocation = null,
+    onDestinationClick,
+    center,
+    zoom = DEFAULT_ZOOM
+  },
+  ref
+) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
   const userMarkerRef = useRef(null)
-  const readyRef = useRef(false)
+  const userLocationRef = useRef(userLocation)
+  const routeRef = useRef({ route, routeIsFallback })
+  const hasCenteredOnUserRef = useRef(false)
+  const lastFitSignatureRef = useRef('')
 
-  useImperativeHandle(ref, () => ({
-    flyToUser() {
-      const map = mapRef.current
-      if (!map || !userLocation) return
-      map.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 800 })
-    },
-    flyToDestinations() {
-      const map = mapRef.current
-      if (!map) return
-      const bounds = new maplibregl.LngLatBounds()
-      let hasPoint = false
-
-      destinations.forEach(d => {
-        bounds.extend([d.lng, d.lat])
-        hasPoint = true
-      })
-      if (searchedPlace) {
-        bounds.extend([searchedPlace.lng, searchedPlace.lat])
-        hasPoint = true
-      }
-
-      if (hasPoint) {
-        map.fitBounds(bounds, { padding: 72, maxZoom: 15, duration: 600 })
-      }
-    }
-  }), [destinations, searchedPlace, userLocation])
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    userLocationRef.current = userLocation
+  }, [userLocation])
+
+  useEffect(() => {
+    routeRef.current = { route, routeIsFallback }
+  }, [route, routeIsFallback])
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return undefined
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -88,33 +148,128 @@ const MapView = forwardRef(function MapView({
     })
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
-    map.on('load', () => {
-      readyRef.current = true
-      applyRoute(map, route, routeIsFallback)
-    })
 
     mapRef.current = map
 
+    function handleLoad() {
+      if (mapRef.current !== map) return
+      applyRoute(map, routeRef.current.route, routeRef.current.routeIsFallback)
+      setReady(true)
+    }
+
+    function handleStyleData() {
+      if (mapRef.current !== map || !map.isStyleLoaded()) return
+      if (map.getLayer(ROUTE_LINE_LAYER_ID)) return
+      applyRoute(map, routeRef.current.route, routeRef.current.routeIsFallback)
+    }
+
+    map.on('load', handleLoad)
+    map.on('styledata', handleStyleData)
+
     return () => {
-      readyRef.current = false
+      map.off('load', handleLoad)
+      map.off('styledata', handleStyleData)
+      markersRef.current.forEach(marker => marker.remove())
+      markersRef.current = []
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove()
+        userMarkerRef.current = null
+      }
       map.remove()
       mapRef.current = null
+      lastFitSignatureRef.current = ''
+      hasCenteredOnUserRef.current = false
+      setReady(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const updateUserMarker = useCallback(() => {
+    const map = mapRef.current
+    const marker = userMarkerRef.current
+    const location = userLocationRef.current
+    if (!map || !marker) return
+
+    const el = marker.getElement()
+
+    if (!location) {
+      el.style.display = 'none'
+      return
+    }
+
+    el.style.display = ''
+    marker.setLngLat([location.lng, location.lat])
+
+    const headingEl = el.querySelector('.map-marker-user__heading')
+    if (headingEl) {
+      if (location.heading != null && !Number.isNaN(location.heading)) {
+        headingEl.style.opacity = '1'
+        headingEl.style.transform = `rotate(${location.heading - map.getBearing()}deg)`
+      } else {
+        headingEl.style.opacity = '0'
+      }
+    }
+
+    const accuracyEl = el.querySelector('.map-marker-user__accuracy')
+    if (accuracyEl) {
+      const size =
+        location.accuracy != null && location.accuracy > 0
+          ? Math.min(240, (location.accuracy * 2) / metersPerPixel(location.lat, map.getZoom()))
+          : 0
+      if (size > 28) {
+        accuracyEl.style.display = ''
+        accuracyEl.style.width = `${Math.round(size)}px`
+        accuracyEl.style.height = `${Math.round(size)}px`
+      } else {
+        accuracyEl.style.display = 'none'
+      }
+    }
+  }, [])
+
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    if (!map || !ready) return undefined
 
-    markersRef.current.forEach(marker => marker.remove())
-    markersRef.current = []
+    if (!userMarkerRef.current) {
+      const element = createUserMarkerElement()
+      element.style.zIndex = MARKER_Z.user
+      const marker = new maplibregl.Marker({ element, anchor: 'center' })
+      marker.setLngLat(
+        userLocationRef.current
+          ? [userLocationRef.current.lng, userLocationRef.current.lat]
+          : center || DEFAULT_CENTER
+      )
+      marker.addTo(map)
+      userMarkerRef.current = marker
+    }
 
-    const bounds = new maplibregl.LngLatBounds()
-    let hasPoint = false
+    updateUserMarker()
+
+    map.on('rotate', updateUserMarker)
+    map.on('zoomend', updateUserMarker)
+
+    return () => {
+      map.off('rotate', updateUserMarker)
+      map.off('zoomend', updateUserMarker)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, updateUserMarker])
+
+  useEffect(() => {
+    updateUserMarker()
+  }, [userLocation, ready, updateUserMarker])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return undefined
+
+    const created = []
 
     destinations.forEach((destination, index) => {
-      const el = createMarkerElement('destination', destinations.length > 1 ? index + 1 : null)
+      const label = destinations.length > 1 ? destination.position ?? index + 1 : null
+      const el = createMarkerElement('destination', { label, visited: destination.visited })
+      el.style.zIndex = MARKER_Z.destination
+
       const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([destination.lng, destination.lat])
         .setPopup(new maplibregl.Popup({ offset: 28 }).setText(destination.name))
@@ -124,103 +279,124 @@ const MapView = forwardRef(function MapView({
         el.addEventListener('click', () => onDestinationClick(destination))
       }
 
-      markersRef.current.push(marker)
-      bounds.extend([destination.lng, destination.lat])
-      hasPoint = true
+      created.push(marker)
     })
 
     nearbyPlaces.forEach(place => {
       const el = createMarkerElement(place.category)
+      el.style.zIndex = MARKER_Z.nearby
+
       const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([place.lng, place.lat])
         .setPopup(new maplibregl.Popup({ offset: 20 }).setText(place.name))
         .addTo(map)
 
-      markersRef.current.push(marker)
-      bounds.extend([place.lng, place.lat])
-      hasPoint = true
+      created.push(marker)
     })
 
     if (searchedPlace) {
       const el = createMarkerElement('searched')
+      el.style.zIndex = MARKER_Z.searched
+
       const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([searchedPlace.lng, searchedPlace.lat])
         .setPopup(new maplibregl.Popup({ offset: 24 }).setText(searchedPlace.name))
         .addTo(map)
 
-      markersRef.current.push(marker)
-      bounds.extend([searchedPlace.lng, searchedPlace.lat])
-      hasPoint = true
+      created.push(marker)
     }
 
-    if (hasPoint) {
-      map.fitBounds(bounds, { padding: 72, maxZoom: 15, duration: 500 })
+    markersRef.current = created
+
+    return () => {
+      created.forEach(marker => marker.remove())
+      markersRef.current = []
     }
-  }, [destinations, nearbyPlaces, searchedPlace, onDestinationClick])
+  }, [destinations, nearbyPlaces, searchedPlace, onDestinationClick, ready])
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    if (!map || !ready) return
+    applyRoute(map, route, routeIsFallback)
+  }, [route, routeIsFallback, ready])
 
-    if (readyRef.current) {
-      applyRoute(map, route, routeIsFallback)
-    } else {
-      map.once('load', () => applyRoute(map, route, routeIsFallback))
-    }
-  }, [route, routeIsFallback])
+  const fitSignature = useMemo(() => {
+    const parts = destinations.map(destination => `${destination.id}@${destination.lng},${destination.lat}`)
+    if (searchedPlace) parts.push(`search@${searchedPlace.lng},${searchedPlace.lat}`)
+    return parts.join('|')
+  }, [destinations, searchedPlace])
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    if (!map || !ready) return
 
-    if (!userLocation) {
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove()
-        userMarkerRef.current = null
+    if (!fitSignature) {
+      lastFitSignatureRef.current = ''
+      if (!hasCenteredOnUserRef.current && userLocationRef.current) {
+        hasCenteredOnUserRef.current = true
+        map.easeTo({
+          center: [userLocationRef.current.lng, userLocationRef.current.lat],
+          zoom: Math.max(map.getZoom(), 14),
+          duration: 600
+        })
       }
       return
     }
 
-    if (!userMarkerRef.current) {
-      userMarkerRef.current = new maplibregl.Marker({ element: createUserMarkerElement(), anchor: 'center' })
-        .setLngLat([userLocation.lng, userLocation.lat])
-        .addTo(map)
-    } else {
-      userMarkerRef.current.setLngLat([userLocation.lng, userLocation.lat])
+    if (fitSignature === lastFitSignatureRef.current) return
+    lastFitSignatureRef.current = fitSignature
+    hasCenteredOnUserRef.current = true
+
+    const bounds = new maplibregl.LngLatBounds()
+    destinations.forEach(destination => bounds.extend([destination.lng, destination.lat]))
+    if (searchedPlace) bounds.extend([searchedPlace.lng, searchedPlace.lat])
+    if (userLocationRef.current) bounds.extend([userLocationRef.current.lng, userLocationRef.current.lat])
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 600 })
     }
-  }, [userLocation])
+  }, [fitSignature, destinations, searchedPlace, ready])
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flyToUser() {
+        const map = mapRef.current
+        const location = userLocationRef.current
+        if (!map || !location) return
+        hasCenteredOnUserRef.current = true
+        map.flyTo({ center: [location.lng, location.lat], zoom: 16, duration: 800 })
+      },
+      flyToDestinations() {
+        const map = mapRef.current
+        if (!map) return
+
+        const bounds = new maplibregl.LngLatBounds()
+        destinations.forEach(destination => bounds.extend([destination.lng, destination.lat]))
+        if (searchedPlace) bounds.extend([searchedPlace.lng, searchedPlace.lat])
+
+        if (bounds.isEmpty()) return
+        map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 600 })
+      },
+      resetView() {
+        const map = mapRef.current
+        if (!map) return
+        lastFitSignatureRef.current = ''
+        hasCenteredOnUserRef.current = false
+        const location = userLocationRef.current
+        map.easeTo({
+          center: location ? [location.lng, location.lat] : center || DEFAULT_CENTER,
+          zoom: location ? 14 : DEFAULT_ZOOM,
+          bearing: 0,
+          pitch: 0,
+          duration: 600
+        })
+      }
+    }),
+    [destinations, searchedPlace, center]
+  )
 
   return <div ref={containerRef} className="map-view" />
 })
-
-function applyRoute(map, route, isFallback) {
-  if (map.getLayer('itinerary-route-casing')) map.removeLayer('itinerary-route-casing')
-  if (map.getLayer('itinerary-route-line')) map.removeLayer('itinerary-route-line')
-  if (map.getSource('itinerary-route')) map.removeSource('itinerary-route')
-
-  if (!route) return
-
-  map.addSource('itinerary-route', { type: 'geojson', data: route })
-
-  map.addLayer({
-    id: 'itinerary-route-casing',
-    type: 'line',
-    source: 'itinerary-route',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#F7F2E4', 'line-width': 7 }
-  })
-
-  map.addLayer({
-    id: 'itinerary-route-line',
-    type: 'line',
-    source: 'itinerary-route',
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      'line-color': isFallback ? '#8A8372' : '#0B3D24',
-      'line-width': 4,
-      ...(isFallback ? { 'line-dasharray': [2, 2] } : {})
-    }
-  })
-}
 
 export default MapView

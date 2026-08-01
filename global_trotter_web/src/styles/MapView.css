@@ -1,4 +1,7 @@
 .map-view {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
 }
@@ -29,6 +32,12 @@
   height: 18px;
 }
 
+.map-marker--visited {
+  opacity: 0.55;
+  border-style: dashed;
+  box-shadow: none;
+}
+
 .map-marker__badge {
   transform: rotate(45deg);
   font-size: 0.72rem;
@@ -45,29 +54,67 @@
 
 .map-marker-user {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 96px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
-.map-marker-user__dot {
-  width: 14px;
-  height: 14px;
+.map-marker-user__accuracy {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: #2461A6;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(11, 61, 36, 0.35);
+  background: rgba(36, 97, 166, 0.12);
+  border: 1px solid rgba(36, 97, 166, 0.25);
+  display: none;
+}
+
+.map-marker-user__heading {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: rotate(0deg);
+  opacity: 0;
+  transition: transform 220ms linear, opacity 220ms ease;
+}
+
+.map-marker-user__beam {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 58px;
+  height: 40px;
+  margin-left: -29px;
+  clip-path: polygon(50% 100%, 100% 0%, 0% 0%);
+  background: linear-gradient(to top, rgba(36, 97, 166, 0.6), rgba(36, 97, 166, 0));
 }
 
 .map-marker-user__pulse {
   position: absolute;
+  top: 50%;
+  left: 50%;
   width: 22px;
   height: 22px;
+  margin: -11px 0 0 -11px;
   border-radius: 50%;
   background: rgba(36, 97, 166, 0.35);
-  animation: map-marker-user-pulse 2s ease-out infinite;
+  animation: map-marker-user-pulse 2.4s ease-out infinite;
+}
+
+.map-marker-user__dot {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2461A6;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(11, 61, 36, 0.45);
 }
 
 @keyframes map-marker-user-pulse {
@@ -76,8 +123,19 @@
     opacity: 0.9;
   }
   100% {
-    transform: scale(2.4);
+    transform: scale(2.6);
     opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-marker-user__pulse {
+    animation: none;
+    opacity: 0.35;
+  }
+
+  .map-marker-user__heading {
+    transition: none;
   }
 }
 

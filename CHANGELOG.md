@@ -186,3 +186,34 @@
 - `CommentSection.jsx` — moved the edit-window check out of render and into an effect, so `Date.now()` is no longer read impurely during render
 - Persisted the itinerary "visited" checkbox to `localStorage` per itinerary, fixing a bug where a destination card would lose its "visited" (greyed-out) state after opening its detail page and navigating back
 - `Destinationcard.test.jsx` / `Destinationdetails.test.jsx` — updated to match the now-enabled Location button
+
+## [01-08-2026]
+
+### Added
+- `hooks/useVisitedStops.js` — shared "visited stops" store and hook, replacing the copy of `loadVisitedIds` that lived in both `MapPage.jsx` and `itineraryDetails.jsx`. Writes publish to subscribers (and across tabs via the `storage` event), so marking a stop visited on the itinerary page updates the map immediately instead of waiting for a window `focus` event that never fires on SPA navigation
+- "Show visited stops" toggle on the map — renders visited stops as dimmed, dashed pins that stay out of the route. Off by default, so the existing behaviour (a visited stop disappears from the map) is unchanged unless enabled
+- Itinerary chip on the map showing the active itinerary's title and visited progress, plus a banner when every stop has been marked visited — previously an all-visited itinerary left an empty map with no explanation
+- Full itinerary picker in the map options menu, so an itinerary can always be selected or cleared from the map itself
+- Accuracy circle around the user's position marker, scaled from the reported GPS accuracy in metres
+- `visited` entry in `CATEGORY_META`, so visited stops appear in the map legend
+
+### Fixed
+- Toggling "Hide itinerary path" wiped every stop from the map, which looked like a reset. `destinationMarkers` was gated on `showRoute`, so the toggle controlled both the markers and the path. Markers now follow the selected itinerary, and `showRoute` only draws the polyline
+- The "Show itinerary path" menu item disappeared after being toggled off, leaving no way to turn it back on. `canToggleRoute` was derived from `destinationMarkers.length`, which the toggle had just emptied — the same root cause as above. The item is now always rendered, and disabled only when there are too few waypoints to route
+- Itineraries needed a page refresh to appear. `MapView` was mounted inside `{!loading && !error && ...}`, so it was torn down and rebuilt whenever `loading` flipped, and the marker effect had no cleanup and never re-ran against the new map instance — markers were being added to a destroyed map. `MapView` is now always mounted (loading/error render as an overlay pill), and every sync effect is gated on a per-instance `ready` flag
+- Stale map state resurrecting a hidden itinerary on the next mount — session state was only persisted when the view was an itinerary view, so `showRoute: true` could outlive being switched off. Persistence now always writes
+- The user's position marker disappearing:
+  - The geolocation watch was restarted on every mount of `MapPage`, dropping the current fix. It's now a single module-level watch shared by all consumers, with refcounted subscription
+  - Nearby-service markers painted over the user marker. Markers now carry explicit z-index values (user 10, searched 7, destination 6, nearby 3)
+  - `fitBounds` re-fired on every change to `nearbyPlaces`, which itself re-ran on every GPS tick, so the camera kept flying away from the user. The map now only refits when the destination set actually changes
+- The direction arrow was a detached triangle floating above the dot, hidden until a heading arrived. Replaced with a Google-Maps-style puck: a solid dot with a translucent beam that rotates around it and compensates for the map's bearing
+- "Show nearby services" did nothing on a map with no destinations — the fetch was skipped when `destinationMarkers` was empty. Services now centre on the user's position when available and fall back to the destination centroid
+- "Reset map" left the camera and the cached nearby-services centre untouched. It now resets the view via a `resetView` handle and clears the cache
+- Route layers were removed and re-added on every route change, and could be lost on a style reload. The route now updates through `setData` on a persistent source, with layers re-created if the style drops them
+- Stop auto-advance ran as a side effect during render; moved into an effect
+
+### Changed
+- `MapPage.jsx`, `MapView.jsx`, `useGeolocation.js`, `mapCategories.js`, `MapPage.css`, `MapView.css` — rewritten for the above
+- `itineraryDetails.jsx` — now uses `useVisitedStops` instead of its own `localStorage` reads and writes
+- `useGeolocation.js` — reports a specific reason when the page isn't a secure context, since `navigator.geolocation` is blocked over plain HTTP on a LAN IP (this is why location fails on a phone hitting the dev server directly, while working on `localhost`)
+- Route requests capped at 10 waypoints, and re-fetched only when the stop list changes or the origin moves more than 30 m; nearby-services re-fetched only after 400 m of movement

@@ -1,5 +1,6 @@
 export const CATEGORY_META = {
   destination: { label: 'Destination', color: '#F2B705' },
+  visited: { label: 'Visited stop', color: '#8A8372' },
   searched: { label: 'Searched place', color: '#2461A6' },
   restaurant: { label: 'Restaurant', color: '#C8102E' },
   cafe: { label: 'Cafe', color: '#D9702E' },

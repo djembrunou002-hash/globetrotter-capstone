@@ -8,24 +8,33 @@
 
 .map-page__status {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  top: max(72px, calc(env(safe-area-inset-top) + 66px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 18;
+  max-width: min(86vw, 340px);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.16);
   font-family: var(--font-body);
+  font-size: 0.8rem;
   color: var(--color-muted);
   text-align: center;
+  pointer-events: none;
 }
 
 .map-page__status--error {
   color: #8A1424;
+  border-color: #E8C6CB;
 }
 
 .map-page__menu-trigger,
 .map-page__search-trigger {
   position: absolute;
-  top: 16px;
+  top: max(16px, calc(env(safe-area-inset-top) + 10px));
   z-index: 20;
   width: 42px;
   height: 42px;
@@ -49,12 +58,13 @@
 
 .map-page__menu {
   position: absolute;
-  top: 64px;
+  top: calc(max(16px, calc(env(safe-area-inset-top) + 10px)) + 48px);
   left: 16px;
-  z-index: 20;
+  z-index: 21;
   display: flex;
   flex-direction: column;
-  min-width: 210px;
+  min-width: 220px;
+  max-width: min(78vw, 280px);
   background: #fff;
   border: 1px solid #E7DFC9;
   border-radius: 16px;
@@ -92,8 +102,25 @@
   color: #fff;
 }
 
-.map-page__menu-select {
+.map-page__menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 4px;
+  border-top: 1px solid #EFE9D8;
   margin-top: 4px;
+}
+
+.map-page__menu-label {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.map-page__menu-select {
+  width: 100%;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #E7DFC9;
@@ -103,12 +130,73 @@
   background: #fff;
 }
 
+.map-page__menu-hint {
+  margin: 4px 12px 8px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.map-page__itinerary-chip {
+  position: absolute;
+  top: max(16px, calc(env(safe-area-inset-top) + 10px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: calc(100vw - 140px);
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.16);
+}
+
+.map-page__itinerary-title {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-page__itinerary-progress {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--color-muted);
+}
+
+.map-page__banner {
+  position: absolute;
+  left: 50%;
+  bottom: 152px;
+  transform: translateX(-50%);
+  z-index: 16;
+  max-width: min(86vw, 340px);
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.16);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--color-ink);
+  text-align: center;
+}
+
 .map-page__search-panel {
   position: absolute;
-  top: 16px;
+  top: max(16px, calc(env(safe-area-inset-top) + 10px));
   left: 16px;
   right: 16px;
-  z-index: 20;
+  z-index: 22;
   background: #fff;
   border-radius: 16px;
   border: 1px solid #E7DFC9;
@@ -126,6 +214,7 @@
 
 .map-page__search-input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   font-family: var(--font-body);
@@ -206,4 +295,45 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.map-page__distance-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--color-forest);
+  color: #fff;
+  border-radius: 14px;
+  padding: 8px 16px;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.28);
+  max-width: min(86vw, 320px);
+  text-align: center;
+}
+
+.map-page__distance-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.map-page__distance-value {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.map-page__distance-total {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.78);
 }
