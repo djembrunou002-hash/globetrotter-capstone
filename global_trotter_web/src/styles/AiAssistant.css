@@ -1,0 +1,123 @@
+.ai-assistant__trigger {
+  position: fixed;
+  bottom: 96px;
+  right: clamp(20px, 5vw, 48px);
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-forest);
+  color: var(--color-gold-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(11, 61, 36, 0.35);
+  transition: transform 0.2s ease;
+}
+
+.ai-assistant__trigger:hover {
+  transform: scale(1.05);
+}
+
+.ai-assistant__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(27, 26, 23, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+.ai-assistant__panel {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 24px clamp(20px, 5vw, 32px) 32px;
+  box-shadow: 0 -8px 30px rgba(11, 61, 36, 0.2);
+}
+
+.ai-assistant__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-assistant__panel-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.ai-assistant__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.ai-assistant__panel-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin: 10px 0 0;
+}
+
+.ai-assistant__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ai-assistant__textarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  border: 1px solid #E7DFC9;
+  border-radius: 16px;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+}
+
+.ai-assistant__textarea:focus {
+  border-color: var(--color-forest);
+}
+
+.ai-assistant__error {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: #8A1424;
+  margin: 0;
+}
+
+.ai-assistant__submit {
+  align-self: flex-end;
+  background: var(--color-forest);
+  color: var(--color-cream);
+  border: none;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.ai-assistant__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

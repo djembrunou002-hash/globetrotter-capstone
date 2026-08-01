@@ -9,19 +9,31 @@ import {
 } from '../services/destinationService.js'
 import { getRecommendations } from '../services/recommendationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import AiAssistant from '../components/AiAssistant.jsx'
 import '../styles/Home.css'
+
+const BUDGET_LEVELS = ['low', 'medium', 'high']
 
 function Home() {
   const navigate = useNavigate()
   const isAuthenticated = Boolean(getToken())
 
   const [recommendedDestinations, setRecommendedDestinations] = useState([])
+  const [allDestinations, setAllDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [typeFilters, setTypeFilters] = useState(new Set())
+  const [budgetFilters, setBudgetFilters] = useState(new Set())
+  const [minBudget, setMinBudget] = useState('')
+  const [maxBudget, setMaxBudget] = useState('')
+
+  const [aiResult, setAiResult] = useState(null)
 
   useEffect(() => {
     if (!getToken()) {
@@ -45,6 +57,7 @@ function Home() {
           .filter(Boolean)
 
         setRecommendedDestinations(recommended)
+        setAllDestinations(destinationsResponse.destinations)
         setFavoriteIds(new Set(favoritesResponse.favorites.map(d => d.id)))
       } catch (err) {
         setError(err.message)
@@ -79,17 +92,71 @@ function Home() {
   async function handleRate(destinationId, stars) {
     try {
       const response = await rateDestination(destinationId, stars)
-      setRecommendedDestinations(prev =>
-        prev.map(destination =>
+      const applyRating = list =>
+        list.map(destination =>
           destination.id === destinationId
             ? { ...destination, rating: response.rating }
             : destination
         )
-      )
+      setRecommendedDestinations(applyRating)
+      setAllDestinations(applyRating)
     } catch (err) {
       setError(err.message)
     }
   }
+
+  function toggleTypeFilter(type) {
+    setTypeFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(type)) {
+        next.delete(type)
+      } else {
+        next.add(type)
+      }
+      return next
+    })
+  }
+
+  function toggleBudgetFilter(level) {
+    setBudgetFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(level)) {
+        next.delete(level)
+      } else {
+        next.add(level)
+      }
+      return next
+    })
+  }
+
+  function handleAiResult(query, response) {
+    setAiResult({
+      query,
+      inScope: response.in_scope,
+      message: response.message,
+      destinationIds: response.destination_ids || []
+    })
+  }
+
+  function handleClearAiResult() {
+    setAiResult(null)
+  }
+
+  const availableTypes = [...new Set(allDestinations.map(destination => destination.type).filter(Boolean))]
+
+  const filteredRecommended = recommendedDestinations.filter(destination => {
+    const matchesType = typeFilters.size === 0 || typeFilters.has(destination.type)
+    const matchesBudgetLevel = budgetFilters.size === 0 || budgetFilters.has(destination.budget_level)
+    const matchesBudgetRange = destinationMatchesBudgetRange(destination, minBudget, maxBudget)
+    return matchesType && matchesBudgetLevel && matchesBudgetRange
+  })
+
+  const hasActiveFilters = typeFilters.size > 0 || budgetFilters.size > 0 || minBudget !== '' || maxBudget !== ''
+
+  const allDestinationsById = new Map(allDestinations.map(destination => [destination.id, destination]))
+  const aiDestinations = aiResult
+    ? aiResult.destinationIds.map(id => allDestinationsById.get(id)).filter(Boolean)
+    : []
 
   return (
     <div className="home">
@@ -98,31 +165,133 @@ function Home() {
         <h1 className="home__title">Recommended for you</h1>
       </header>
 
-      <main className="home__content home__content--with-bottom-nav">
-        {loading && <p className="home__status">Loading recommendations...</p>}
-        {error && <p className="home__status home__status--error">{error}</p>}
-
-        {!loading && !error && recommendedDestinations.length === 0 && (
-          <p className="home__status">
-            No recommendations yet -- rate or favorite a few destinations to get personalized picks.
-          </p>
-        )}
-
-        {!loading && !error && recommendedDestinations.length > 0 && (
-          <div className="home__grid">
-            {recommendedDestinations.map(destination => (
-              <DestinationCard
-                key={destination.id}
-                destination={destination}
-                isFavorite={favoriteIds.has(destination.id)}
-                isAuthenticated={isAuthenticated}
-                onToggleFavorite={handleToggleFavorite}
-                onRate={handleRate}
-              />
+      {availableTypes.length > 0 && (
+        <div className="home__filters" role="group" aria-label="Filter recommendations">
+          <div className="home__filter-row">
+            {availableTypes.map(type => (
+              <button
+                key={type}
+                type="button"
+                className={`home__filter-pill ${typeFilters.has(type) ? 'home__filter-pill--active' : ''}`}
+                onClick={() => toggleTypeFilter(type)}
+                aria-pressed={typeFilters.has(type)}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
             ))}
           </div>
+
+          <div className="home__filter-row">
+            {BUDGET_LEVELS.map(level => (
+              <button
+                key={level}
+                type="button"
+                className={`home__filter-pill ${budgetFilters.has(level) ? 'home__filter-pill--active' : ''}`}
+                onClick={() => toggleBudgetFilter(level)}
+                aria-pressed={budgetFilters.has(level)}
+              >
+                {level.charAt(0).toUpperCase() + level.slice(1)} budget
+              </button>
+            ))}
+          </div>
+
+          <div className="home__budget-range">
+            <label className="home__budget-range-field">
+              <span>Min (FCFA)</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={minBudget}
+                onChange={e => setMinBudget(e.target.value)}
+              />
+            </label>
+            <span className="home__budget-range-separator">-</span>
+            <label className="home__budget-range-field">
+              <span>Max (FCFA)</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="Any"
+                value={maxBudget}
+                onChange={e => setMaxBudget(e.target.value)}
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      <main className="home__content home__content--with-bottom-nav">
+        {aiResult ? (
+          <div className="home__ai-results">
+            <div className="home__ai-results-header">
+              <p className="home__ai-results-query">AI results for "{aiResult.query}"</p>
+              <button type="button" className="home__ai-results-clear" onClick={handleClearAiResult}>
+                Back to recommendations
+              </button>
+            </div>
+
+            {aiResult.message && <p className="home__status">{aiResult.message}</p>}
+
+            {!aiResult.inScope && (
+              <p className="home__status home__status--ai-off-topic">
+                I can only help you find places to visit -- try describing a trip, vibe, or activity instead.
+              </p>
+            )}
+
+            {aiResult.inScope && aiDestinations.length === 0 && (
+              <p className="home__status">
+                No destinations match that yet -- try describing it a little differently.
+              </p>
+            )}
+
+            {aiResult.inScope && aiDestinations.length > 0 && (
+              <div className="home__grid">
+                {aiDestinations.map(destination => (
+                  <DestinationCard
+                    key={destination.id}
+                    destination={destination}
+                    isFavorite={favoriteIds.has(destination.id)}
+                    isAuthenticated={isAuthenticated}
+                    onToggleFavorite={handleToggleFavorite}
+                    onRate={handleRate}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {loading && <p className="home__status">Loading recommendations...</p>}
+            {error && <p className="home__status home__status--error">{error}</p>}
+
+            {!loading && !error && filteredRecommended.length === 0 && (
+              <p className="home__status">
+                {hasActiveFilters
+                  ? 'No recommendations match your filters -- try clearing a filter.'
+                  : 'No recommendations yet -- rate or favorite a few destinations to get personalized picks.'}
+              </p>
+            )}
+
+            {!loading && !error && filteredRecommended.length > 0 && (
+              <div className="home__grid">
+                {filteredRecommended.map(destination => (
+                  <DestinationCard
+                    key={destination.id}
+                    destination={destination}
+                    isFavorite={favoriteIds.has(destination.id)}
+                    isAuthenticated={isAuthenticated}
+                    onToggleFavorite={handleToggleFavorite}
+                    onRate={handleRate}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
+
+      <AiAssistant onResult={handleAiResult} />
 
       <BottomNav />
     </div>

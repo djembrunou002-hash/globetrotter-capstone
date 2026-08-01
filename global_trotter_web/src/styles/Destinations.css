@@ -133,17 +133,59 @@
 
 .destinations__filters {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 14px;
   padding: 4px clamp(20px, 5vw, 48px);
+}
+
+.destinations__filter-row {
+  display: flex;
+  gap: 10px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 
-.destinations__filters::-webkit-scrollbar {
+.destinations__filter-row::-webkit-scrollbar {
   display: none;
+}
+
+.destinations__budget-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.destinations__budget-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.destinations__budget-range-field input {
+  width: 110px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.destinations__budget-range-field input:focus {
+  border-color: var(--color-forest);
+}
+
+.destinations__budget-range-separator {
+  color: var(--color-muted);
+  padding-bottom: 8px;
 }
 
 .destinations__filter-pill {

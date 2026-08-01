@@ -32,6 +32,11 @@
   color: #8A1424;
 }
 
+.home__status--ai-off-topic {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
 .home__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -40,4 +45,109 @@
 
 .home__content--with-bottom-nav {
   padding-bottom: 100px;
+}
+
+.home__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px clamp(20px, 5vw, 48px) 4px;
+}
+
+.home__filter-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home__filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.home__filter-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.home__filter-pill--active {
+  background: var(--color-forest);
+  border-color: var(--color-forest);
+  color: var(--color-cream);
+}
+
+.home__budget-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.home__budget-range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.home__budget-range-field input {
+  width: 110px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.home__budget-range-field input:focus {
+  border-color: var(--color-forest);
+}
+
+.home__budget-range-separator {
+  color: var(--color-muted);
+  padding-bottom: 8px;
+}
+
+.home__ai-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.home__ai-results-query {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.home__ai-results-clear {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #E7DFC9;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-ink);
+  cursor: pointer;
 }

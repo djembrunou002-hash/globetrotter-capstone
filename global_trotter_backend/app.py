@@ -4,6 +4,7 @@ from flask_cors import CORS
 
 from config import Config
 from routes.admin import admin_bp
+from routes.ai import ai_bp
 from routes.auth import auth_bp
 from routes.comments import comments_bp
 from routes.destinations import destinations_bp
@@ -23,6 +24,7 @@ def create_app():
     JWTManager(app)
 
     app.register_blueprint(admin_bp)
+    app.register_blueprint(ai_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(comments_bp)
     app.register_blueprint(destinations_bp)

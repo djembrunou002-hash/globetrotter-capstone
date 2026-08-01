@@ -29,3 +29,9 @@ class Config:
     # application" type) is set here AND on the frontend
     # (VITE_GOOGLE_CLIENT_ID).
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+
+    # --- OpenRouter (AI destination assistant) ---------------------------
+    # Get a key at https://openrouter.ai/keys. Leave empty locally and the
+    # /ai/recommend endpoint will return a 503 until it's set.
+    OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")

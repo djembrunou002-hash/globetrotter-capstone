@@ -8,11 +8,14 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import '../styles/Destinations.css'
+
+const BUDGET_LEVELS = ['low', 'medium', 'high']
 
 function Destinations() {
   const navigate = useNavigate()
@@ -30,7 +33,10 @@ function Destinations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeType, setActiveType] = useState(null)
+  const [typeFilters, setTypeFilters] = useState(new Set())
+  const [budgetFilters, setBudgetFilters] = useState(new Set())
+  const [minBudget, setMinBudget] = useState('')
+  const [maxBudget, setMaxBudget] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -115,12 +121,34 @@ function Destinations() {
     const name = (destination.name || '').toLowerCase()
     const area = (destination.area || '').toLowerCase()
     const matchesSearch = !normalizedQuery || name.startsWith(normalizedQuery) || area.startsWith(normalizedQuery)
-    const matchesType = !activeType || destination.type === activeType
-    return matchesSearch && matchesType
+    const matchesType = typeFilters.size === 0 || typeFilters.has(destination.type)
+    const matchesBudgetLevel = budgetFilters.size === 0 || budgetFilters.has(destination.budget_level)
+    const matchesBudgetRange = destinationMatchesBudgetRange(destination, minBudget, maxBudget)
+    return matchesSearch && matchesType && matchesBudgetLevel && matchesBudgetRange
   })
 
-  function handleSelectType(type) {
-    setActiveType(prev => (prev === type ? null : type))
+  function toggleTypeFilter(type) {
+    setTypeFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(type)) {
+        next.delete(type)
+      } else {
+        next.add(type)
+      }
+      return next
+    })
+  }
+
+  function toggleBudgetFilter(level) {
+    setBudgetFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(level)) {
+        next.delete(level)
+      } else {
+        next.add(level)
+      }
+      return next
+    })
   }
 
   return (
@@ -167,26 +195,58 @@ function Destinations() {
       </div>
 
       {availableTypes.length > 0 && (
-        <div className="destinations__filters" role="group" aria-label="Filter destinations by type">
-          <button
-            type="button"
-            className={`destinations__filter-pill ${activeType === null ? 'destinations__filter-pill--active' : ''}`}
-            onClick={() => setActiveType(null)}
-            aria-pressed={activeType === null}
-          >
-            All
-          </button>
-          {availableTypes.map(type => (
-            <button
-              key={type}
-              type="button"
-              className={`destinations__filter-pill ${activeType === type ? 'destinations__filter-pill--active' : ''}`}
-              onClick={() => handleSelectType(type)}
-              aria-pressed={activeType === type}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
+        <div className="destinations__filters" role="group" aria-label="Filter destinations">
+          <div className="destinations__filter-row">
+            {availableTypes.map(type => (
+              <button
+                key={type}
+                type="button"
+                className={`destinations__filter-pill ${typeFilters.has(type) ? 'destinations__filter-pill--active' : ''}`}
+                onClick={() => toggleTypeFilter(type)}
+                aria-pressed={typeFilters.has(type)}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="destinations__filter-row">
+            {BUDGET_LEVELS.map(level => (
+              <button
+                key={level}
+                type="button"
+                className={`destinations__filter-pill ${budgetFilters.has(level) ? 'destinations__filter-pill--active' : ''}`}
+                onClick={() => toggleBudgetFilter(level)}
+                aria-pressed={budgetFilters.has(level)}
+              >
+                {level.charAt(0).toUpperCase() + level.slice(1)} budget
+              </button>
+            ))}
+          </div>
+
+          <div className="destinations__budget-range">
+            <label className="destinations__budget-range-field">
+              <span>Min (FCFA)</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={minBudget}
+                onChange={e => setMinBudget(e.target.value)}
+              />
+            </label>
+            <span className="destinations__budget-range-separator">-</span>
+            <label className="destinations__budget-range-field">
+              <span>Max (FCFA)</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="Any"
+                value={maxBudget}
+                onChange={e => setMaxBudget(e.target.value)}
+              />
+            </label>
+          </div>
         </div>
       )}
 

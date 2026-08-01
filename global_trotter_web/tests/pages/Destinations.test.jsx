@@ -302,22 +302,22 @@ describe('Destinations', () => {
       })
     })
 
-    test('renders one pill per distinct type present in the data, plus an All pill', async () => {
+    test('renders one pill per distinct type present in the data', async () => {
       renderDestinations()
       await screen.findByText('Marche Central')
 
-      expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Market' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Viewpoint' })).toBeInTheDocument()
       // Both Marche Central and Craft Village are type "market" -- should only get one pill
       expect(screen.getAllByRole('button', { name: 'Market' })).toHaveLength(1)
     })
 
-    test('All is active by default and shows every destination', async () => {
+    test('no type pill is active by default and every destination shows', async () => {
       renderDestinations()
       await screen.findByText('Marche Central')
 
-      expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Market' })).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByRole('button', { name: 'Viewpoint' })).toHaveAttribute('aria-pressed', 'false')
       expect(screen.getByText('Mont Febe')).toBeInTheDocument()
     })
 
@@ -331,10 +331,23 @@ describe('Destinations', () => {
       expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
       expect(screen.queryByText('Craft Village')).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Viewpoint' })).toHaveAttribute('aria-pressed', 'true')
-      expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false')
     })
 
-    test('clicking the active pill again toggles back to showing all destinations', async () => {
+    test('selecting multiple type pills shows destinations matching any selected type', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Viewpoint' }))
+
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Craft Village')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Market' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Viewpoint' })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    test('clicking an active pill again deselects it and shows all destinations', async () => {
       renderDestinations()
       await screen.findByText('Marche Central')
 
@@ -362,6 +375,65 @@ describe('Destinations', () => {
 
       expect(screen.getByText('Craft Village')).toBeInTheDocument()
       expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('budget filters', () => {
+    const HIGH_BUDGET_SPOT = {
+      id: 'dest_009',
+      name: 'Hilton Yaounde',
+      country: 'Cameroon',
+      region: 'Centre',
+      area: 'Centre-ville',
+      type: 'hotel',
+      tags: ['luxury'],
+      budget_level: 'high',
+      location: { lat: 3.87, lng: 11.52, address: 'Centre-ville, Yaounde' },
+      rating: { average: 4.6, count: 40 },
+      images: ['https://cdn.globetrotter.com/dest_009/main.jpg'],
+      description: 'An upscale hotel in the city center.'
+    }
+
+    beforeEach(() => {
+      getToken.mockReturnValue(null)
+      getDestinations.mockResolvedValue({
+        destinations: [DESTINATION, MONT_FEBE, HIGH_BUDGET_SPOT]
+      })
+    })
+
+    test('selecting a budget level pill filters to matching destinations only', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      fireEvent.click(screen.getByRole('button', { name: 'High budget' }))
+
+      expect(screen.getByText('Hilton Yaounde')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mont Febe')).not.toBeInTheDocument()
+    })
+
+    test('selecting multiple budget level pills combines matches', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Low budget' }))
+      fireEvent.click(screen.getByRole('button', { name: 'High budget' }))
+
+      expect(screen.getByText('Marche Central')).toBeInTheDocument()
+      expect(screen.getByText('Mont Febe')).toBeInTheDocument()
+      expect(screen.getByText('Hilton Yaounde')).toBeInTheDocument()
+    })
+
+    test('numeric budget range narrows results to the matching budget level', async () => {
+      renderDestinations()
+      await screen.findByText('Marche Central')
+
+      const minInput = screen.getByLabelText(/min \(fcfa\)/i)
+      fireEvent.change(minInput, { target: { value: '20000' } })
+
+      expect(screen.getByText('Hilton Yaounde')).toBeInTheDocument()
+      expect(screen.queryByText('Marche Central')).not.toBeInTheDocument()
+      expect(screen.queryByText('Mont Febe')).not.toBeInTheDocument()
     })
   })
 })

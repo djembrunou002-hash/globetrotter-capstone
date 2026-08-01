@@ -238,6 +238,8 @@
 - Clicking the "GlobalTrotter" logo on the login, register, or verify-code pages did nothing whenever a stale or expired token was still sitting in storage, since `Logo.jsx` renders as plain (non-clickable) text for anyone it considers authenticated. Those three pages now force the logo to always link back to the landing page, regardless of token state
 - A destination submission still awaiting admin review (`pending_review`) could be cancelled but not edited — the "Edit" tab was missing even though the intent (tweak a typo, swap a photo) was reasonable before anyone had reviewed it. `pending_review` is now an editable status, routed through the new `PUT /my-destinations/requests/<request_id>` endpoint above rather than the published-destination edit endpoint
 - Action buttons on `DestinationCard.jsx`, `DestinationManageCard.jsx`, and `PendingRequestCard.jsx` sat at inconsistent heights within a grid row whenever cards had differing amounts of content above them (tags, admin notes, submitter info, etc.), since the button row simply followed the content instead of anchoring to the bottom of the card
+- Dev-mode LAN access from a phone failed with "failed to fetch": `.env.development`'s `VITE_API_BASE_URL` pointed at `localhost`, which resolves to the phone itself rather than the computer running Flask — updated to the computer's LAN IP
+- `.env.production`'s `VITE_API_BASE_URL` had a leading space and no `http://`/`https://` scheme, producing an invalid URL that `fetch()` rejected on any production build
 
 ### Changed
 - `MapPage.jsx`, `MapView.jsx`, `useGeolocation.js`, `mapCategories.js`, `MapPage.css`, `MapView.css` — rewritten for the above
@@ -270,3 +272,4 @@
 - `MyDestinations.jsx` — `EDITABLE_STATUSES` now includes `pending_review`
 - `DestinationForm.jsx` — tracks whether the destination being edited is a still-pending submission (`isPendingSubmission`) and, when it is, submits through `updateSubmission` instead of `requestDestinationUpdate`, with an adjusted submit label ("Update submission") and hint text
 - `DestinationManageCard.css`, `PendingRequestCard.css`, `DestinationCard.css` — card body sections now stretch to fill the card (`flex: 1`), and their action rows use `margin-top: auto` so buttons stay pinned to the bottom of the card regardless of how much content sits above them
+- `vite.config.js` — added `server: { host: true }` so the dev server binds to the LAN interface (not just `localhost`), letting a phone on the same Wi-Fi load it via the printed "Network" URL
