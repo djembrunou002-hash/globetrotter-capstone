@@ -273,3 +273,51 @@
 - `DestinationForm.jsx` — tracks whether the destination being edited is a still-pending submission (`isPendingSubmission`) and, when it is, submits through `updateSubmission` instead of `requestDestinationUpdate`, with an adjusted submit label ("Update submission") and hint text
 - `DestinationManageCard.css`, `PendingRequestCard.css`, `DestinationCard.css` — card body sections now stretch to fill the card (`flex: 1`), and their action rows use `margin-top: auto` so buttons stay pinned to the bottom of the card regardless of how much content sits above them
 - `vite.config.js` — added `server: { host: true }` so the dev server binds to the LAN interface (not just `localhost`), letting a phone on the same Wi-Fi load it via the printed "Network" URL
+
+## [02-08-2026](01-08-2026)
+
+### Added
+- Phase 2 — the Flask monolith is now three independently deployable services behind an API gateway. Each service owns its data outright and reaches the others only over REST; nothing reads another service's JSON files:
+  - `api-gateway/` (port 5000) — single public entry point. Routes by path prefix, enforces CORS, forwards `Authorization` untouched, and refuses `/internal/*` outright. Its `/health` also probes the three services and reports 503 if any is unreachable, so one call tells you the state of the whole stack
+  - `user-service/` (port 5001) — owns `users.json`, `otp_pending.json`, `otp_reset.json`. Registration, login, OTP, Google sign-in, password reset, preferences
+  - `itinerary-service/` (port 5002) — owns `itineraries.json`. Itinerary CRUD, ordering, sharing
+  - `destination-service/` (port 5003) — owns `destinations.json`, `comments.json`, `destination_requests.json` and `uploads/`. Destinations, comments, moderation, admin review, places, AI, and recommendations. This is the Recommendation Service of the Phase 2 diagram, which attaches DestinationsDB to it
+- Internal API — the five places where the monolith reached across what are now service boundaries, each guarded by a shared `X-Internal-Key` header and blocked at the gateway:
+  - `GET /internal/users/<id>`, `POST /internal/users/batch`, `GET /internal/users/lookup?email=&number=`, `PUT /internal/users/<id>/favorites` (user-service)
+  - `GET /internal/itineraries?user_id=` (itinerary-service)
+  - `POST /internal/destinations/batch`, `GET /internal/destinations/<id>` (destination-service)
+- `services/service_client.py` — shared HTTP client for internal calls, plus the `internal_only` decorator and a `ServiceUnavailable` exception that every app converts into a 503 rather than a 500 traceback
+- `services/clients.py` in itinerary-service and destination-service — every cross-service call funnels through here, which is also what makes the services testable in isolation
+- `services/urls.py` in destination-service — builds absolute image URLs from the public gateway address rather than the service's own hostname
+- `Dockerfile` per service and `docker-compose.yml` — four containers on an internal network, with only the gateway publishing a port. Health checks on all three services; `data/` and `uploads/` bind-mounted so they live on the host, not inside a container
+- `docker-compose.debug.yml` — optional override publishing 5001–5003 for manual testing. Never to be used on a server
+- `smoke-test.sh` — end-to-end test against a running stack, through the gateway only. Ten checks covering every path that now crosses a service boundary: internal endpoints sealed, image URLs pointing at the gateway, favourites round-tripping, itinerary tags fetched from destination-service, the recommendations fan-out, comment author resolution, and share-by-email lookup
+- Test suites split three ways, one pytest run per service (all three define modules named `config`, `app`, `routes` and `services`, so they cannot share a process). Cross-service calls are replaced with in-memory fakes; tokens are minted directly with `create_access_token` since only user-service can register. 134 tests total:
+  - `user-service/tests/` — `test_auth.py` (unchanged), `test_users.py`, `test_internal.py`
+  - `itinerary-service/tests/` — `test_itineraries.py`, `test_itinerary_sharing.py`
+  - `destination-service/tests/` — `test_destinations.py`, `test_comments.py`, `test_recommendations.py`, `test_scoring.py` (unchanged), `test_internal.py`
+- Degradation tests, covering failure modes that could not exist in the monolith: comment authors falling back to "Traveler" and itinerary owner names to "Unknown" when user-service is down; writes to favourites and the recommendations fan-out returning 503 instead
+- `README-microservices.md` — architecture, routing table, internal API reference, run instructions, and the known limitations that Phase 3 has to address
+
+### Changed
+- `services/storage.py` — creates its data file from an empty schema when missing, instead of raising `FileNotFoundError`. `data/*.json` is gitignored, so a fresh clone on a server would otherwise have four services crashing on their first read
+- `services/auth_helpers.py` in destination-service — `get_current_user()` now resolves the JWT identity through user-service's internal API rather than reading `users.json`. The user-service copy is unchanged, since it owns that data
+- `routes/itineraries.py` — destination ids are validated and tags collected via destination-service; owner names and share-by-email lookups go to user-service
+- `routes/comments.py` — author names come from a single batched user lookup per request rather than a read per comment
+- `routes/destinations.py` — favourites are mutated through user-service, which owns the field; the destination-service side only verifies the destination exists
+- `routes/admin.py` — submitter names resolved through user-service
+- `routes/recommendations.py` — reads the user from user-service and their trips from itinerary-service, which is the "Recommendation Service calls User and Itinerary Service" arrow in the Phase 2 diagram
+- CORS moved to the gateway alone; `flask-cors` removed from the three services. A downstream service also setting `Access-Control-Allow-Origin` would produce duplicate headers after proxying, which the browser rejects
+- `JWT_SECRET_KEY` is now shared across all three services so `@jwt_required()` verifies locally with no network hop. Only fetching the user record costs a call
+- Gunicorn runs `--workers 1 --threads 4`. `storage.py` guards writes with a `threading.Lock`, which only holds within one process
+- `.gitignore` — `data/*.json` replaced with `**/data/*.json`. A pattern containing a slash is anchored to the directory holding the `.gitignore`, so the old rule only matched the monolith's `data/` folder and silently stopped covering the services' after the split
+- The frontend needs no changes: all 47 endpoints kept their public paths and the gateway listens on 5000, which is what `VITE_API_BASE_URL` already pointed at
+
+### Fixed
+- Entering the map through a destination's "Location" button and then navigating away lost the destination on return, while entering through "Show itinerary" survived. The persisted map state stored `itineraryId` but not the focused destination, which was read straight from the `?destination=` query param — so it vanished the moment the map was reopened from the bottom nav without one. The focused destination is now held in state, persisted alongside the itinerary, and kept mutually exclusive with it. `searchedPlace` is persisted too, which had the same problem
+
+### Known limitations
+- JSON files are not a database. Each service is capped at one Gunicorn worker, and horizontal scaling is impossible until each owns a real datastore — the first task of Phase 3, since "at least 3 instances of each service" cannot be met while replicas each hold their own copy of the data on local disk
+- No service discovery beyond Compose DNS. Addresses are hardcoded environment variables
+- All communication is synchronous REST, so a slow dependency slows its caller. Events that need no reply — "itinerary created", "destination approved" — are the natural first candidates for a message queue
+- Deleting a user does not cascade to their itineraries or comments; those services degrade to placeholder names instead

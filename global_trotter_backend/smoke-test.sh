@@ -19,7 +19,34 @@ check() {
   fi
 }
 
-jsonfield() { python3 -c "import sys,json;d=json.load(sys.stdin);print(eval('d$1'))" 2>/dev/null; }
+PY=""
+for candidate in python3 python py; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    if [ "$("$candidate" -c "print(42)" 2>/dev/null)" = "42" ]; then
+      PY="$candidate"
+      break
+    fi
+  fi
+done
+
+if [ -z "$PY" ]; then
+  red "No working python interpreter found."
+  red "Note: on Windows, 'python3' is often a Microsoft Store stub that does nothing."
+  exit 1
+fi
+
+jsonfield() {
+  "$PY" -c '
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    for key in sys.argv[1].split("."):
+        d = d[int(key)] if key.lstrip("-").isdigit() else d[key]
+    print(len(d) if sys.argv[2] == "len" else d)
+except Exception:
+    sys.exit(1)
+' "$1" "${2:-value}" 2>/dev/null
+}
 
 echo
 echo "Testing $BASE"
@@ -43,8 +70,8 @@ echo "[3] register a phone user (skips OTP)"
 NUM="6$(shuf -i 10000000-99999999 -n 1)"
 REG=$(curl -s -X POST "$BASE/register" -H 'Content-Type: application/json' \
   -d "{\"name\":\"Smoke Test\",\"number\":\"$NUM\",\"password\":\"secret123\"}")
-TOKEN=$(echo "$REG" | jsonfield "['token']")
-USER_ID=$(echo "$REG" | jsonfield "['user']['id']")
+TOKEN=$(echo "$REG" | jsonfield "token")
+USER_ID=$(echo "$REG" | jsonfield "user.id")
 if [ -n "${TOKEN:-}" ]; then
   green "  PASS  registered $USER_ID"
   PASS=$((PASS + 1))
@@ -58,8 +85,8 @@ AUTH="Authorization: Bearer $TOKEN"
 echo
 echo "[4] destination-service, no cross-service call"
 DESTS=$(curl -s "$BASE/destinations")
-DEST_ID=$(echo "$DESTS" | jsonfield "['destinations'][0]['id']")
-IMG=$(echo "$DESTS" | jsonfield "['destinations'][0]['images'][0]")
+DEST_ID=$(echo "$DESTS" | jsonfield "destinations.0.id")
+IMG=$(echo "$DESTS" | jsonfield "destinations.0.images.0")
 if [ -n "${DEST_ID:-}" ]; then
   green "  PASS  listed destinations, first is $DEST_ID"
   PASS=$((PASS + 1))
@@ -80,14 +107,14 @@ echo "[5] favorites: destination-service -> user-service"
 CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE/destinations/$DEST_ID/favorite" -H "$AUTH")
 check "add favorite" "200" "$CODE"
 FAVS=$(curl -s "$BASE/favorites" -H "$AUTH")
-COUNT=$(echo "$FAVS" | jsonfield "['favorites'].__len__()")
+COUNT=$(echo "$FAVS" | jsonfield "favorites" len)
 check "favorite reads back" "1" "${COUNT:-0}"
 
 echo
 echo "[6] create itinerary: itinerary-service -> destination-service"
 ITIN=$(curl -s -X POST "$BASE/itineraries" -H "$AUTH" -H 'Content-Type: application/json' \
   -d "{\"title\":\"Smoke Trip\",\"destinations\":[\"$DEST_ID\"]}")
-ITIN_ID=$(echo "$ITIN" | jsonfield "['itinerary']['id']")
+ITIN_ID=$(echo "$ITIN" | jsonfield "itinerary.id")
 if [ -n "${ITIN_ID:-}" ]; then
   green "  PASS  created $ITIN_ID"
   PASS=$((PASS + 1))
@@ -96,7 +123,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-TAGS=$(echo "$ITIN" | jsonfield "['itinerary']['tags'].__len__()")
+TAGS=$(echo "$ITIN" | jsonfield "itinerary.tags" len)
 if [ "${TAGS:-0}" -gt 0 ] 2>/dev/null; then
   green "  PASS  tags were pulled from destination-service"
   PASS=$((PASS + 1))
@@ -118,8 +145,8 @@ echo
 echo "[8] comments: destination-service -> user-service for author names"
 CMT=$(curl -s -X POST "$BASE/destinations/$DEST_ID/comments" -H "$AUTH" \
   -H 'Content-Type: application/json' -d '{"text":"smoke test comment"}')
-CMT_ID=$(echo "$CMT" | jsonfield "['comment']['id']")
-AUTHOR=$(echo "$CMT" | jsonfield "['comment']['author']['name']")
+CMT_ID=$(echo "$CMT" | jsonfield "comment.id")
+AUTHOR=$(echo "$CMT" | jsonfield "comment.author.name")
 check "author name resolved" "Smoke Test" "${AUTHOR:-none}"
 
 echo
