@@ -20,10 +20,12 @@ const MAP_STATE_STORAGE_KEY = 'globaltrotter:map-last-view'
 
 const DEFAULT_MAP_STATE = {
   itineraryId: null,
+  destinationId: null,
   showRoute: true,
   showServices: true,
   showVisited: false,
-  stopIds: null
+  stopIds: null,
+  searchedPlace: null
 }
 
 function readPersistedMapState() {
@@ -106,6 +108,11 @@ function MapPage() {
     if (destinationParam) return null
     return persisted.stopIds
   })
+  const [focusDestinationId, setFocusDestinationId] = useState(() => {
+    if (itineraryParam) return null
+    if (destinationParam) return destinationParam
+    return persisted.destinationId
+  })
   const [showRoute, setShowRoute] = useState(() => (itineraryParam || destinationParam ? true : persisted.showRoute))
   const [showServices, setShowServices] = useState(persisted.showServices)
   const [showVisited, setShowVisited] = useState(persisted.showVisited)
@@ -119,7 +126,7 @@ function MapPage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
-  const [searchedPlace, setSearchedPlace] = useState(null)
+  const [searchedPlace, setSearchedPlace] = useState(persisted.searchedPlace)
 
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -160,12 +167,14 @@ function MapPage() {
     if (itineraryParam) {
       setSelectedItineraryId(itineraryParam)
       setCustomStopIds(parseStops(stopsParam))
+      setFocusDestinationId(null)
       setShowRoute(true)
       return
     }
     if (destinationParam) {
       setSelectedItineraryId(null)
       setCustomStopIds(null)
+      setFocusDestinationId(destinationParam)
       setShowRoute(true)
     }
   }, [itineraryParam, destinationParam, stopsParam])
@@ -175,7 +184,7 @@ function MapPage() {
     [destinations]
   )
 
-  const focusDestination = destinationParam ? destinationsById.get(destinationParam) : null
+  const focusDestination = focusDestinationId ? destinationsById.get(focusDestinationId) : null
 
   const activeItinerary = useMemo(
     () => itineraries.find(itinerary => itinerary.id === selectedItineraryId) || null,
@@ -188,6 +197,12 @@ function MapPage() {
     setSelectedItineraryId(null)
     setCustomStopIds(null)
   }, [selectedItineraryId, itineraries, loading])
+
+  useEffect(() => {
+    if (!focusDestinationId || loading) return
+    if (destinationsById.has(focusDestinationId)) return
+    setFocusDestinationId(null)
+  }, [focusDestinationId, destinationsById, loading])
 
   const itineraryStops = useMemo(() => {
     if (!activeItinerary) return []
@@ -251,12 +266,14 @@ function MapPage() {
   useEffect(() => {
     writePersistedMapState({
       itineraryId: selectedItineraryId,
+      destinationId: focusDestinationId,
       showRoute,
       showServices,
       showVisited,
-      stopIds: customStopIds
+      stopIds: customStopIds,
+      searchedPlace
     })
-  }, [selectedItineraryId, showRoute, showServices, showVisited, customStopIds])
+  }, [selectedItineraryId, focusDestinationId, showRoute, showServices, showVisited, customStopIds, searchedPlace])
 
   useEffect(() => {
     if (!routeEnabled) {
@@ -456,6 +473,7 @@ function MapPage() {
     setSelectedItineraryId(nextId)
     setCustomStopIds(null)
     setStopIndex(0)
+    if (nextId) setFocusDestinationId(null)
     if (nextId) setShowRoute(true)
     if (itineraryParam || destinationParam) {
       navigate(nextId ? `/map?itinerary=${nextId}` : '/map', { replace: true })
@@ -467,6 +485,7 @@ function MapPage() {
     clearPersistedMapState()
     setSelectedItineraryId(null)
     setCustomStopIds(null)
+    setFocusDestinationId(null)
     setShowRoute(true)
     setShowServices(true)
     setShowVisited(false)
