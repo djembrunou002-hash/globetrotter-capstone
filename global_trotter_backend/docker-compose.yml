@@ -1,0 +1,96 @@
+services:
+  user-service:
+    build: ./user-service
+    container_name: gt-user-service
+    environment:
+      PORT: 5001
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-no-reply@globaltrotter.app}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-GlobalTrotter}
+      BREVO_SMS_SENDER: ${BREVO_SMS_SENDER:-GlobTrot}
+      OTP_EXPIRY_MINUTES: ${OTP_EXPIRY_MINUTES:-10}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    volumes:
+      - ./user-service/data:/app/data
+    expose:
+      - "5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  itinerary-service:
+    build: ./itinerary-service
+    container_name: gt-itinerary-service
+    environment:
+      PORT: 5002
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      USER_SERVICE_URL: http://user-service:5001
+      DESTINATION_SERVICE_URL: http://destination-service:5003
+    volumes:
+      - ./itinerary-service/data:/app/data
+    expose:
+      - "5002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - user-service
+      - destination-service
+    restart: unless-stopped
+
+  destination-service:
+    build: ./destination-service
+    container_name: gt-destination-service
+    environment:
+      PORT: 5003
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      USER_SERVICE_URL: http://user-service:5001
+      ITINERARY_SERVICE_URL: http://itinerary-service:5002
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:5000}
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+    volumes:
+      - ./destination-service/data:/app/data
+      - ./destination-service/uploads:/app/uploads
+    expose:
+      - "5003"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5003/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - user-service
+    restart: unless-stopped
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: gt-api-gateway
+    environment:
+      PORT: 5000
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:5000}
+      PROXY_TIMEOUT: ${PROXY_TIMEOUT:-30}
+      USER_SERVICE_URL: http://user-service:5001
+      ITINERARY_SERVICE_URL: http://itinerary-service:5002
+      DESTINATION_SERVICE_URL: http://destination-service:5003
+    ports:
+      - "5000:5000"
+    depends_on:
+      - user-service
+      - itinerary-service
+      - destination-service
+    restart: unless-stopped
