@@ -9,7 +9,7 @@ import { getToken } from '../services/tokenStorage.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
-import ConfirmDialog from '../components/Confirmdialog.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import '../styles/MyDestinations.css'
 
 const EDITABLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_review']

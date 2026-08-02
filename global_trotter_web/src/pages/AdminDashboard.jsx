@@ -14,7 +14,7 @@ import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import PendingRequestCard from '../components/PendingRequestCard.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
-import ConfirmDialog from '../components/Confirmdialog.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import RequestDetailModal from '../components/RequestDetailModal.jsx'
 import '../styles/AdminDashboard.css'
 
