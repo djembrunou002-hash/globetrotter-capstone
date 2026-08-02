@@ -321,3 +321,44 @@
 - No service discovery beyond Compose DNS. Addresses are hardcoded environment variables
 - All communication is synchronous REST, so a slow dependency slows its caller. Events that need no reply — "itinerary created", "destination approved" — are the natural first candidates for a message queue
 - Deleting a user does not cascade to their itineraries or comments; those services degrade to placeholder names instead
+
+## [02-08-2026] — Production deployment
+
+Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, sharing the host with five unrelated applications. Frontend and API live on one domain: Nginx serves the React build at `/` and strips the `/api/` prefix before proxying to the gateway, so every backend route keeps the path it already had and no service code changed. Same-origin means CORS never engages in production.
+
+### Added
+- `.dockerignore` in all four services. Every `Dockerfile` does `COPY . .`, which was baking each service's `.env` — live Brevo, Geoapify and OpenRouter keys — into the image layers. Also excludes `data/`, `uploads/`, `__pycache__` and `.pytest_cache`, cutting the destination-service build context from ~12 MB to 108 kB
+- `deploy-globaltrotter.sh` on the server — pulls, rebuilds, polls `/health` for up to 60 s, and only then rebuilds and publishes the frontend. A backend failure aborts the run with the previous frontend still serving, rather than publishing a new bundle against a broken API. Asserts both MapLibre worker files exist in `dist/assets` before publishing
+- `data/.gitkeep` in each service. `**/data/*.json` is gitignored and git does not track empty directories, so a fresh clone left three services with no `data/` folder at all
+- Nginx site config (`/etc/nginx/sites-available/globaltrotter`) — TLS via the existing Let's Encrypt certificate, `/api/` proxy with prefix strip, direct filesystem serving of destination images, gzip, and immutable caching for fingerprinted assets
+- `copyMaplibreWorker` plugin in `vite.config.js` — copies `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` into `dist/assets` after every build (see Fixed)
+
+### Changed
+- `docker-compose.yml` — the two values that differ between laptop and server are now environment variables with development defaults: `ports: "${GATEWAY_BIND:-0.0.0.0:5000}:5000"` and `volumes: ${UPLOADS_HOST_DIR:-./destination-service/uploads}:/app/uploads`. Local development is unchanged; production sets `GATEWAY_BIND=127.0.0.1:6000` (port 5000 on the host already belongs to another application) and points uploads at `/var/www/globaltrotter-uploads`, outside the repo, so a `git pull` or rebuild cannot destroy user-submitted images
+- `docker-compose.prod.yml` — the `!override` tags are gone, since the values they overrode are now environment variables. This also removes the dependency on Compose 2.24.4+. What remains is log rotation on all four containers (`json-file` has no rotation by default, so logs grow until the disk fills) and `--access-logfile -` on the gateway so Gunicorn's request log reaches `docker compose logs`
+- `.gitignore` (web) — added `!.env.production`. The existing `.env.*` rule prevented the file from ever reaching the server, and a build with `VITE_API_BASE_URL` undefined produces a frontend that silently fetches `undefined/destinations`. The file holds no secrets: both values are compiled into the public bundle regardless
+- `.env.production` (web) — `VITE_API_BASE_URL` now `https://globaltrotter.duckdns.org/api`, was a LAN IP
+- Destination images re-encoded at max 1600 px, JPEG quality 82, progressive: **340 MB → 12 MB** across 45 files. At roughly 2 MB each, a destination page with four photos was pulling 8 MB, which does not complete on a mobile connection. The upload itself had also been failing partway through
+- `data/` reset for launch: `comments.json`, `destination_requests.json` and `itineraries.json` emptied; `users.json` replaced with the 19 accounts from the earlier deployment, normalised to the current schema (`preferences`, `role`, `verified`, `auth_provider`, `google_id` backfilled; empty-string identifiers converted to `null`). The `scrypt:` hashes on those records validate unchanged — Werkzeug reads both `scrypt` and `pbkdf2:sha256`, and rotating `JWT_SECRET_KEY` invalidates sessions but not passwords
+- One user-submitted destination removed along with its image, and all ratings zeroed — its coordinates placed it in the Atlantic, ~900 km from Yaoundé
+
+### Fixed
+- Two files were tracked as `Confirmdialog.jsx` and `Preferencesmodal.css` while imported as `ConfirmDialog.jsx` and `PreferencesModal.css`. Windows resolves either; Linux does not, so the production build failed on unresolved imports. Fixed via `git rm --cached` and re-adding under the correct names, since `git mv` cannot express a case-only rename on a case-insensitive filesystem. `git config core.ignorecase false` set locally so future mismatches surface
+- **MapLibre rendered no tiles in production.** MapLibre v6 builds its worker URL at runtime — `new URL('./maplibre-gl-worker.mjs', import.meta.url)` — which Rolldown cannot see as a static reference, so the chunk was never emitted and the request 404'd. Dev mode works because the dev server resolves it from `node_modules` directly. Note that `optimizeDeps.exclude` was not the cause and only affects the dev server; scoping it to `command === 'serve'` produced a byte-identical build. Resolved with a build plugin that copies both the worker and the shared module it imports
+- `.mjs` is absent from Nginx 1.24's MIME table, so the worker was served as `application/octet-stream` and the browser refused to execute it as a module — reported in DevTools as a request stuck pending rather than a clean error. Added to `/etc/nginx/mime.types`. A per-site `types { }` block was tried first and broke the whole site: `types` *replaces* the inherited table rather than extending it, so `text/html` disappeared and the browser downloaded `index.html` instead of rendering it
+- `client_max_body_size` was never set, leaving Nginx's 1 MB default. Any destination photo above that was rejected with a 413 before Flask saw the request. Now 25 MB
+- `proxy_read_timeout` raised to 90 s; OpenRouter calls can exceed Nginx's 60 s default
+
+### Infrastructure notes
+- `/etc/nginx/mime.types` now maps `mjs` to `application/javascript`. This file is outside the repository and shared with the host's other sites — an Nginx package upgrade may revert it, and a rebuilt server will not have it
+- The Nginx site config is likewise not version-controlled
+- Uploads live at `/var/www/globaltrotter-uploads`, deliberately outside the repository. The repo copy under `destination-service/uploads/` is a seed catalogue only; user-submitted images exist solely on the server. Never mirror one onto the other with `rsync --delete`
+- The backend `.env` is created directly on the server, `chmod 600`, and never committed
+
+### Known limitations
+- No admin account exists in the deployed `users.json`; `/admin` is inaccessible until a `role` is promoted by hand
+- Registration and OTP delivery via Brevo remain untested in production
+- Destination galleries reference four images per entry while only the first exists, so three broken thumbnails appear per destination until the remaining photos are uploaded
+- Route geometry is fetched from Geoapify on every request with no caching, and is noticeably slow on mobile connections. The map draws markers immediately and the route line some seconds later, with no loading indicator to explain the gap
+- `cameroon-showcase-2.jpg` is 1 MB and sits on the landing page, unaffected by the destination-image compression above
+- Google Fonts is loaded from a CDN that responds slowly or times out from the deployment's network; self-hosting the three font files would remove the dependency

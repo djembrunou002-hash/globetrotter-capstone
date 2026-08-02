@@ -1,345 +1,402 @@
 # GlobeTrotter – Travel Assistant
 
+**Live:** https://globaltrotter.duckdns.org
+
 ## Overview
 
-**GlobeTrotter Travel Assistant** is a **distributed travel recommendation and trip planning application** designed to help users discover new destinations, organize their trips, and receive personalized travel recommendations based on their preferences and interests.
+**GlobeTrotter Travel Assistant** is a distributed travel recommendation and trip-planning application. Users discover destinations, build itineraries, and receive recommendations based on their travel style, budget and past trips.
 
-The project starts as a **monolithic Flask application** that serves as the foundation for a semester-long capstone project. Students first build the monolith, then progressively refactor it into a **microservices architecture**, and finally deploy it to the cloud using resilience patterns and cloud-native technologies such as:
+The project is built in three phases:
 
-- Docker
-- Kubernetes
-- Cloud-native tooling
+| Phase | Scope | Status |
+|-------|-------|--------|
+| 1 | Flask monolith | Complete |
+| 2 | Microservices behind an API gateway, containerised, deployed to a VPS | Complete |
+| 3 | Kubernetes, auto-scaling, managed datastores, cloud provider | Upcoming |
 
-# BACKEND
+---
 
-## Project Structure
+# Architecture
+
+Four containers on a private Docker network. Only the gateway publishes a port, and in production it binds to loopback only, with Nginx as the sole public entry point.
+
+```
+                    Nginx (443, TLS)
+                    ├── /              →  React build on disk
+                    └── /api/          →  127.0.0.1:6000  (prefix stripped)
+                                             │
+                                       api-gateway :5000
+                                             │
+                        ┌────────────────────┼────────────────────┐
+                        │                    │                    │
+                 user-service :5001  itinerary-service :5002  destination-service :5003
+                   users.json           itineraries.json      destinations.json
+                   otp_pending.json                           comments.json
+                   otp_reset.json                             destination_requests.json
+                                                              uploads/
+```
+
+Each service owns its data outright and reaches the others only over REST. Cross-service calls go through `/internal/*` endpoints guarded by a shared `X-Internal-Key` header, which the gateway refuses to proxy.
+
+`JWT_SECRET_KEY` is shared across all services so `@jwt_required()` verifies locally with no network hop; only fetching the user record costs a call.
+
+---
+
+# Project structure
 
 ```
 .
-├── .git/
 ├── global_trotter_backend/
-│   ├── .env
+│   ├── .env                          # server-side only, never committed
 │   ├── .gitignore
-│   ├── app.py
-│   ├── config.py
-│   ├── requirements.txt
-│   ├── data/
-│   │   ├── destinations.json
-│   │   ├── itineraries.json
-│   │   ├── comments.json
-│   │   ├── destination_requests.json
-│   │   ├── otp_pending.json        # pending email sign-ups awaiting OTP verification
-│   │   ├── otp_reset.json          # active password-reset codes
-│   │   └── users.json
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   ├── admin.py
-│   │   ├── auth.py
-│   │   ├── comments.py
-│   │   ├── destinations.py
-│   │   ├── itineraries.py
-│   │   ├── my_destinations.py
-│   │   ├── places.py
-│   │   ├── recommendations.py
-│   │   ├── uploads.py
-│   │   └── users.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── auth_helpers.py
-│   │   ├── brevo_service.py        # Brevo transactional email/SMS wrapper (OTP delivery)
-│   │   ├── destination_requests.py
-│   │   ├── geoapify.py
-│   │   ├── google_auth_service.py  # Google ID token verification (Sign-In)
-│   │   ├── images.py
-│   │   ├── otp_service.py          # pending-registration + reset-code storage
-│   │   ├── scoring.py
-│   │   └── storage.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   └── identifier.py          # normalizes the email/phone pair, prioritizing email
-│   ├── uploads/
-│   │   └── destinations/
-│   └── tests/
-│       ├── conftest.py
-│       ├── test_auth.py
-│       ├── test_comments.py
-│       ├── test_destinations.py
-│       ├── test_itineraries.py
-│       ├── test_itinerary_sharing.py
-│       ├── test_recommendations.py
-│       └── test_scoring.py
+│   ├── docker-compose.yml
+│   ├── docker-compose.prod.yml
+│   ├── docker-compose.debug.yml
+│   ├── smoke-test.sh
+│   ├── README-microservices.md
+│   │
+│   ├── api-gateway/                  # :5000 — routing, CORS, /internal blocking
+│   │   ├── .dockerignore
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   ├── config.py
+│   │   ├── routing.py
+│   │   └── requirements.txt
+│   │
+│   ├── user-service/                 # :5001 — auth, OTP, Google, preferences
+│   │   ├── .dockerignore
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   ├── config.py
+│   │   ├── data/                     # users.json, otp_pending.json, otp_reset.json
+│   │   ├── routes/                   # auth.py, users.py, internal.py
+│   │   ├── services/                 # brevo_service.py, otp_service.py, google_auth_service.py
+│   │   ├── utils/identifier.py
+│   │   └── tests/
+│   │
+│   ├── itinerary-service/            # :5002 — itinerary CRUD, ordering, sharing
+│   │   ├── .dockerignore
+│   │   ├── Dockerfile
+│   │   ├── data/                     # itineraries.json
+│   │   ├── routes/                   # itineraries.py, internal.py
+│   │   ├── services/                 # clients.py, service_client.py, storage.py
+│   │   └── tests/
+│   │
+│   └── destination-service/          # :5003 — destinations, comments, moderation, places, AI
+│       ├── .dockerignore
+│       ├── Dockerfile
+│       ├── data/                     # destinations.json, comments.json, destination_requests.json
+│       ├── uploads/destinations/     # seed images only; live uploads are outside the repo
+│       ├── routes/                   # destinations.py, comments.py, admin.py, my_destinations.py,
+│       │                             # places.py, ai.py, recommendations.py, uploads.py, internal.py
+│       ├── services/                 # geoapify.py, ai_assistant.py, scoring.py, images.py, urls.py
+│       └── tests/
+│
 ├── global_trotter_web/
 │   ├── .env.development
-│   ├── .env.production
-│   ├── .gitignore
-│   ├── index.html
-│   ├── package.json
-│   ├── package-lock.json
+│   ├── .env.production               # tracked; contains no secrets
 │   ├── vite.config.js
-│   ├── eslint.config.js
+│   ├── index.html
 │   ├── public/
 │   └── src/
-│       ├── main.jsx
 │       ├── App.jsx
-│       ├── App.css
-│       ├── index.css
-│       ├── assets/
+│       ├── main.jsx
 │       ├── components/
 │       ├── pages/
+│       ├── hooks/
 │       ├── services/
+│       ├── utils/
+│       ├── context/
 │       └── styles/
+│
 ├── CHANGELOG.md
 └── README.md
 ```
 
-## Setup
+---
+
+# Local development
+
+## Backend
 
 ```bash
 cd global_trotter_backend
-pip install -r requirements.txt
+docker compose up -d --build
 ```
 
-Create a `.env` file (or copy an existing one) with:
+Gateway on http://localhost:5000. Health check across the whole stack:
+
+```bash
+curl http://localhost:5000/health
+```
+
+Create `.env` in `global_trotter_backend/`:
 
 ```dotenv
-JWT_SECRET_KEY=<a long random string>
+JWT_SECRET_KEY=<long random string>
+INTERNAL_API_KEY=<long random string>
+
 ALLOWED_ORIGINS=http://localhost:5173
+PUBLIC_BASE_URL=http://localhost:5000
+PROXY_TIMEOUT=30
 
-GEOAPIFY_API_KEY=
-
-# --- Brevo (OTP email/SMS delivery). Leave BREVO_API_KEY empty during
-# dev: verification codes are logged to the console and echoed back in
-# the API response as "dev_otp", so the full auth flow works without a
-# Brevo account.
 BREVO_API_KEY=
 BREVO_SENDER_EMAIL=no-reply@example.com
 BREVO_SENDER_NAME=GlobalTrotter
 BREVO_SMS_SENDER=GlobTrot
 OTP_EXPIRY_MINUTES=10
 
-# --- Google Sign-In. Leave empty until you create an OAuth Client ID
-# in Google Cloud Console (Credentials -> OAuth client ID -> Web application).
 GOOGLE_CLIENT_ID=
+GEOAPIFY_API_KEY=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
-## Running
+Leave `BREVO_API_KEY` empty in development: verification codes are logged to the console and echoed back as `dev_otp`, so the full auth flow works without a Brevo account. The Google button stays hidden until `VITE_GOOGLE_CLIENT_ID` is set.
+
+To reach individual services directly for debugging:
 
 ```bash
-python app.py
+docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d
 ```
 
-The API runs on http://localhost:5000
+This publishes 5001–5003. Never use it on a server.
 
-## Authentication
-
-Sign-up behaves differently depending on which identifier is used:
-
-- **Email** — goes through a 2-step OTP flow: `/register` sends a 6-digit code by email, and the account is only created once that code is confirmed via `/verify-email`.
-- **Phone number** — skips OTP entirely (no SMS credits required) and creates + logs the user in immediately from `/register`.
-- **Google** — `/auth/google` verifies a Google ID token server-side and creates (or logs into) an already-verified account in one step.
-
-If both an email and a phone number are supplied, the email always takes priority.
-
-## REST API
-
-| Method | Endpoint                         | Auth required | Description                                                        |
-|--------|-----------------------------------|:--------------:|---------------------------------------------------------------------|
-| POST   | `/register`                      | No             | Register a new user (email → sends OTP; phone → logs in immediately)|
-| POST   | `/verify-email`                  | No             | Confirm the OTP code and create the account (email sign-ups only)   |
-| POST   | `/resend-otp`                    | No             | Resend a new OTP code for a pending email registration              |
-| POST   | `/login`                         | No             | Authenticate and receive a JWT token                                |
-| POST   | `/auth/google`                   | No             | Sign up or log in with a Google ID token                            |
-| POST   | `/forgot-password`               | No             | Send a password-reset OTP by email (not available for phone numbers)|
-| POST   | `/verify-reset-code`             | No             | Confirm a password-reset OTP code                                   |
-| POST   | `/reset-password`                | No             | Set a new password using a confirmed reset code                     |
-| POST   | `/change-password`               | No             | Change a known password while logged in                             |
-| GET    | `/destinations`                  | No             | Search the destination catalogue                                    |
-| POST   | `/destinations/<id>/rating`      | Yes            | Rate a destination                                                   |
-| POST   | `/destinations/<id>/favorite`    | Yes            | Add a destination to favorites                                      |
-| DELETE | `/destinations/<id>/favorite`    | Yes            | Remove a destination from favorites                                 |
-| GET    | `/favorites`                     | Yes            | List your favorite destinations                                     |
-| GET    | `/recommendations`               | Yes            | Get personalized recommendations                                    |
-| POST   | `/itineraries`                   | Yes (JWT)      | Create a new itinerary                                               |
-| GET    | `/itineraries`                   | Yes (JWT)      | List all itineraries for the logged-in user                         |
-
-*(Comments, admin review, map/places, and itinerary-sharing endpoints exist too — see `routes/` for the full set; this table covers auth + the original core routes.)*
-
-## Request examples
-
-### register (email — sends an OTP)
-```bash
-curl -X POST http://localhost:5000/register ^
-  -H "Content-Type: application/json" ^
-  -d "{\"name\": \"Jane Doe\", \"email\": \"jane@example.com\", \"password\": \"supersecret\"}"
-```
-Response (dev mode, no `BREVO_API_KEY` set):
-```json
-{
-  "message": "Verification code sent to your email",
-  "identifier": "jane@example.com",
-  "channel": "email",
-  "dev_otp": "482913"
-}
-```
-
-### verify-email
-```bash
-curl -X POST http://localhost:5000/verify-email ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\", \"code\": \"482913\"}"
-```
-Returns a JWT `token` + the created `user`, same shape as `/login`.
-
-### resend-otp
-```bash
-curl -X POST http://localhost:5000/resend-otp ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\"}"
-```
-
-### register (phone — no OTP, logs in immediately)
-```bash
-curl -X POST http://localhost:5000/register ^
-  -H "Content-Type: application/json" ^
-  -d "{\"name\": \"Jane Doe\", \"number\": \"677123456\", \"password\": \"supersecret\"}"
-```
-Returns a JWT `token` + `user` directly.
-
-### login
-```bash
-curl -X POST http://localhost:5000/login ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\", \"password\": \"supersecret\"}"
-```
-
-### Google sign-in / sign-up
-```bash
-curl -X POST http://localhost:5000/auth/google ^
-  -H "Content-Type: application/json" ^
-  -d "{\"credential\": \"<google-id-token>\"}"
-```
-
-### forgot-password / verify-reset-code / reset-password
-```bash
-curl -X POST http://localhost:5000/forgot-password ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\"}"
-
-curl -X POST http://localhost:5000/verify-reset-code ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\", \"code\": \"482913\"}"
-
-curl -X POST http://localhost:5000/reset-password ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\": \"jane@example.com\", \"code\": \"482913\", \"new_password\": \"newsecret\"}"
-```
-
-### get destinations
-```bash
-curl -X GET "http://localhost:5000/destinations"
-```
-
-### rate a destination
-```bash
-curl -X POST http://localhost:5000/destinations/dest_001/rating -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"stars\": 5}"
-```
-
-### add to favorites
-```bash
-curl -X POST http://localhost:5000/destinations/dest_001/favorite -H "Authorization: Bearer %TOKEN%"
-```
-
-### remove from favorites
-```bash
-curl -X DELETE http://localhost:5000/destinations/dest_001/favorite -H "Authorization: Bearer %TOKEN%"
-```
-
-### get favorites
-```bash
-curl -X GET http://localhost:5000/favorites -H "Authorization: Bearer %TOKEN%"
-```
-
-### get recommendations
-```bash
-curl -X GET http://localhost:5000/recommendations -H "Authorization: Bearer %TOKEN%"
-```
-
-### create itinerary
-```bash
-curl -X POST http://localhost:5000/itineraries -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" -d "{\"title\":\"Weekend Trip\",\"destinations\":[\"dest_001\",\"dest_002\"]}"
-```
-
-### get itineraries
-```bash
-curl -X GET http://localhost:5000/itineraries -H "Authorization: Bearer %TOKEN%"
-```
-
-## Data storage
-
-| File                        | Purpose                                              |
-|-----------------------------|-------------------------------------------------------|
-| `data/destinations.json`    | Static catalogue of travel destinations               |
-| `data/users.json`           | Registered users                                       |
-| `data/itineraries.json`     | User itineraries                                        |
-| `data/otp_pending.json`     | Email sign-ups awaiting OTP verification (auto-cleaned once verified) |
-| `data/otp_reset.json`       | Active password-reset codes                            |
-
-## Testing
-
-```bash
-pytest
-```
-
-The test fixture in `tests/conftest.py` copies `data/` into a disposable temp directory and forces `BREVO_API_KEY` / `GOOGLE_CLIENT_ID` to empty on the test app instance — so the suite always exercises the dev-mode OTP fallback and the "Google not configured" branch, regardless of whatever real credentials are sitting in your local `.env`.
-
-# FRONTEND
-
-React web app (Vite + JS), lives in `global_trotter_web/`.
-
-## Pages
-
-- Landing page
-- Register page (email OTP, phone, or Google)
-- Login page (email/phone, or Google)
-- Verify OTP page (shown after registering by email)
-- Home page
-- Itineraries
-- Destinations page
-- Profile page
-- Itinerary details page
-- Destination detail page
-- Destination choose page
-- Favorites page
-- Map page
-- My Destinations / destination detail (owner view)
-- Admin dashboard + request review
-
-### Setup
+## Frontend
 
 ```bash
 cd global_trotter_web
 npm install
-```
-
-Create `.env.development` (used by `npm run dev`) with:
-
-```dotenv
-VITE_API_BASE_URL=http://localhost:5000
-
-# Leave empty until you create a Google OAuth Client ID (see backend
-# setup above) — the Google button on Login/Register just won't render
-# until this is set.
-VITE_GOOGLE_CLIENT_ID=
-```
-
-And `.env.production` (used by `npm run build`) with the equivalent values for your deployed backend/domain.
-
-### Running
-
-```bash
 npm run dev
 ```
 
-The app runs on http://localhost:5173 and expects the backend on http://localhost:5000 (or whatever `VITE_API_BASE_URL` points to).
+Runs on http://localhost:5173. `.env.development`:
 
-To reach the dev server from another device on your network (e.g. a phone), run `npm run dev -- --host` and make sure `VITE_API_BASE_URL` points at your machine's LAN IP rather than `localhost`, and that the backend's `ALLOWED_ORIGINS` includes that LAN origin.
+```dotenv
+VITE_API_BASE_URL=http://localhost:5000
+VITE_GOOGLE_CLIENT_ID=
+```
+
+To reach the dev server from a phone on the same network, `VITE_API_BASE_URL` must point at your machine's LAN IP rather than `localhost`, and the backend's `ALLOWED_ORIGINS` must include that origin. Note that `navigator.geolocation` is blocked on insecure origins, so the map's location features will not work over a plain-HTTP LAN address.
+
+---
+
+# Testing
+
+Each service runs its own pytest suite — all three define modules named `config`, `app`, `routes` and `services`, so they cannot share a process.
+
+```bash
+cd global_trotter_backend/user-service        && pytest
+cd global_trotter_backend/itinerary-service   && pytest
+cd global_trotter_backend/destination-service && pytest
+```
+
+134 tests. Cross-service calls are replaced with in-memory fakes; tokens are minted directly with `create_access_token`, since only user-service can register.
+
+End-to-end against a running stack, through the gateway only:
+
+```bash
+cd global_trotter_backend
+bash smoke-test.sh http://localhost:5000
+```
+
+Ten checks covering every path that crosses a service boundary. Against production, pass the public base including the prefix:
+
+```bash
+bash smoke-test.sh https://globaltrotter.duckdns.org/api
+```
+
+Frontend:
+
+```bash
+cd global_trotter_web && npm test
+```
+
+---
+
+# Deployment
+
+## Layout on the server
+
+```
+/root/globetrotter-capstone/            repository
+/var/www/globaltrotter/                 published React build
+/var/www/globaltrotter-uploads/         user-uploaded images (outside the repo)
+/etc/nginx/sites-available/globaltrotter
+/root/deploy-globaltrotter.sh
+```
+
+## Routing
+
+Both the React routes and the API routes are top-level (`/destinations`, `/itineraries`, `/login` exist in each), so they cannot share a namespace. Nginx serves the SPA at `/` and strips `/api/` before proxying:
+
+```nginx
+location ^~ /api/ {
+    proxy_pass http://127.0.0.1:6000/;
+}
+```
+
+The trailing slash on `proxy_pass` performs the strip, so `/api/destinations` reaches the gateway as `/destinations` and no backend route changed. Being same-origin, CORS never engages in production.
+
+Destination images are served straight from disk rather than through Flask:
+
+```nginx
+location ^~ /api/images/destinations/ {
+    alias /var/www/globaltrotter-uploads/destinations/;
+}
+```
+
+## Production environment
+
+`.env` on the server adds two values absent locally:
+
+```dotenv
+GATEWAY_BIND=127.0.0.1:6000
+UPLOADS_HOST_DIR=/var/www/globaltrotter-uploads
+
+ALLOWED_ORIGINS=https://globaltrotter.duckdns.org
+PUBLIC_BASE_URL=https://globaltrotter.duckdns.org/api
+```
+
+`GATEWAY_BIND` keeps the gateway on loopback and off port 5000, which belongs to another application on this host. `UPLOADS_HOST_DIR` puts uploads outside the repository so a pull or rebuild cannot destroy them. Both have development defaults in `docker-compose.yml`, so a laptop needs neither.
+
+`PUBLIC_BASE_URL` must include the `/api` prefix — it is what `destination-service` uses to build absolute image URLs, forwarded from the gateway as `X-Gateway-Public-Url`.
+
+## Deploying
+
+```bash
+/root/deploy-globaltrotter.sh
+```
+
+Pulls, rebuilds the containers, waits for `/health` to report ok, rebuilds the frontend, verifies the MapLibre worker files are present, publishes to `/var/www/globaltrotter`, and reloads Nginx. If the backend does not come up, it aborts with the previous frontend still serving.
+
+## Server-side state not in the repository
+
+- `global_trotter_backend/.env` — created directly on the server, `chmod 600`
+- `/etc/nginx/sites-available/globaltrotter`
+- `/etc/nginx/mime.types` — maps `mjs` to `application/javascript`, without which MapLibre's worker is served as `application/octet-stream` and the browser refuses to execute it
+- TLS certificate at `/etc/letsencrypt/live/globaltrotter.duckdns.org/`, auto-renewed by certbot
+- `/var/www/globaltrotter-uploads/` — user-submitted images exist only here
+
+## Logs
+
+```bash
+docker logs -f gt-user-service
+tail -f /var/log/nginx/error.log
+```
+
+Container logs rotate at 10 MB × 3 files per service.
+
+---
+
+# Authentication
+
+Sign-up branches on identifier type:
+
+- **Email** — two-step OTP. `/register` sends a 6-digit code; the account is created only once `/verify-email` succeeds
+- **Phone** — skips OTP entirely (no SMS credits required) and logs the user in immediately
+- **Google** — `/auth/google` verifies an ID token server-side and creates or logs into an already-verified account
+
+If both an email and a phone number are supplied, email takes priority.
+
+Passwords use Werkzeug's `pbkdf2:sha256`. Records created before Phase 2 carry `scrypt:` hashes and validate unchanged. Rotating `JWT_SECRET_KEY` invalidates existing sessions but not passwords.
+
+---
+
+# REST API
+
+All paths are public through the gateway. In production they are reached under `/api/`.
+
+| Method | Endpoint | Auth | Service | Description |
+|--------|----------|:----:|---------|-------------|
+| GET | `/health` | No | gateway | Gateway plus all three services |
+| POST | `/register` | No | user | Email sends OTP; phone logs in immediately |
+| POST | `/verify-email` | No | user | Confirm OTP and create the account |
+| POST | `/resend-otp` | No | user | Reissue a code for a pending registration |
+| POST | `/login` | No | user | Authenticate, returns a JWT |
+| POST | `/auth/google` | No | user | Sign up or log in with a Google ID token |
+| POST | `/forgot-password` | No | user | Send a reset OTP by email |
+| POST | `/verify-reset-code` | No | user | Confirm a reset code |
+| POST | `/reset-password` | No | user | Set a new password |
+| PUT | `/users/preferences` | Yes | user | Update travel-style preferences |
+| GET | `/destinations` | No | destination | Search the catalogue |
+| POST | `/destinations/<id>/rating` | Yes | destination | Rate a destination |
+| POST/DELETE | `/destinations/<id>/favorite` | Yes | destination | Add or remove a favourite |
+| GET | `/favorites` | Yes | destination | List favourites |
+| GET | `/recommendations` | Yes | destination | Personalised ranking |
+| GET/POST | `/destinations/<id>/comments` | Mixed | destination | Read or post comments |
+| POST/DELETE | `/destinations/<id>/comments/<cid>/pin` | Yes | destination | Pin or unpin a comment |
+| GET | `/my-destinations` | Yes | destination | Your submissions |
+| PUT | `/my-destinations/requests/<id>` | Yes | destination | Edit a pending submission |
+| GET | `/admin/requests` | Admin | destination | Pending review queue |
+| POST | `/admin/requests/<id>/approve` | Admin | destination | Approve a submission |
+| POST | `/admin/requests/<id>/reject` | Admin | destination | Reject a submission |
+| GET | `/places/search` | No | destination | Geoapify autocomplete |
+| GET | `/places/nearby` | No | destination | Nearby services |
+| GET | `/places/route` | No | destination | Route geometry between waypoints |
+| GET | `/images/destinations/<file>` | No | destination | Destination image (served by Nginx in production) |
+| GET/POST | `/itineraries` | Yes | itinerary | List or create |
+| PUT | `/itineraries/<id>/destinations` | Yes | itinerary | Reorder stops |
+| POST | `/itineraries/<id>/share` | Yes | itinerary | Share by email |
+| GET | `/itineraries/<id>/shared-users` | Yes | itinerary | List recipients |
+| DELETE | `/itineraries/<id>` | Yes | itinerary | Delete |
+
+See `README-microservices.md` for the internal API and the full routing table.
+
+## Examples
+
+Register by email — in development, with no `BREVO_API_KEY`, the code is returned as `dev_otp`:
+
+```bash
+curl -X POST https://globaltrotter.duckdns.org/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Doe","email":"jane@example.com","password":"supersecret"}'
+```
+
+```bash
+curl -X POST https://globaltrotter.duckdns.org/api/verify-email \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@example.com","code":"482913"}'
+```
+
+```bash
+curl -X POST https://globaltrotter.duckdns.org/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane@example.com","password":"supersecret"}'
+```
+
+```bash
+curl https://globaltrotter.duckdns.org/api/recommendations \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```bash
+curl -X POST https://globaltrotter.duckdns.org/api/itineraries \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Weekend Trip","destinations":["dest_001","dest_002"]}'
+```
+
+---
+
+# Frontend
+
+React 19, Vite 8, React Router 7, MapLibre GL 6. Maps render with OpenFreeMap tiles; search, nearby places and routing go through the backend so the Geoapify key stays server-side.
+
+## Pages
+
+Landing · Register · Login · Verify OTP · Select style · Home · Destinations · Destination detail · Itineraries · Itinerary detail · Map · Favorites · My Destinations · My Destination detail · Destination form · Profile · Admin dashboard
+
+## Build note
+
+MapLibre v6 constructs its worker URL at runtime from `import.meta.url`, which Rolldown cannot resolve statically, so the chunk is never emitted. `vite.config.js` carries a `copyMaplibreWorker` plugin that copies `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` into `dist/assets` after each build. Without it the map renders controls and attribution over a blank canvas, and the worker request hangs rather than failing cleanly.
+
+---
+
+# Known limitations
+
+- JSON files are not a database. Each service is capped at one Gunicorn worker because `storage.py` guards writes with a `threading.Lock`, which holds only within a process. Horizontal scaling is impossible until each service owns a real datastore — the first task of Phase 3
+- No service discovery beyond Compose DNS; addresses are hardcoded environment variables
+- All communication is synchronous REST, so a slow dependency slows its caller
+- Deleting a user does not cascade to their itineraries or comments; those services degrade to placeholder names
+- Route geometry is fetched from Geoapify uncached on every request
