@@ -63,7 +63,7 @@ services:
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
     volumes:
       - ./destination-service/data:/app/data
-      - ./destination-service/uploads:/app/uploads
+      - ${UPLOADS_HOST_DIR:-./destination-service/uploads}:/app/uploads
     expose:
       - "5003"
     healthcheck:
@@ -88,7 +88,7 @@ services:
       ITINERARY_SERVICE_URL: http://itinerary-service:5002
       DESTINATION_SERVICE_URL: http://destination-service:5003
     ports:
-      - "5000:5000"
+      - "${GATEWAY_BIND:-0.0.0.0:5000}:5000"
     depends_on:
       - user-service
       - itinerary-service
