@@ -171,7 +171,16 @@ function DestinationDetails() {
               {destination.tags && destination.tags.length > 0 && (
                 <ul className="destination-details__tags">
                   {destination.tags.map(tag => (
-                    <li key={tag} className="destination-details__tag">{tag}</li>
+                    <li key={tag}>
+                      <button
+                        type="button"
+                        className="destination-details__tag"
+                        onClick={() => navigate(`/destinations?tag=${encodeURIComponent(tag)}`)}
+                        title={`Show destinations tagged ${tag}`}
+                      >
+                        {tag}
+                      </button>
+                    </li>
                   ))}
                 </ul>
               )}

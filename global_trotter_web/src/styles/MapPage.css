@@ -341,3 +341,68 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
+@media (min-width: 1024px) {
+  .map-page .map-view {
+    top: var(--desktop-nav-height, 56px);
+  }
+
+  .map-page__menu-trigger,
+  .map-page__search-trigger {
+    top: auto;
+    bottom: 20px;
+  }
+
+  .map-page__menu {
+    top: auto;
+    bottom: 72px;
+  }
+
+  .map-page__search-panel {
+    top: auto;
+    bottom: 20px;
+    left: auto;
+    right: 20px;
+    width: min(380px, 40vw);
+  }
+
+  .map-page__menu-trigger {
+    left: 20px;
+  }
+
+  .map-page__search-trigger {
+    right: 20px;
+  }
+
+  .map-page__legend {
+    top: calc(var(--desktop-nav-height, 56px) + 16px);
+    bottom: auto;
+    left: 20px;
+    max-height: 40vh;
+  }
+
+  .map-page__distance-panel {
+    top: calc(var(--desktop-nav-height, 56px) + 16px);
+    bottom: auto;
+  }
+
+  .map-page__banner {
+    top: calc(var(--desktop-nav-height, 56px) + 84px);
+    bottom: auto;
+  }
+
+  .map-page__itinerary-chip {
+    top: auto;
+    bottom: 24px;
+    max-width: min(40vw, 420px);
+  }
+
+  .map-page__status {
+    top: auto;
+    bottom: 78px;
+  }
+
+  .map-page .maplibregl-ctrl-bottom-right {
+    top: 12px;
+    bottom: auto;
+  }
+}

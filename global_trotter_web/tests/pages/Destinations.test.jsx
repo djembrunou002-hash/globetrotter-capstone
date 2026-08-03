@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Destinations from '../../src/pages/Destinations.jsx'
 import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
@@ -88,9 +88,10 @@ describe('Destinations', () => {
 
     expect(screen.getByText(/loading destinations/i)).toBeInTheDocument()
 
-    expect(await screen.findByText('Marche Central')).toBeInTheDocument()
+    const card = (await screen.findByText('Marche Central')).closest('.destination-card')
+    expect(card).toBeInTheDocument()
     expect(screen.getByText(/centre-ville · market/i)).toBeInTheDocument()
-    expect(screen.getByText('food')).toBeInTheDocument()
+    expect(within(card).getByText('food')).toBeInTheDocument()
   })
 
   test('shows an error message when the destinations request fails', async () => {

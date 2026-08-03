@@ -10,6 +10,7 @@ import {
 import { getRecommendations } from '../services/recommendationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
+import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -17,6 +18,15 @@ import AiAssistant from '../components/AiAssistant.jsx'
 import '../styles/Home.css'
 
 const BUDGET_LEVELS = ['low', 'medium', 'high']
+
+const FILTER_KEY = 'home'
+
+const DEFAULT_FILTERS = {
+  typeFilters: [],
+  budgetFilters: [],
+  minBudget: '',
+  maxBudget: ''
+}
 
 function Home() {
   const navigate = useNavigate()
@@ -28,10 +38,12 @@ function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [typeFilters, setTypeFilters] = useState(new Set())
-  const [budgetFilters, setBudgetFilters] = useState(new Set())
-  const [minBudget, setMinBudget] = useState('')
-  const [maxBudget, setMaxBudget] = useState('')
+  const [restored] = useState(() => readFilterState(FILTER_KEY, DEFAULT_FILTERS))
+
+  const [typeFilters, setTypeFilters] = useState(() => new Set(restored.typeFilters))
+  const [budgetFilters, setBudgetFilters] = useState(() => new Set(restored.budgetFilters))
+  const [minBudget, setMinBudget] = useState(restored.minBudget)
+  const [maxBudget, setMaxBudget] = useState(restored.maxBudget)
 
   const [aiResult, setAiResult] = useState(null)
 
@@ -104,6 +116,15 @@ function Home() {
       setError(err.message)
     }
   }
+
+  useEffect(() => {
+    writeFilterState(FILTER_KEY, {
+      typeFilters: [...typeFilters],
+      budgetFilters: [...budgetFilters],
+      minBudget,
+      maxBudget
+    })
+  }, [typeFilters, budgetFilters, minBudget, maxBudget])
 
   function toggleTypeFilter(type) {
     setTypeFilters(prev => {

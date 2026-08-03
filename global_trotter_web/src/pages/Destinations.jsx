@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   getDestinations,
   getFavorites,
@@ -10,6 +10,7 @@ import {
 import { getToken } from '../services/tokenStorage.js'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
+import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -17,8 +18,20 @@ import '../styles/Destinations.css'
 
 const BUDGET_LEVELS = ['low', 'medium', 'high']
 
+const FILTER_KEY = 'destinations'
+
+const DEFAULT_FILTERS = {
+  typeFilters: [],
+  budgetFilters: [],
+  tagFilters: [],
+  minBudget: '',
+  maxBudget: ''
+}
+
 function Destinations() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tagParam = searchParams.get('tag')
   const isAuthenticated = Boolean(getToken())
   const {
     selectionMode,
@@ -32,11 +45,30 @@ function Destinations() {
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [restored] = useState(() => readFilterState(FILTER_KEY, DEFAULT_FILTERS))
+
   const [searchQuery, setSearchQuery] = useState('')
-  const [typeFilters, setTypeFilters] = useState(new Set())
-  const [budgetFilters, setBudgetFilters] = useState(new Set())
-  const [minBudget, setMinBudget] = useState('')
-  const [maxBudget, setMaxBudget] = useState('')
+  const [typeFilters, setTypeFilters] = useState(() => new Set(tagParam ? [] : restored.typeFilters))
+  const [budgetFilters, setBudgetFilters] = useState(() => new Set(tagParam ? [] : restored.budgetFilters))
+  const [tagFilters, setTagFilters] = useState(
+    () => new Set(tagParam ? [tagParam] : restored.tagFilters)
+  )
+  const [minBudget, setMinBudget] = useState(() => (tagParam ? '' : restored.minBudget))
+  const [maxBudget, setMaxBudget] = useState(() => (tagParam ? '' : restored.maxBudget))
+
+  const [appliedTagParam, setAppliedTagParam] = useState(tagParam)
+
+  if (tagParam !== appliedTagParam) {
+    setAppliedTagParam(tagParam)
+    if (tagParam) {
+      setTagFilters(new Set([tagParam]))
+      setTypeFilters(new Set())
+      setBudgetFilters(new Set())
+      setSearchQuery('')
+      setMinBudget('')
+      setMaxBudget('')
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -58,6 +90,16 @@ function Destinations() {
 
     loadData()
   }, [isAuthenticated])
+
+  useEffect(() => {
+    writeFilterState(FILTER_KEY, {
+      typeFilters: [...typeFilters],
+      budgetFilters: [...budgetFilters],
+      tagFilters: [...tagFilters],
+      minBudget,
+      maxBudget
+    })
+  }, [typeFilters, budgetFilters, tagFilters, minBudget, maxBudget])
 
   async function handleToggleFavorite(destinationId) {
     if (!isAuthenticated) {
@@ -116,6 +158,7 @@ function Destinations() {
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const availableTypes = [...new Set(destinations.map(destination => destination.type).filter(Boolean))]
+  const availableTags = [...new Set(destinations.flatMap(destination => destination.tags || []).filter(Boolean))]
 
   const filteredDestinations = destinations.filter(destination => {
     const name = (destination.name || '').toLowerCase()
@@ -124,8 +167,46 @@ function Destinations() {
     const matchesType = typeFilters.size === 0 || typeFilters.has(destination.type)
     const matchesBudgetLevel = budgetFilters.size === 0 || budgetFilters.has(destination.budget_level)
     const matchesBudgetRange = destinationMatchesBudgetRange(destination, minBudget, maxBudget)
-    return matchesSearch && matchesType && matchesBudgetLevel && matchesBudgetRange
+    const matchesTags =
+      tagFilters.size === 0 || (destination.tags || []).some(tag => tagFilters.has(tag))
+    return matchesSearch && matchesType && matchesBudgetLevel && matchesBudgetRange && matchesTags
   })
+
+  const hasActiveFilters =
+    typeFilters.size > 0 ||
+    budgetFilters.size > 0 ||
+    tagFilters.size > 0 ||
+    minBudget !== '' ||
+    maxBudget !== ''
+
+  function clearTagParam() {
+    if (!tagParam) return
+    const next = new URLSearchParams(searchParams)
+    next.delete('tag')
+    setSearchParams(next, { replace: true })
+  }
+
+  function toggleTagFilter(tag) {
+    clearTagParam()
+    setTagFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(tag)) {
+        next.delete(tag)
+      } else {
+        next.add(tag)
+      }
+      return next
+    })
+  }
+
+  function handleClearFilters() {
+    clearTagParam()
+    setTypeFilters(new Set())
+    setBudgetFilters(new Set())
+    setTagFilters(new Set())
+    setMinBudget('')
+    setMaxBudget('')
+  }
 
   function toggleTypeFilter(type) {
     setTypeFilters(prev => {
@@ -194,8 +275,20 @@ function Destinations() {
         )}
       </div>
 
-      {availableTypes.length > 0 && (
+      {(availableTypes.length > 0 || availableTags.length > 0) && (
         <div className="destinations__filters" role="group" aria-label="Filter destinations">
+          {hasActiveFilters && (
+            <div className="destinations__filter-row destinations__filter-row--actions">
+              <button
+                type="button"
+                className="destinations__filter-clear"
+                onClick={handleClearFilters}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
           <div className="destinations__filter-row">
             {availableTypes.map(type => (
               <button
@@ -223,6 +316,22 @@ function Destinations() {
               </button>
             ))}
           </div>
+
+          {availableTags.length > 0 && (
+            <div className="destinations__filter-row">
+              {availableTags.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`destinations__filter-pill destinations__filter-pill--tag ${tagFilters.has(tag) ? 'destinations__filter-pill--active' : ''}`}
+                  onClick={() => toggleTagFilter(tag)}
+                  aria-pressed={tagFilters.has(tag)}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="destinations__budget-range">
             <label className="destinations__budget-range-field">

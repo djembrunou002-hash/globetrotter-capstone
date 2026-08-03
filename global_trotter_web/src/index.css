@@ -25,7 +25,6 @@ html,
 body,
 #root {
   height: 100%;
-  overflow-x: hidden;
 }
 
 body {
@@ -38,6 +37,9 @@ body {
 
 html {
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 a {

@@ -207,4 +207,32 @@
   background: var(--color-forest);
   border-color: var(--color-forest);
   color: var(--color-cream);
+}.destinations__filter-row--actions {
+  justify-content: flex-end;
+}
+
+.destinations__filter-clear {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.destinations__filter-clear:hover {
+  color: var(--color-forest);
+  border-color: var(--color-forest);
+}
+
+@media (min-width: 1024px) {
+  .destinations__content,
+  .destinations__search-bar,
+  .destinations__filters {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+  }
 }

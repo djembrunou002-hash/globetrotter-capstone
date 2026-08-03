@@ -150,4 +150,11 @@
   font-size: 0.8rem;
   color: var(--color-ink);
   cursor: pointer;
+}@media (min-width: 1024px) {
+  .home__content,
+  .home__filters {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+  }
 }

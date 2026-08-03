@@ -301,4 +301,60 @@
   border-left: 3px solid var(--color-gold);
   background: var(--color-sand);
   border-radius: 0 10px 10px 0;
+}.destination-details__tag {
+  display: inline-block;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.destination-details__tag:hover {
+  background: var(--color-forest);
+  border-color: var(--color-forest);
+  color: var(--color-cream);
+}
+
+@media (min-width: 1024px) {
+  .destination-details__header {
+    justify-content: center;
+    position: relative;
+    padding-inline: clamp(20px, 5vw, 48px);
+  }
+
+  .destination-details__back {
+    position: absolute;
+    left: clamp(20px, 5vw, 48px);
+  }
+
+  .destination-details__content {
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding-inline: 32px;
+  }
+
+  .destination-details__image-wrap {
+    margin-top: 32px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #E7DFC9;
+  }
+
+  .destination-details__image {
+    aspect-ratio: 16 / 8;
+    max-height: 420px;
+  }
+
+  .destination-details__budget {
+    left: 20px;
+  }
+
+  .destination-details__body {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .destination-details__status {
+    padding-inline: 0;
+  }
 }
