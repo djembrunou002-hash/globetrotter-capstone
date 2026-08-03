@@ -2,18 +2,32 @@ import { useCallback, useEffect, useState } from 'react'
 import { haversineDistanceMeters, bearingDegrees } from '../utils/geo.js'
 
 const MOVEMENT_HEADING_THRESHOLD_METERS = 5
-const GEO_OPTIONS = { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 }
+const POSITION_EPSILON_METERS = 4
+const ACCURACY_EPSILON_METERS = 15
+const HEADING_EPSILON_DEGREES = 3
+const ORIENTATION_MIN_INTERVAL_MS = 120
+const GEO_OPTIONS = { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
 
 const isGeolocationSupported = typeof navigator !== 'undefined' && 'geolocation' in navigator
 const isOrientationSupported = typeof window !== 'undefined' && 'DeviceOrientationEvent' in window
+const isSecureOrigin = typeof window === 'undefined' ? true : window.isSecureContext !== false
+
+function initialError() {
+  if (!isGeolocationSupported) return 'Location is not available on this device'
+  if (!isSecureOrigin) {
+    return 'Location needs a secure connection. Open this page over https to enable positioning.'
+  }
+  return ''
+}
 
 const store = {
   position: null,
-  error: isGeolocationSupported ? '' : 'Location is not available on this device',
+  error: initialError(),
   compassHeading: null,
   movementAnchor: null,
   watchId: null,
   orientationBound: false,
+  lastOrientationAt: 0,
   subscribers: 0
 }
 
@@ -21,6 +35,11 @@ const listeners = new Set()
 
 function emit() {
   listeners.forEach(listener => listener())
+}
+
+function headingDelta(a, b) {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
 }
 
 function setError(message) {
@@ -31,15 +50,21 @@ function setError(message) {
 
 function setPosition(next) {
   const previous = store.position
-  if (
-    previous &&
-    previous.lat === next.lat &&
-    previous.lng === next.lng &&
-    previous.heading === next.heading &&
-    previous.accuracy === next.accuracy
-  ) {
-    return
+
+  if (previous) {
+    const moved = haversineDistanceMeters(previous, next)
+
+    const headingChanged =
+      previous.heading == null || next.heading == null
+        ? previous.heading !== next.heading
+        : headingDelta(previous.heading, next.heading) >= HEADING_EPSILON_DEGREES
+
+    const accuracyChanged =
+      Math.abs((previous.accuracy || 0) - (next.accuracy || 0)) >= ACCURACY_EPSILON_METERS
+
+    if (moved < POSITION_EPSILON_METERS && !headingChanged && !accuracyChanged) return
   }
+
   store.position = next
   emit()
 }
@@ -80,10 +105,17 @@ function handlePosition(pos) {
 
 function handlePositionError(err) {
   if (err && err.code === 3 && store.position) return
+  if (!isSecureOrigin) {
+    setError('Location needs a secure connection. Open this page over https to enable positioning.')
+    return
+  }
   setError(err && err.message ? err.message : 'Location unavailable')
 }
 
 function handleOrientation(event) {
+  const now = Date.now()
+  if (now - store.lastOrientationAt < ORIENTATION_MIN_INTERVAL_MS) return
+
   const heading =
     event.webkitCompassHeading != null
       ? event.webkitCompassHeading
@@ -92,21 +124,27 @@ function handleOrientation(event) {
         : null
 
   if (heading == null || Number.isNaN(heading)) return
+  if (store.compassHeading != null && headingDelta(store.compassHeading, heading) < HEADING_EPSILON_DEGREES) {
+    return
+  }
 
+  store.lastOrientationAt = now
   store.compassHeading = heading
   if (!store.position) return
   setPosition({ ...store.position, heading })
 }
 
+function bindOrientation() {
+  if (!isOrientationSupported || store.orientationBound) return
+  store.orientationBound = true
+  window.addEventListener('deviceorientationabsolute', handleOrientation, true)
+  window.addEventListener('deviceorientation', handleOrientation, true)
+}
+
 function startWatching() {
   if (!isGeolocationSupported || store.watchId != null) return
   store.watchId = navigator.geolocation.watchPosition(handlePosition, handlePositionError, GEO_OPTIONS)
-
-  if (isOrientationSupported && !store.orientationBound) {
-    store.orientationBound = true
-    window.addEventListener('deviceorientationabsolute', handleOrientation, true)
-    window.addEventListener('deviceorientation', handleOrientation, true)
-  }
+  bindOrientation()
 }
 
 function stopWatching() {
@@ -150,11 +188,7 @@ export function useGeolocation() {
     }
     try {
       const result = await DeviceOrientationEvent.requestPermission()
-      if (result === 'granted' && !store.orientationBound) {
-        store.orientationBound = true
-        window.addEventListener('deviceorientationabsolute', handleOrientation, true)
-        window.addEventListener('deviceorientation', handleOrientation, true)
-      }
+      if (result === 'granted') bindOrientation()
       return result === 'granted'
     } catch {
       return false

@@ -13,10 +13,12 @@ import MapView from '../components/MapView.jsx'
 import '../styles/MapPage.css'
 
 const ARRIVAL_THRESHOLD_METERS = 60
-const REROUTE_THRESHOLD_METERS = 30
+const REROUTE_THRESHOLD_METERS = 50
 const NEARBY_REFRESH_THRESHOLD_METERS = 400
 const MAX_ROUTE_WAYPOINTS = 10
 const MAP_STATE_STORAGE_KEY = 'globaltrotter:map-last-view'
+
+const EMPTY_PLACES = []
 
 const DEFAULT_MAP_STATE = {
   itineraryId: null,
@@ -130,9 +132,8 @@ function MapPage() {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const lastRouteOriginRef = useRef(null)
-  const lastRouteStopsKeyRef = useRef('')
-  const lastNearbyCenterRef = useRef(null)
+  const [routeOrigin, setRouteOrigin] = useState(null)
+  const [servicesCenter, setServicesCenter] = useState(null)
 
   const { visitedIds } = useVisitedStops(selectedItineraryId)
 
@@ -163,21 +164,23 @@ function MapPage() {
     }
   }, [isAuthenticated])
 
-  useEffect(() => {
+  const paramsKey = `${itineraryParam || ''}|${destinationParam || ''}|${stopsParam || ''}`
+  const [lastParamsKey, setLastParamsKey] = useState(paramsKey)
+
+  if (paramsKey !== lastParamsKey) {
+    setLastParamsKey(paramsKey)
     if (itineraryParam) {
       setSelectedItineraryId(itineraryParam)
       setCustomStopIds(parseStops(stopsParam))
       setFocusDestinationId(null)
       setShowRoute(true)
-      return
-    }
-    if (destinationParam) {
+    } else if (destinationParam) {
       setSelectedItineraryId(null)
       setCustomStopIds(null)
       setFocusDestinationId(destinationParam)
       setShowRoute(true)
     }
-  }, [itineraryParam, destinationParam, stopsParam])
+  }
 
   const destinationsById = useMemo(
     () => new Map(destinations.map(destination => [destination.id, destination])),
@@ -191,18 +194,14 @@ function MapPage() {
     [itineraries, selectedItineraryId]
   )
 
-  useEffect(() => {
-    if (!selectedItineraryId || loading) return
-    if (itineraries.some(itinerary => itinerary.id === selectedItineraryId)) return
+  if (!loading && selectedItineraryId && !itineraries.some(itinerary => itinerary.id === selectedItineraryId)) {
     setSelectedItineraryId(null)
     setCustomStopIds(null)
-  }, [selectedItineraryId, itineraries, loading])
+  }
 
-  useEffect(() => {
-    if (!focusDestinationId || loading) return
-    if (destinationsById.has(focusDestinationId)) return
+  if (!loading && focusDestinationId && !destinationsById.has(focusDestinationId)) {
     setFocusDestinationId(null)
-  }, [focusDestinationId, destinationsById, loading])
+  }
 
   const itineraryStops = useMemo(() => {
     if (!activeItinerary) return []
@@ -229,6 +228,21 @@ function MapPage() {
     return [toMarker(focusDestination, null, false)]
   }, [focusDestination])
 
+  const searchedMarker = useMemo(() => {
+    if (!searchedPlace) return null
+    const lat = Number(searchedPlace.lat)
+    const lng = Number(searchedPlace.lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+    return {
+      id: `searched:${lat},${lng}`,
+      name: searchedPlace.name,
+      lat,
+      lng,
+      position: null,
+      visited: false
+    }
+  }, [searchedPlace])
+
   const isItineraryMode = itineraryStops.length > 0
 
   const destinationMarkers = useMemo(() => {
@@ -240,25 +254,43 @@ function MapPage() {
 
   const pendingStops = useMemo(() => {
     if (isItineraryMode) return itineraryStops.filter(stop => !stop.visited)
-    return focusMarkers
-  }, [isItineraryMode, itineraryStops, focusMarkers])
+    if (focusMarkers.length > 0) return focusMarkers
+    if (searchedMarker) return [searchedMarker]
+    return EMPTY_PLACES
+  }, [isItineraryMode, itineraryStops, focusMarkers, searchedMarker])
 
   const pendingStopsKey = pendingStops.map(stop => stop.id).join(',')
 
   const [stopResetKey, setStopResetKey] = useState(pendingStopsKey)
+  const remainingStops = useMemo(() => pendingStops.slice(stopIndex), [pendingStops, stopIndex])
+
   if (pendingStopsKey !== stopResetKey) {
     setStopResetKey(pendingStopsKey)
     setStopIndex(0)
+  } else if (
+    userLocation &&
+    remainingStops.length > 0 &&
+    stopIndex < pendingStops.length - 1 &&
+    haversineDistanceMeters(userLocation, remainingStops[0]) < ARRIVAL_THRESHOLD_METERS
+  ) {
+    setStopIndex(stopIndex + 1)
   }
 
-  const remainingStops = useMemo(() => pendingStops.slice(stopIndex), [pendingStops, stopIndex])
+  if (!userLocation) {
+    if (routeOrigin !== null) setRouteOrigin(null)
+  } else if (
+    !routeOrigin ||
+    haversineDistanceMeters(routeOrigin, userLocation) >= REROUTE_THRESHOLD_METERS
+  ) {
+    setRouteOrigin({ lat: userLocation.lat, lng: userLocation.lng })
+  }
 
   const routeWaypoints = useMemo(() => {
-    if (remainingStops.length === 0) return []
+    if (remainingStops.length === 0) return EMPTY_PLACES
     const points = remainingStops.slice(0, MAX_ROUTE_WAYPOINTS).map(stop => [stop.lat, stop.lng])
-    if (userLocation) return [[userLocation.lat, userLocation.lng], ...points]
+    if (routeOrigin) return [[routeOrigin.lat, routeOrigin.lng], ...points]
     return points
-  }, [remainingStops, userLocation])
+  }, [remainingStops, routeOrigin])
 
   const canRoute = routeWaypoints.length >= 2
   const routeEnabled = showRoute && canRoute
@@ -276,34 +308,9 @@ function MapPage() {
   }, [selectedItineraryId, focusDestinationId, showRoute, showServices, showVisited, customStopIds, searchedPlace])
 
   useEffect(() => {
-    if (!routeEnabled) {
-      setRoute(null)
-      setRouteIsFallback(false)
-      setRouteSummary(null)
-      lastRouteOriginRef.current = null
-      lastRouteStopsKeyRef.current = ''
-      return undefined
-    }
-
-    const stopsKey = remainingStops.map(stop => stop.id).join(',')
-    const origin = routeWaypoints[0]
-    const sameStops = stopsKey === lastRouteStopsKeyRef.current
-    const previousOrigin = lastRouteOriginRef.current
-
-    if (
-      sameStops &&
-      previousOrigin &&
-      haversineDistanceMeters(
-        { lat: previousOrigin[0], lng: previousOrigin[1] },
-        { lat: origin[0], lng: origin[1] }
-      ) < REROUTE_THRESHOLD_METERS
-    ) {
-      return undefined
-    }
+    if (!routeEnabled) return undefined
 
     let active = true
-    lastRouteOriginRef.current = origin
-    lastRouteStopsKeyRef.current = stopsKey
 
     async function loadRoute() {
       try {
@@ -349,51 +356,41 @@ function MapPage() {
     return () => {
       active = false
     }
-  }, [routeEnabled, routeWaypoints, remainingStops])
+  }, [routeEnabled, routeWaypoints])
 
-  useEffect(() => {
-    if (!userLocation || remainingStops.length === 0) return
-    if (stopIndex >= pendingStops.length - 1) return
-    const distance = haversineDistanceMeters(userLocation, remainingStops[0])
-    if (distance < ARRIVAL_THRESHOLD_METERS) {
-      setStopIndex(previous => previous + 1)
-    }
-  }, [userLocation, remainingStops, stopIndex, pendingStops.length])
-
-  const servicesCenter = useMemo(() => {
-    if (userLocation) return { lat: userLocation.lat, lng: userLocation.lng }
+  const rawServicesCenter = useMemo(() => {
+    if (userLocation) return { lat: userLocation.lat, lng: userLocation.lng, source: 'user' }
     if (destinationMarkers.length === 0) return null
     return {
       lat: destinationMarkers.reduce((sum, marker) => sum + marker.lat, 0) / destinationMarkers.length,
-      lng: destinationMarkers.reduce((sum, marker) => sum + marker.lng, 0) / destinationMarkers.length
+      lng: destinationMarkers.reduce((sum, marker) => sum + marker.lng, 0) / destinationMarkers.length,
+      source: 'itinerary'
     }
   }, [userLocation, destinationMarkers])
+
+  if (!rawServicesCenter) {
+    if (servicesCenter !== null) setServicesCenter(null)
+  } else if (
+    !servicesCenter ||
+    servicesCenter.source !== rawServicesCenter.source ||
+    haversineDistanceMeters(servicesCenter, rawServicesCenter) >= NEARBY_REFRESH_THRESHOLD_METERS
+  ) {
+    setServicesCenter(rawServicesCenter)
+  }
 
   const servicesRadius = destinationMarkers.length > 1 ? 2500 : 1500
 
   useEffect(() => {
-    if (!showServices) {
-      setNearbyPlaces([])
-      lastNearbyCenterRef.current = null
-      return undefined
-    }
-
-    if (!servicesCenter) return undefined
-
-    const previous = lastNearbyCenterRef.current
-    if (previous && haversineDistanceMeters(previous, servicesCenter) < NEARBY_REFRESH_THRESHOLD_METERS) {
-      return undefined
-    }
+    if (!showServices || !servicesCenter) return undefined
 
     let active = true
-    lastNearbyCenterRef.current = servicesCenter
 
     async function loadNearby() {
       try {
         const response = await getNearbyPlaces(servicesCenter.lat, servicesCenter.lng, { radius: servicesRadius })
         if (active) setNearbyPlaces(response.results || [])
       } catch {
-        if (active) setNearbyPlaces([])
+        if (active) setNearbyPlaces(EMPTY_PLACES)
       }
     }
 
@@ -404,14 +401,14 @@ function MapPage() {
     }
   }, [showServices, servicesCenter, servicesRadius])
 
-  const visibleNearbyPlaces = showServices ? nearbyPlaces : []
+  const visibleNearbyPlaces = useMemo(
+    () => (showServices ? nearbyPlaces : EMPTY_PLACES),
+    [showServices, nearbyPlaces]
+  )
 
   useEffect(() => {
     const trimmed = searchQuery.trim()
-    if (!trimmed) {
-      setSearchResults([])
-      return undefined
-    }
+    if (!trimmed) return undefined
 
     let active = true
     const timeout = setTimeout(async () => {
@@ -444,6 +441,8 @@ function MapPage() {
     setSearchResults([])
     setSearchQuery(result.name)
     setSearchOpen(false)
+    setStopIndex(0)
+    setShowRoute(true)
   }
 
   function handleClearSearch() {
@@ -496,11 +495,10 @@ function MapPage() {
     setRoute(null)
     setRouteIsFallback(false)
     setRouteSummary(null)
-    setNearbyPlaces([])
+    setNearbyPlaces(EMPTY_PLACES)
     setStopIndex(0)
-    lastRouteOriginRef.current = null
-    lastRouteStopsKeyRef.current = ''
-    lastNearbyCenterRef.current = null
+    setRouteOrigin(null)
+    setServicesCenter(null)
     mapViewRef.current?.resetView()
     if (itineraryParam || destinationParam || stopsParam) {
       navigate('/map', { replace: true })
@@ -515,6 +513,9 @@ function MapPage() {
     visibleNearbyPlaces.forEach(place => set.add(place.category))
     return [...set]
   }, [destinationMarkers, searchedPlace, visibleNearbyPlaces])
+
+  const servicesAreRemote = showServices && servicesCenter?.source === 'itinerary'
+  const routeNeedsLocation = showRoute && !canRoute && pendingStops.length > 0 && !routeOrigin
 
   const visitedCount = itineraryStops.filter(stop => stop.visited).length
   const nextStop = remainingStops[0]
@@ -532,7 +533,11 @@ function MapPage() {
         ? 'That itinerary is not available on your account.'
         : destinationParam && focusMarkers.length === 0
           ? 'That destination has no map location yet.'
-          : ''
+          : routeNeedsLocation
+            ? 'Waiting for your location to draw the route.'
+            : servicesAreRemote
+              ? 'Showing services around the itinerary, not around you.'
+              : ''
 
   return (
     <div className="map-page">

@@ -120,7 +120,9 @@ const MapView = forwardRef(function MapView(
 ) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
-  const markersRef = useRef([])
+  const destinationMarkersRef = useRef([])
+  const nearbyMarkersRef = useRef([])
+  const searchedMarkerRef = useRef(null)
   const userMarkerRef = useRef(null)
   const userLocationRef = useRef(userLocation)
   const routeRef = useRef({ route, routeIsFallback })
@@ -169,8 +171,14 @@ const MapView = forwardRef(function MapView(
     return () => {
       map.off('load', handleLoad)
       map.off('styledata', handleStyleData)
-      markersRef.current.forEach(marker => marker.remove())
-      markersRef.current = []
+      destinationMarkersRef.current.forEach(marker => marker.remove())
+      destinationMarkersRef.current = []
+      nearbyMarkersRef.current.forEach(marker => marker.remove())
+      nearbyMarkersRef.current = []
+      if (searchedMarkerRef.current) {
+        searchedMarkerRef.current.remove()
+        searchedMarkerRef.current = null
+      }
       if (userMarkerRef.current) {
         userMarkerRef.current.remove()
         userMarkerRef.current = null
@@ -263,9 +271,7 @@ const MapView = forwardRef(function MapView(
     const map = mapRef.current
     if (!map || !ready) return undefined
 
-    const created = []
-
-    destinations.forEach((destination, index) => {
+    const created = destinations.map((destination, index) => {
       const label = destinations.length > 1 ? destination.position ?? index + 1 : null
       const el = createMarkerElement('destination', { label, visited: destination.visited })
       el.style.zIndex = MARKER_Z.destination
@@ -279,40 +285,58 @@ const MapView = forwardRef(function MapView(
         el.addEventListener('click', () => onDestinationClick(destination))
       }
 
-      created.push(marker)
+      return marker
     })
 
-    nearbyPlaces.forEach(place => {
-      const el = createMarkerElement(place.category)
-      el.style.zIndex = MARKER_Z.nearby
-
-      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat([place.lng, place.lat])
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(place.name))
-        .addTo(map)
-
-      created.push(marker)
-    })
-
-    if (searchedPlace) {
-      const el = createMarkerElement('searched')
-      el.style.zIndex = MARKER_Z.searched
-
-      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat([searchedPlace.lng, searchedPlace.lat])
-        .setPopup(new maplibregl.Popup({ offset: 24 }).setText(searchedPlace.name))
-        .addTo(map)
-
-      created.push(marker)
-    }
-
-    markersRef.current = created
+    destinationMarkersRef.current = created
 
     return () => {
       created.forEach(marker => marker.remove())
-      markersRef.current = []
+      destinationMarkersRef.current = []
     }
-  }, [destinations, nearbyPlaces, searchedPlace, onDestinationClick, ready])
+  }, [destinations, onDestinationClick, ready])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return undefined
+
+    const created = nearbyPlaces.map(place => {
+      const el = createMarkerElement(place.category)
+      el.style.zIndex = MARKER_Z.nearby
+
+      return new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([place.lng, place.lat])
+        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(place.name))
+        .addTo(map)
+    })
+
+    nearbyMarkersRef.current = created
+
+    return () => {
+      created.forEach(marker => marker.remove())
+      nearbyMarkersRef.current = []
+    }
+  }, [nearbyPlaces, ready])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !searchedPlace) return undefined
+
+    const el = createMarkerElement('searched')
+    el.style.zIndex = MARKER_Z.searched
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat([searchedPlace.lng, searchedPlace.lat])
+      .setPopup(new maplibregl.Popup({ offset: 24 }).setText(searchedPlace.name))
+      .addTo(map)
+
+    searchedMarkerRef.current = marker
+
+    return () => {
+      marker.remove()
+      searchedMarkerRef.current = null
+    }
+  }, [searchedPlace, ready])
 
   useEffect(() => {
     const map = mapRef.current
