@@ -47,6 +47,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .itinerary-details__title {
@@ -54,6 +56,14 @@
   font-size: 1.6rem;
   color: var(--color-ink);
   margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 480px) {
+  .itinerary-details__title {
+    font-size: 1.3rem;
+  }
 }
 
 .itinerary-details__title-actions {

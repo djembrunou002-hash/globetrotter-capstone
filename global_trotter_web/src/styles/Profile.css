@@ -16,6 +16,19 @@
   font-size: 1.4rem;
   color: var(--color-ink);
   margin: 0;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .profile__header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 20px clamp(16px, 5vw, 48px);
+  }
+
+  .profile__title {
+    font-size: 1.15rem;
+  }
 }
 
 .profile__content {

@@ -32,15 +32,26 @@
   font-size: 1.4rem;
   color: var(--color-ink);
   margin: 0;
+  min-width: 0;
 }
 
 .admin-dashboard__tabs {
   display: flex;
   gap: 8px;
   padding: 20px clamp(20px, 5vw, 48px) 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-dashboard__tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-dashboard__tab {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 10px 20px;
   border-radius: 999px;
   border: 1px solid #E7DFC9;
@@ -51,6 +62,18 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard__header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 20px clamp(16px, 5vw, 48px);
+  }
+
+  .admin-dashboard__title {
+    font-size: 1.15rem;
+  }
 }
 
 .admin-dashboard__tab--active {

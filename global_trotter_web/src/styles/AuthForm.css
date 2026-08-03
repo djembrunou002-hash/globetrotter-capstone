@@ -295,11 +295,22 @@
   }
 
   .auth__form-panel {
-    padding: 40px 24px;
+    padding: 88px 24px 40px;
   }
 
   .auth__logo .logo {
     color: var(--color-ink);
+  }
+}
+
+@media (max-width: 380px) {
+  .auth__logo,
+  .auth__back {
+    top: 18px;
+  }
+
+  .auth__form-panel {
+    padding-top: 80px;
   }
 }
 

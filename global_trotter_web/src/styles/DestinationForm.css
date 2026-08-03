@@ -32,6 +32,19 @@
   font-size: 1.4rem;
   color: var(--color-ink);
   margin: 0;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .destination-form-page__header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding: 20px clamp(16px, 5vw, 48px);
+  }
+
+  .destination-form-page__title {
+    font-size: 1.15rem;
+  }
 }
 
 .destination-form-page__content {

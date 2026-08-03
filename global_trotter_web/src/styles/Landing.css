@@ -254,3 +254,24 @@
     margin: 0 auto;
   }
 }
+
+@media (max-width: 480px) {
+  .landing__nav {
+    flex-wrap: wrap;
+    row-gap: 12px;
+    padding: 20px clamp(16px, 5vw, 64px) 0;
+  }
+
+  .landing__nav-links {
+    gap: 12px;
+  }
+
+  .landing__showcase-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .landing__showcase-title {
+    padding: 0 8px;
+  }
+}
