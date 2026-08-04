@@ -285,6 +285,18 @@
   font-weight: 600;
 }
 
+.auth__forgot {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.auth__forgot a {
+  color: var(--color-muted);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 @media (orientation: portrait) and (max-width: 699px) {
   .auth {
     flex-direction: column;

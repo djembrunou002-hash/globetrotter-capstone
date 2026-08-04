@@ -380,4 +380,6 @@ def reset_password():
     save_json("users.json", data)
     otp_service.delete_reset(identifier)
 
-    return jsonify({"message": "Password reset successfully"}), 200
+    # Log the user in immediately so they land straight back in the app.
+    token = create_access_token(identity=user["id"])
+    return jsonify({"message": "Password reset successfully", "token": token, "user": _public_user(user)}), 200

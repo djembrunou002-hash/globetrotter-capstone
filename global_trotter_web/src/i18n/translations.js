@@ -53,7 +53,8 @@ export const translations = {
       invalidEmail: 'Enter a valid email address',
       phoneLength: 'Phone number must be exactly 9 digits',
       passwordRules: 'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character',
-      codeRequired: 'Enter the code we sent you'
+      codeRequired: 'Enter the code we sent you',
+      passwordMismatch: 'Passwords do not match'
     },
     budgetLevels: {
       low: 'Low budget',
@@ -102,7 +103,39 @@ export const translations = {
       submit: 'Log in',
       submitting: 'Logging in...',
       noAccount: "Don't have an account?",
-      signUpLink: 'Sign up'
+      signUpLink: 'Sign up',
+      forgotPasswordLink: 'Forgot password?'
+    },
+    forgotPassword: {
+      tagline: "It happens to the best of us.",
+      eyebrow: 'Reset your password',
+      title: 'Forgot your password?',
+      hint: "Enter the email you registered with and we'll send you a code to reset it.",
+      submit: 'Send reset code',
+      submitting: 'Sending...',
+      rememberedPassword: 'Remembered your password?',
+      backToLogin: 'Log in'
+    },
+    resetPassword: {
+      tagline: 'Just a couple more steps and you\u2019re back in.',
+      codeEyebrow: 'Verify your identity',
+      codeTitle: 'Enter your code',
+      codeHint: 'We sent a reset code to {{destination}}.',
+      codeLabel: 'Reset code',
+      verifyCode: 'Verify code',
+      verifying: 'Verifying...',
+      noCode: "Didn't get a code?",
+      resend: 'Resend code',
+      resending: 'Sending...',
+      newCodeSent: 'New code sent',
+      devNotice: 'Dev mode (no Brevo key set): your code is pre-filled below.',
+      passwordEyebrow: 'Choose a new password',
+      passwordTitle: 'Set a new password',
+      passwordHint: 'Enter your new password twice to confirm it.',
+      newPasswordLabel: 'New password',
+      confirmPasswordLabel: 'Confirm new password',
+      submit: 'Reset password',
+      submitting: 'Resetting...'
     },
     register: {
       tagline: 'Your journey through Cameroon starts here.',
@@ -572,7 +605,8 @@ export const translations = {
       invalidEmail: 'Saisissez une adresse e-mail valide',
       phoneLength: 'Le numéro de téléphone doit comporter exactement 9 chiffres',
       passwordRules: 'Le mot de passe doit comporter au moins 8 caractères et inclure une majuscule, une minuscule, un chiffre et un caractère spécial',
-      codeRequired: 'Saisissez le code que nous vous avons envoyé'
+      codeRequired: 'Saisissez le code que nous vous avons envoyé',
+      passwordMismatch: 'Les mots de passe ne correspondent pas'
     },
     budgetLevels: {
       low: 'Petit budget',
@@ -621,7 +655,39 @@ export const translations = {
       submit: 'Se connecter',
       submitting: 'Connexion en cours...',
       noAccount: "Vous n'avez pas de compte ?",
-      signUpLink: "S'inscrire"
+      signUpLink: "S'inscrire",
+      forgotPasswordLink: 'Mot de passe oublié ?'
+    },
+    forgotPassword: {
+      tagline: 'Ça arrive aux meilleurs d\u2019entre nous.',
+      eyebrow: 'Réinitialisez votre mot de passe',
+      title: 'Mot de passe oublié ?',
+      hint: "Saisissez l'e-mail avec lequel vous vous êtes inscrit et nous vous enverrons un code pour le réinitialiser.",
+      submit: 'Envoyer le code',
+      submitting: 'Envoi...',
+      rememberedPassword: 'Vous vous souvenez de votre mot de passe ?',
+      backToLogin: 'Se connecter'
+    },
+    resetPassword: {
+      tagline: 'Encore quelques étapes et vous y êtes.',
+      codeEyebrow: 'Vérifiez votre identité',
+      codeTitle: 'Saisissez votre code',
+      codeHint: 'Nous avons envoyé un code de réinitialisation à {{destination}}.',
+      codeLabel: 'Code de réinitialisation',
+      verifyCode: 'Vérifier le code',
+      verifying: 'Vérification...',
+      noCode: "Vous n'avez pas reçu de code ?",
+      resend: 'Renvoyer le code',
+      resending: 'Envoi...',
+      newCodeSent: 'Nouveau code envoyé',
+      devNotice: 'Mode développement (aucune clé Brevo configurée) : votre code est prérempli ci-dessous.',
+      passwordEyebrow: 'Choisissez un nouveau mot de passe',
+      passwordTitle: 'Définir un nouveau mot de passe',
+      passwordHint: 'Saisissez votre nouveau mot de passe deux fois pour le confirmer.',
+      newPasswordLabel: 'Nouveau mot de passe',
+      confirmPasswordLabel: 'Confirmer le nouveau mot de passe',
+      submit: 'Réinitialiser le mot de passe',
+      submitting: 'Réinitialisation...'
     },
     register: {
       tagline: 'Votre voyage à travers le Cameroun commence ici.',

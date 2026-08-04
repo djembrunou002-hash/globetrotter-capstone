@@ -5,6 +5,8 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import Landing from './pages/Landing.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
+import ResetPassword from './pages/ResetPassword.jsx'
 import VerifyOtp from './pages/VerifyOtp.jsx'
 import SelectStyle from './pages/SelectStyle.jsx'
 import Home from './pages/Home.jsx'
@@ -30,6 +32,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-otp" element={<VerifyOtp />} />
             <Route path="/select-style" element={<SelectStyle />} />
             <Route path="/home" element={<Home />} />

@@ -110,6 +110,10 @@ function Login() {
 
         <PasswordField value={formData.password} onChange={handleChange} />
 
+        <p className="auth__forgot">
+          <Link to="/forgot-password">{t('login.forgotPasswordLink')}</Link>
+        </p>
+
         <button type="submit" className="auth__submit" disabled={loading}>
           {loading ? t('login.submitting') : t('login.submit')}
         </button>
