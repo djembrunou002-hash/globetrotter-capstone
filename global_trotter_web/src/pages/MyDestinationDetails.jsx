@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getMyDestinations, requestDestinationDelete, discardSubmission } from '../services/myDestinationService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import StarRating from '../components/Starrating.jsx'
@@ -11,14 +12,14 @@ import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.j
 import '../styles/DestinationDetails.css'
 import '../styles/MyDestinationDetails.css'
 
-const STATUS_LABELS = {
-  published: { label: 'Published', tone: 'success' },
-  pending_review: { label: 'Pending review', tone: 'pending' },
-  rejected: { label: 'Rejected', tone: 'danger' },
-  pending_edit: { label: 'Edit pending review', tone: 'pending' },
-  pending_delete: { label: 'Deletion pending review', tone: 'pending' },
-  deleted: { label: 'Deleted', tone: 'danger' },
-  edited: { label: 'Edited by admin', tone: 'info' }
+const STATUS_TONES = {
+  published: 'success',
+  pending_review: 'pending',
+  rejected: 'danger',
+  pending_edit: 'pending',
+  pending_delete: 'pending',
+  deleted: 'danger',
+  edited: 'info'
 }
 
 const EDITABLE_STATUSES = ['published', 'edited', 'pending_edit']
@@ -26,16 +27,16 @@ const DISCARDABLE_STATUSES = ['rejected', 'deleted']
 const CANCELABLE_STATUSES = ['pending_review', 'pending_edit', 'pending_delete']
 const MAP_ELIGIBLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_delete']
 
-const CANCEL_LABELS = {
-  pending_review: 'Cancel submission',
-  pending_edit: 'Cancel edit',
-  pending_delete: 'Cancel deletion'
+const CANCEL_LABEL_KEYS = {
+  pending_review: 'manage.cancelSubmission',
+  pending_edit: 'manage.cancelEdit',
+  pending_delete: 'manage.cancelDeletion'
 }
 
-const CANCEL_MESSAGES = {
-  pending_review: 'This will withdraw your submission. You can add it again anytime.',
-  pending_edit: 'This will cancel your pending edit. The destination stays as it is now published.',
-  pending_delete: 'This will cancel your pending deletion request. The destination stays published.'
+const CANCEL_MESSAGE_KEYS = {
+  pending_review: 'manage.cancelMessagePendingReview',
+  pending_edit: 'manage.cancelMessagePendingEdit',
+  pending_delete: 'manage.cancelMessagePendingDelete'
 }
 
 function ExtraPhoto({ src, alt }) {
@@ -60,6 +61,7 @@ function MyDestinationDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t, language } = useTranslation()
 
   const [destination, setDestination] = useState(location.state?.destination || null)
   const [loading, setLoading] = useState(!location.state?.destination)
@@ -143,7 +145,7 @@ function MyDestinationDetails() {
     }
   }
 
-  const status = destination ? STATUS_LABELS[destination.status] : null
+  const statusTone = destination ? STATUS_TONES[destination.status] : null
   const editDisabled = destination ? !EDITABLE_STATUSES.includes(destination.status) : true
   const canDelete = destination
     ? EDITABLE_STATUSES.includes(destination.status) ||
@@ -152,19 +154,45 @@ function MyDestinationDetails() {
     : false
   const deleteLabel = destination
     ? CANCELABLE_STATUSES.includes(destination.status)
-      ? CANCEL_LABELS[destination.status]
+      ? t(CANCEL_LABEL_KEYS[destination.status])
       : DISCARDABLE_STATUSES.includes(destination.status)
-        ? 'Discard'
-        : 'Delete'
-    : 'Delete'
+        ? t('manage.discard')
+        : t('common.delete')
+    : t('common.delete')
   const canViewOnMap = destination ? MAP_ELIGIBLE_STATUSES.includes(destination.status) : false
 
   const image = destination?.images && destination.images[0]
   const extraPhotos = destination?.images ? destination.images.slice(1, 4) : []
-  const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level) : null
-  const hoursDisplay = destination ? getHoursDisplay(destination.hours) : null
+  const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level, t) : null
+  const hoursDisplay = destination ? getHoursDisplay(destination.hours, t, language) : null
   const nearbyServices = destination?.nearby_services || []
-  const advice = destination?.advice && destination.advice.trim() ? destination.advice : 'No advice.'
+  const advice = destination?.advice && destination.advice.trim()
+    ? destination.advice
+    : t('destinationDetails.noAdvice')
+
+  function dialogTitle() {
+    if (pendingAction === 'discard') return t('manage.removeCardTitle')
+    if (pendingAction === 'cancel') return t('manage.cancelRequestTitle')
+    return t('manage.deleteDestinationTitle')
+  }
+
+  function dialogMessage() {
+    if (pendingAction === 'discard') {
+      return destination.status === 'deleted'
+        ? t('manage.discardDeletedMessage')
+        : t('manage.discardRejectedMessage')
+    }
+    if (pendingAction === 'cancel') {
+      return t(CANCEL_MESSAGE_KEYS[destination.status])
+    }
+    return t('manage.deleteRequestMessage')
+  }
+
+  function dialogConfirmLabel() {
+    if (pendingAction === 'discard') return t('manage.confirmRemove')
+    if (pendingAction === 'cancel') return t('manage.confirmCancelRequest')
+    return t('manage.confirmSendRequest')
+  }
 
   return (
     <div className="destination-details">
@@ -172,7 +200,7 @@ function MyDestinationDetails() {
         <button
           type="button"
           className="destination-details__back"
-          aria-label="Go back"
+          aria-label={t('common.goBack')}
           onClick={handleBack}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -184,11 +212,11 @@ function MyDestinationDetails() {
       </header>
 
       <main className="destination-details__content destination-details__content--with-bottom-nav">
-        {loading && <p className="destination-details__status">Loading destination...</p>}
+        {loading && <p className="destination-details__status">{t('destinationDetails.loading')}</p>}
         {error && <p className="destination-details__status destination-details__status--error">{error}</p>}
 
         {!loading && !error && !destination && (
-          <p className="destination-details__status">Destination not found.</p>
+          <p className="destination-details__status">{t('destinationDetails.notFound')}</p>
         )}
 
         {!loading && !error && destination && (
@@ -212,9 +240,9 @@ function MyDestinationDetails() {
               >
                 {budgetDisplay.label}
               </span>
-              {status && (
-                <span className={`my-destination-details__status-badge my-destination-details__status-badge--${status.tone}`}>
-                  {status.label}
+              {statusTone && (
+                <span className={`my-destination-details__status-badge my-destination-details__status-badge--${statusTone}`}>
+                  {t(`status.${destination.status}`)}
                 </span>
               )}
             </div>
@@ -222,9 +250,9 @@ function MyDestinationDetails() {
             <div className="destination-details__body">
               {destination.status === 'edited' && (
                 <div className="my-destination-details__notice">
-                  An admin edited this spot's details.
+                  {t('manage.adminEdited')}
                   <button type="button" className="my-destination-details__notice-dismiss" onClick={handleAcknowledgeEdit}>
-                    Got it
+                    {t('manage.gotIt')}
                   </button>
                 </div>
               )}
@@ -236,7 +264,7 @@ function MyDestinationDetails() {
                   }`}
                 >
                   <span>
-                    <strong>{destination.status === 'rejected' ? 'Why it was rejected: ' : 'Admin note: '}</strong>
+                    <strong>{destination.status === 'rejected' ? t('manage.whyRejected') : t('manage.adminNote')}</strong>
                     {destination.admin_note}
                   </span>
                 </div>
@@ -267,19 +295,19 @@ function MyDestinationDetails() {
                     type="button"
                     className="destination-details__location"
                     onClick={() => navigate(`/map?destination=${destination.id}`)}
-                    title="View on map"
+                    title={t('common.viewOnMap')}
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
                       <circle cx="12" cy="10" r="2.5" />
                     </svg>
-                    Location
+                    {t('common.location')}
                   </button>
                 )}
 
                 {!editDisabled && (
                   <button type="button" className="my-destination-details__edit" onClick={handleEdit}>
-                    Edit
+                    {t('common.edit')}
                   </button>
                 )}
 
@@ -292,7 +320,7 @@ function MyDestinationDetails() {
 
               <div className="destination-details__info-grid">
                 <div className="destination-details__info-card">
-                  <span className="destination-details__info-label">Budget to visit</span>
+                  <span className="destination-details__info-label">{t('destinationDetails.budgetToVisit')}</span>
                   <span className="destination-details__info-value">{budgetDisplay.label}</span>
                   {budgetDisplay.note && (
                     <p className="destination-details__info-note">{budgetDisplay.note}</p>
@@ -300,7 +328,7 @@ function MyDestinationDetails() {
                 </div>
 
                 <div className="destination-details__info-card">
-                  <span className="destination-details__info-label">Opening hours</span>
+                  <span className="destination-details__info-label">{t('destinationDetails.openingHours')}</span>
                   <span className="destination-details__info-value">{hoursDisplay.label}</span>
                   {hoursDisplay.note && (
                     <p className="destination-details__info-note">{hoursDisplay.note}</p>
@@ -310,17 +338,21 @@ function MyDestinationDetails() {
 
               {destination.description && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">About this place</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.about')}</h2>
                   <p className="destination-details__description">{destination.description}</p>
                 </div>
               )}
 
               {extraPhotos.length > 0 && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">More photos</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.morePhotos')}</h2>
                   <div className="destination-details__photo-grid">
                     {extraPhotos.map((src, index) => (
-                      <ExtraPhoto key={src} src={src} alt={`${destination.name} photo ${index + 2}`} />
+                      <ExtraPhoto
+                        key={src}
+                        src={src}
+                        alt={t('destinationDetails.photoAlt', { name: destination.name, number: index + 2 })}
+                      />
                     ))}
                   </div>
                 </div>
@@ -328,7 +360,7 @@ function MyDestinationDetails() {
 
               {nearbyServices.length > 0 && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">Good to know nearby</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.nearby')}</h2>
                   <ul className="destination-details__services">
                     {nearbyServices.map(service => (
                       <li key={service.name} className="destination-details__service">
@@ -341,7 +373,7 @@ function MyDestinationDetails() {
               )}
 
               <div className="destination-details__section">
-                <h2 className="destination-details__section-title">Advice</h2>
+                <h2 className="destination-details__section-title">{t('destinationDetails.advice')}</h2>
                 <p className="destination-details__advice">{advice}</p>
               </div>
 
@@ -359,23 +391,9 @@ function MyDestinationDetails() {
 
       {pendingAction && (
         <ConfirmDialog
-          title={
-            pendingAction === 'discard'
-              ? 'Remove this card?'
-              : pendingAction === 'cancel'
-                ? 'Cancel this request?'
-                : 'Delete this destination?'
-          }
-          message={
-            pendingAction === 'discard'
-              ? destination.status === 'deleted'
-                ? 'This destination was deleted by an admin. Removing the card will clear it from your page for good.'
-                : 'This will remove the rejected submission for good.'
-              : pendingAction === 'cancel'
-                ? CANCEL_MESSAGES[destination.status]
-                : "This will send a deletion request to an admin. Your destination stays published until it's approved."
-          }
-          confirmLabel={pendingAction === 'discard' ? 'Remove' : pendingAction === 'cancel' ? 'Cancel request' : 'Send request'}
+          title={dialogTitle()}
+          message={dialogMessage()}
+          confirmLabel={dialogConfirmLabel()}
           submitting={submitting}
           error={dialogError}
           onConfirm={handleConfirmAction}

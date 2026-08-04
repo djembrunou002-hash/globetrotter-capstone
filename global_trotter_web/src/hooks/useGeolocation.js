@@ -12,17 +12,16 @@ const isGeolocationSupported = typeof navigator !== 'undefined' && 'geolocation'
 const isOrientationSupported = typeof window !== 'undefined' && 'DeviceOrientationEvent' in window
 const isSecureOrigin = typeof window === 'undefined' ? true : window.isSecureContext !== false
 
-function initialError() {
-  if (!isGeolocationSupported) return 'Location is not available on this device'
-  if (!isSecureOrigin) {
-    return 'Location needs a secure connection. Open this page over https to enable positioning.'
-  }
+function initialErrorCode() {
+  if (!isGeolocationSupported) return 'unsupported'
+  if (!isSecureOrigin) return 'insecure'
   return ''
 }
 
 const store = {
   position: null,
-  error: initialError(),
+  errorCode: initialErrorCode(),
+  errorMessage: '',
   compassHeading: null,
   movementAnchor: null,
   watchId: null,
@@ -42,9 +41,10 @@ function headingDelta(a, b) {
   return diff > 180 ? 360 - diff : diff
 }
 
-function setError(message) {
-  if (store.error === message) return
-  store.error = message
+function setError(code, message = '') {
+  if (store.errorCode === code && store.errorMessage === message) return
+  store.errorCode = code
+  store.errorMessage = message
   emit()
 }
 
@@ -106,10 +106,14 @@ function handlePosition(pos) {
 function handlePositionError(err) {
   if (err && err.code === 3 && store.position) return
   if (!isSecureOrigin) {
-    setError('Location needs a secure connection. Open this page over https to enable positioning.')
+    setError('insecure')
     return
   }
-  setError(err && err.message ? err.message : 'Location unavailable')
+  if (err && err.message) {
+    setError('browser', err.message)
+    return
+  }
+  setError('unavailable')
 }
 
 function handleOrientation(event) {
@@ -156,12 +160,17 @@ function stopWatching() {
 export function useGeolocation() {
   const [snapshot, setSnapshot] = useState(() => ({
     position: store.position,
-    error: store.error
+    errorCode: store.errorCode,
+    errorMessage: store.errorMessage
   }))
 
   useEffect(() => {
     function sync() {
-      setSnapshot({ position: store.position, error: store.error })
+      setSnapshot({
+        position: store.position,
+        errorCode: store.errorCode,
+        errorMessage: store.errorMessage
+      })
     }
 
     listeners.add(sync)
@@ -197,7 +206,8 @@ export function useGeolocation() {
 
   return {
     position: snapshot.position,
-    error: snapshot.error,
+    errorCode: snapshot.errorCode,
+    errorMessage: snapshot.errorMessage,
     requestHeadingPermission
   }
 }

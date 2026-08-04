@@ -1,7 +1,11 @@
-function EmailField({ id = 'email', name = 'email', label = 'Email', value, onChange }) {
+import { useTranslation } from '../hooks/useTranslation.js'
+
+function EmailField({ id = 'email', name = 'email', label, value, onChange }) {
+  const { t } = useTranslation()
+
   return (
     <>
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label || t('fields.email')}</label>
       <input
         id={id}
         name={name}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '../hooks/useTranslation.js'
 
 function ItineraryCard({
   itinerary,
@@ -11,6 +12,7 @@ function ItineraryCard({
   onRequestShare
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
 
@@ -44,7 +46,7 @@ function ItineraryCard({
       tabIndex={0}
       onClick={handleOpen}
       onKeyDown={handleKeyDown}
-      aria-label={`Open ${itinerary.title}`}
+      aria-label={t('itineraryCard.open', { title: itinerary.title })}
     >
       <div className="itinerary-card__image-wrap">
         {coverImage && !imageFailed ? (
@@ -66,7 +68,11 @@ function ItineraryCard({
               e.stopPropagation()
               onToggleSelect(itinerary.id)
             }}
-            aria-label={selected ? `Deselect ${itinerary.title}` : `Select ${itinerary.title}`}
+            aria-label={
+              selected
+                ? t('itineraryCard.deselect', { title: itinerary.title })
+                : t('itineraryCard.select', { title: itinerary.title })
+            }
             aria-pressed={selected}
           >
             {selected && (
@@ -86,7 +92,7 @@ function ItineraryCard({
                 e.stopPropagation()
                 setMenuOpen(prev => !prev)
               }}
-              aria-label="Itinerary options"
+              aria-label={t('itineraryCard.options')}
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                 <circle cx="5" cy="12" r="2" />
@@ -106,10 +112,10 @@ function ItineraryCard({
                 />
                 <div className="itinerary-card__menu" onClick={e => e.stopPropagation()}>
                   <button type="button" className="itinerary-card__menu-item" onClick={handleRequestShare}>
-                    Share itinerary
+                    {t('itineraryCard.share')}
                   </button>
                   <button type="button" className="itinerary-card__menu-item itinerary-card__menu-item--danger" onClick={handleRequestDelete}>
-                    Delete itinerary
+                    {t('itineraryCard.delete')}
                   </button>
                 </div>
               </>
@@ -118,7 +124,9 @@ function ItineraryCard({
         )}
 
         {!isOwner && (
-          <span className="itinerary-card__shared-badge">Shared by {itinerary.owner_name}</span>
+          <span className="itinerary-card__shared-badge">
+            {t('itineraryCard.sharedBy', { name: itinerary.owner_name })}
+          </span>
         )}
 
         <div className="itinerary-card__overlay">

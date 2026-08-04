@@ -6,6 +6,7 @@ import {
   discardSubmission
 } from '../services/myDestinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
@@ -16,20 +17,21 @@ const EDITABLE_STATUSES = ['published', 'edited', 'pending_edit', 'pending_revie
 const DISCARDABLE_STATUSES = ['rejected', 'deleted']
 const CANCELABLE_STATUSES = ['pending_review', 'pending_edit', 'pending_delete']
 
-const CANCEL_LABELS = {
-  pending_review: 'Cancel submission',
-  pending_edit: 'Cancel edit',
-  pending_delete: 'Cancel deletion'
+const CANCEL_LABEL_KEYS = {
+  pending_review: 'manage.cancelSubmission',
+  pending_edit: 'manage.cancelEdit',
+  pending_delete: 'manage.cancelDeletion'
 }
 
-const CANCEL_MESSAGES = {
-  pending_review: 'This will withdraw your submission. You can add it again anytime.',
-  pending_edit: 'This will cancel your pending edit. The destination stays as it is now published.',
-  pending_delete: 'This will cancel your pending deletion request. The destination stays published.'
+const CANCEL_MESSAGE_KEYS = {
+  pending_review: 'manage.cancelMessagePendingReview',
+  pending_edit: 'manage.cancelMessagePendingEdit',
+  pending_delete: 'manage.cancelMessagePendingDelete'
 }
 
 function MyDestinations() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [destinations, setDestinations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -115,30 +117,54 @@ function MyDestinations() {
     }
   }
 
+  function dialogTitle() {
+    if (pendingAction.type === 'discard') return t('manage.removeCardTitle')
+    if (pendingAction.type === 'cancel') return t('manage.cancelRequestTitle')
+    return t('manage.deleteDestinationTitle')
+  }
+
+  function dialogMessage() {
+    if (pendingAction.type === 'discard') {
+      return pendingAction.destination.status === 'deleted'
+        ? t('manage.discardDeletedMessage')
+        : t('manage.discardRejectedMessage')
+    }
+    if (pendingAction.type === 'cancel') {
+      return t(CANCEL_MESSAGE_KEYS[pendingAction.destination.status])
+    }
+    return t('manage.deleteRequestMessage')
+  }
+
+  function dialogConfirmLabel() {
+    if (pendingAction.type === 'discard') return t('manage.confirmRemove')
+    if (pendingAction.type === 'cancel') return t('manage.confirmCancelRequest')
+    return t('manage.confirmSendRequest')
+  }
+
   return (
     <div className="my-destinations">
       <header className="my-destinations__header">
-        <button type="button" className="my-destinations__back" aria-label="Go back" onClick={handleBack}>
+        <button type="button" className="my-destinations__back" aria-label={t('common.goBack')} onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
         <Logo theme="dark" />
-        <h1 className="my-destinations__title">My destinations</h1>
+        <h1 className="my-destinations__title">{t('manage.title')}</h1>
       </header>
 
       <main className="my-destinations__content my-destinations__content--with-bottom-nav">
         <button type="button" className="my-destinations__add" onClick={() => navigate('/my-destinations/new')}>
-          + Add a destination
+          {t('manage.add')}
         </button>
 
-        {loading && <p className="my-destinations__status">Loading your destinations...</p>}
+        {loading && <p className="my-destinations__status">{t('manage.loading')}</p>}
         {error && <p className="my-destinations__status my-destinations__status--error">{error}</p>}
 
         {!loading && !error && destinations.length === 0 && (
           <p className="my-destinations__status">
-            You haven't added any destinations yet. Share a spot you know well and it'll appear here once you submit it.
+            {t('manage.empty')}
           </p>
         )}
 
@@ -151,10 +177,10 @@ function MyDestinations() {
                 DISCARDABLE_STATUSES.includes(destination.status) ||
                 CANCELABLE_STATUSES.includes(destination.status)
               const deleteLabel = CANCELABLE_STATUSES.includes(destination.status)
-                ? CANCEL_LABELS[destination.status]
+                ? t(CANCEL_LABEL_KEYS[destination.status])
                 : DISCARDABLE_STATUSES.includes(destination.status)
-                  ? 'Discard'
-                  : 'Delete'
+                  ? t('manage.discard')
+                  : t('common.delete')
               return (
                 <DestinationManageCard
                   key={destination.id}
@@ -173,25 +199,9 @@ function MyDestinations() {
 
       {pendingAction && (
         <ConfirmDialog
-          title={
-            pendingAction.type === 'discard'
-              ? 'Remove this card?'
-              : pendingAction.type === 'cancel'
-                ? 'Cancel this request?'
-                : 'Delete this destination?'
-          }
-          message={
-            pendingAction.type === 'discard'
-              ? pendingAction.destination.status === 'deleted'
-                ? 'This destination was deleted by an admin. Removing the card will clear it from your page for good.'
-                : 'This will remove the rejected submission for good.'
-              : pendingAction.type === 'cancel'
-                ? CANCEL_MESSAGES[pendingAction.destination.status]
-                : "This will send a deletion request to an admin. Your destination stays published until it's approved."
-          }
-          confirmLabel={
-            pendingAction.type === 'discard' ? 'Remove' : pendingAction.type === 'cancel' ? 'Cancel request' : 'Send request'
-          }
+          title={dialogTitle()}
+          message={dialogMessage()}
+          confirmLabel={dialogConfirmLabel()}
           submitting={submitting}
           error={dialogError}
           onConfirm={handleConfirmAction}

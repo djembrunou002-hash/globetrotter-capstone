@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { getItineraries, addDestinationToItinerary } from '../services/itineraryService.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/AddToItineraryButton.css'
 
 function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon' }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [open, setOpen] = useState(false)
   const [itineraries, setItineraries] = useState([])
@@ -89,11 +91,11 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
         type="button"
         className={variant === 'icon' ? 'add-to-itinerary__trigger' : 'add-to-itinerary__trigger add-to-itinerary__trigger--pill'}
         onClick={handleOpen}
-        aria-label="Add to itinerary"
+        aria-label={t('addToItinerary.trigger')}
         aria-expanded={open}
       >
         {plusIcon}
-        {variant === 'pill' && <span>Add to trip</span>}
+        {variant === 'pill' && <span>{t('addToItinerary.pill')}</span>}
       </button>
 
       {createPortal(
@@ -106,14 +108,14 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
             className={`add-to-itinerary__sheet ${open ? 'add-to-itinerary__sheet--open' : ''}`}
             role="dialog"
             aria-modal="true"
-            aria-label="Add to itinerary"
+            aria-label={t('addToItinerary.title')}
             onClick={e => e.stopPropagation()}
           >
             <div className="add-to-itinerary__handle" />
 
             <div className="add-to-itinerary__header">
-              <p className="add-to-itinerary__title">Add to itinerary</p>
-              <button type="button" className="add-to-itinerary__close" onClick={handleClose} aria-label="Close">
+              <p className="add-to-itinerary__title">{t('addToItinerary.title')}</p>
+              <button type="button" className="add-to-itinerary__close" onClick={handleClose} aria-label={t('common.close')}>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
@@ -121,18 +123,18 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
             </div>
 
             <div className="add-to-itinerary__body">
-              {loading && <p className="add-to-itinerary__status">Loading your itineraries...</p>}
+              {loading && <p className="add-to-itinerary__status">{t('addToItinerary.loading')}</p>}
               {error && <p className="add-to-itinerary__status add-to-itinerary__status--error">{error}</p>}
 
               {!loading && loaded && itineraries.length === 0 && !error && (
                 <div className="add-to-itinerary__empty">
-                  <p className="add-to-itinerary__status">You don't have any itineraries yet.</p>
+                  <p className="add-to-itinerary__status">{t('addToItinerary.empty')}</p>
                   <button
                     type="button"
                     className="add-to-itinerary__create"
                     onClick={() => navigate('/itineraries')}
                   >
-                    Create one
+                    {t('addToItinerary.createOne')}
                   </button>
                 </div>
               )}
@@ -142,6 +144,7 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
                   {itineraries.map(itinerary => {
                     const isAdded = itinerary.destinations.includes(destinationId)
                     const isAdding = addingId === itinerary.id
+                    const count = itinerary.destinations.length
                     return (
                       <li key={itinerary.id}>
                         <button
@@ -153,11 +156,13 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
                           <span className="add-to-itinerary__item-info">
                             <span className="add-to-itinerary__item-title">{itinerary.title}</span>
                             <span className="add-to-itinerary__item-meta">
-                              {itinerary.destinations.length} destination{itinerary.destinations.length === 1 ? '' : 's'}
+                              {count === 1
+                                ? t('addToItinerary.destinationsOne', { count })
+                                : t('addToItinerary.destinationsMany', { count })}
                             </span>
                           </span>
-                          {isAdded && <span className="add-to-itinerary__badge">Added</span>}
-                          {!isAdded && isAdding && <span className="add-to-itinerary__badge">Adding...</span>}
+                          {isAdded && <span className="add-to-itinerary__badge">{t('addToItinerary.added')}</span>}
+                          {!isAdded && isAdding && <span className="add-to-itinerary__badge">{t('addToItinerary.adding')}</span>}
                           {!isAdded && !isAdding && (
                             <span className="add-to-itinerary__badge add-to-itinerary__badge--plus">
                               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4">

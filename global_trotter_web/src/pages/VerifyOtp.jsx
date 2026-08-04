@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { verifyOtp, resendOtp } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import AuthLayout from '../components/Authlayout.jsx'
 
 function VerifyOtp() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
 
   const { email, number, devOtp } = location.state || {}
 
@@ -17,7 +19,6 @@ function VerifyOtp() {
   const [resending, setResending] = useState(false)
 
   if (!email && !number) {
-    // Someone navigated here directly without registering first.
     navigate('/register', { replace: true })
     return null
   }
@@ -30,7 +31,7 @@ function VerifyOtp() {
     setInfo('')
 
     if (!code.trim()) {
-      setError('Enter the code we sent you')
+      setError(t('validation.codeRequired'))
       return
     }
 
@@ -53,7 +54,7 @@ function VerifyOtp() {
     setResending(true)
     try {
       const response = await resendOtp({ email, number })
-      setInfo(response.message || 'New code sent')
+      setInfo(response.message || t('verifyOtp.newCodeSent'))
       if (response.dev_otp) setCode(response.dev_otp)
     } catch (err) {
       setError(err.message)
@@ -63,22 +64,22 @@ function VerifyOtp() {
   }
 
   return (
-    <AuthLayout tagline="Just one more step." onBack={() => navigate(-1)} forceLogoLink>
+    <AuthLayout tagline={t('verifyOtp.tagline')} onBack={() => navigate(-1)} forceLogoLink>
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
-        <span className="auth__eyebrow">Verify your account</span>
-        <h1>Enter your code</h1>
-        <p className="auth__hint">We sent a verification code to {destination}.</p>
+        <span className="auth__eyebrow">{t('verifyOtp.eyebrow')}</span>
+        <h1>{t('verifyOtp.title')}</h1>
+        <p className="auth__hint">{t('verifyOtp.hint', { destination })}</p>
 
         {error && <p className="auth__error">{error}</p>}
         {info && <p className="auth__hint">{info}</p>}
 
         {devOtp && (
           <p className="auth__dev-otp">
-            Dev mode (no Brevo key set): your code is pre-filled below.
+            {t('verifyOtp.devNotice')}
           </p>
         )}
 
-        <label htmlFor="code">Verification code</label>
+        <label htmlFor="code">{t('verifyOtp.codeLabel')}</label>
         <input
           id="code"
           name="code"
@@ -91,13 +92,13 @@ function VerifyOtp() {
         />
 
         <button type="submit" className="auth__submit" disabled={loading}>
-          {loading ? 'Verifying...' : 'Verify'}
+          {loading ? t('verifyOtp.submitting') : t('verifyOtp.submit')}
         </button>
 
         <p className="auth__switch">
-          Didn't get a code?{' '}
+          {t('verifyOtp.noCode')}{' '}
           <button type="button" className="auth__resend" onClick={handleResend} disabled={resending}>
-            {resending ? 'Sending...' : 'Resend code'}
+            {resending ? t('verifyOtp.resending') : t('verifyOtp.resend')}
           </button>
         </p>
       </form>

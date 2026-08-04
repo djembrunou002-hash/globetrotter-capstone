@@ -9,6 +9,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -16,11 +17,11 @@ import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import ReorderItineraryModal from '../components/ReorderItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
 
-function formatDate(dateString) {
+function formatDate(dateString, locale) {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return dateString
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function loadVisitedIds(itineraryId) {
@@ -35,6 +36,7 @@ function loadVisitedIds(itineraryId) {
 function ItineraryDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t, locale } = useTranslation()
   const isAuthenticated = Boolean(getToken())
 
   const [itinerary, setItinerary] = useState(null)
@@ -50,9 +52,6 @@ function ItineraryDetails() {
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [reorderModalOpen, setReorderModalOpen] = useState(false)
 
-  // Keep visitedIds in sync with the current itinerary id. This runs during
-  // render (not in an effect) since it's just adjusting state to match a
-  // changed prop, per https://react.dev/learn/you-might-not-need-an-effect
   if (id !== visitedIdsLoadedFor) {
     setVisitedIdsLoadedFor(id)
     setVisitedIds(loadVisitedIds(id))
@@ -161,9 +160,6 @@ function ItineraryDetails() {
     }
   }
 
-  // "Visited" is tracked locally (per browser) since there's no backend
-  // endpoint for it yet. It's persisted to localStorage, keyed by itinerary,
-  // so it survives navigating to a destination's detail page and back.
   function handleToggleVisited(destinationId) {
     setVisitedIds(prev => {
       const next = new Set(prev)
@@ -175,7 +171,7 @@ function ItineraryDetails() {
       try {
         localStorage.setItem(`itinerary-visited:${id}`, JSON.stringify([...next]))
       } catch {
-        // ignore storage errors (e.g. private browsing / storage full)
+        return next
       }
       return next
     })
@@ -203,7 +199,7 @@ function ItineraryDetails() {
   return (
     <div className="itinerary-details">
       <header className="itinerary-details__header">
-        <Link to="/itineraries" className="itinerary-details__back" aria-label="Back to itineraries">
+        <Link to="/itineraries" className="itinerary-details__back" aria-label={t('itineraryDetails.back')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
@@ -213,22 +209,24 @@ function ItineraryDetails() {
       </header>
 
       <main className="itinerary-details__content itinerary-details__content--with-bottom-nav">
-        {loading && <p className="itinerary-details__status">Loading itinerary...</p>}
+        {loading && <p className="itinerary-details__status">{t('itineraryDetails.loading')}</p>}
         {error && <p className="itinerary-details__status itinerary-details__status--error">{error}</p>}
 
         {!loading && !error && !itinerary && (
-          <p className="itinerary-details__status">Itinerary not found.</p>
+          <p className="itinerary-details__status">{t('itineraryDetails.notFound')}</p>
         )}
 
         {!loading && !error && itinerary && (
           <>
             {itinerary.is_owner === false && (
-              <p className="itinerary-details__shared-note">Shared by {itinerary.owner_name}</p>
+              <p className="itinerary-details__shared-note">
+                {t('itineraryDetails.sharedBy', { name: itinerary.owner_name })}
+              </p>
             )}
 
             {itinerary.is_owner !== false && sharedUsers.length > 0 && (
               <p className="itinerary-details__shared-note">
-                Shared with {sharedUsers.map(user => user.name).join(', ')}
+                {t('itineraryDetails.sharedWith', { names: sharedUsers.map(user => user.name).join(', ') })}
               </p>
             )}
 
@@ -245,7 +243,7 @@ function ItineraryDetails() {
                     <path d="M9 4v14" />
                     <path d="M15 6v14" />
                   </svg>
-                  Show itinerary
+                  {t('itineraryDetails.showItinerary')}
                 </button>
                 {itinerary.is_owner !== false && (
                   <button
@@ -253,14 +251,14 @@ function ItineraryDetails() {
                     className="itinerary-details__share-button"
                     onClick={handleOpenShare}
                   >
-                    Share
+                    {t('common.share')}
                   </button>
                 )}
               </div>
             </div>
 
             <p className="itinerary-details__dates">
-              {formatDate(itinerary.start_date)} – {formatDate(itinerary.end_date)}
+              {formatDate(itinerary.start_date, locale)} – {formatDate(itinerary.end_date, locale)}
             </p>
 
             <div className="itinerary-details__search-bar">
@@ -280,17 +278,17 @@ function ItineraryDetails() {
               <input
                 type="text"
                 className="itinerary-details__search-input"
-                placeholder="Search this itinerary by name or area"
+                placeholder={t('itineraryDetails.searchPlaceholder')}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                aria-label="Search this itinerary's destinations by name or area"
+                aria-label={t('itineraryDetails.searchLabel')}
               />
               {searchQuery && (
                 <button
                   type="button"
                   className="itinerary-details__search-clear"
                   onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
+                  aria-label={t('common.clearSearch')}
                 >
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 6l12 12M18 6L6 18" />
@@ -300,14 +298,14 @@ function ItineraryDetails() {
             </div>
 
             {availableTypes.length > 0 && (
-              <div className="itinerary-details__filters" role="group" aria-label="Filter this itinerary's destinations by type">
+              <div className="itinerary-details__filters" role="group" aria-label={t('itineraryDetails.filtersLabel')}>
                 <button
                   type="button"
                   className={`itinerary-details__filter-pill ${activeType === null ? 'itinerary-details__filter-pill--active' : ''}`}
                   onClick={() => setActiveType(null)}
                   aria-pressed={activeType === null}
                 >
-                  All
+                  {t('itineraryDetails.all')}
                 </button>
                 {availableTypes.map(type => (
                   <button
@@ -326,8 +324,8 @@ function ItineraryDetails() {
             {filteredDestinations.length === 0 && (
               <p className="itinerary-details__status">
                 {searchQuery
-                  ? `No destinations in this itinerary match "${searchQuery}".`
-                  : 'No destinations match this filter.'}
+                  ? t('itineraryDetails.noSearchMatches', { query: searchQuery })
+                  : t('itineraryDetails.noFilterMatches')}
               </p>
             )}
 

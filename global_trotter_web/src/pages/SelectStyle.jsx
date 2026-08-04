@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { updatePreferences } from '../services/userService.js'
 import { getToken, setUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import StyleSelector from '../components/StyleSelector.jsx'
 
 function SelectStyle() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [selected, setSelected] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,12 +44,12 @@ function SelectStyle() {
   }
 
   return (
-    <AuthLayout tagline="Tell us what you love, and we'll tailor your trips.">
+    <AuthLayout tagline={t('selectStyle.tagline')}>
       <div className="auth__form">
-        <span className="auth__eyebrow">One last step</span>
-        <h1>What are you into?</h1>
+        <span className="auth__eyebrow">{t('selectStyle.eyebrow')}</span>
+        <h1>{t('selectStyle.title')}</h1>
         <p className="auth__hint">
-          Pick as many styles as you like. You can always change this later from your profile.
+          {t('selectStyle.hint')}
         </p>
 
         {error && <p className="auth__error">{error}</p>}
@@ -55,11 +57,11 @@ function SelectStyle() {
         <StyleSelector selected={selected} onToggle={toggleStyle} />
 
         <button type="button" className="auth__submit" onClick={handleContinue} disabled={loading}>
-          {loading ? 'Saving...' : 'Continue'}
+          {loading ? t('common.saving') : t('common.continue')}
         </button>
 
         <button type="button" className="auth__skip" onClick={handleSkip} disabled={loading}>
-          Skip for now
+          {t('selectStyle.skip')}
         </button>
       </div>
     </AuthLayout>

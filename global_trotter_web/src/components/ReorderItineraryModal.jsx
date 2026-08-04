@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/ReorderItineraryModal.css'
 
 function ReorderItineraryModal({ itinerary, destinations, onClose }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [orderedIds, setOrderedIds] = useState([])
 
   const orderedSet = new Set(orderedIds)
@@ -36,14 +38,14 @@ function ReorderItineraryModal({ itinerary, destinations, onClose }) {
         className="reorder-modal__sheet"
         role="dialog"
         aria-modal="true"
-        aria-label="Choose the order of visit"
+        aria-label={t('reorder.title')}
         onClick={e => e.stopPropagation()}
       >
         <div className="reorder-modal__handle" />
 
         <div className="reorder-modal__header">
-          <p className="reorder-modal__title">Choose the order of visit</p>
-          <button type="button" className="reorder-modal__close" onClick={onClose} aria-label="Close">
+          <p className="reorder-modal__title">{t('reorder.title')}</p>
+          <button type="button" className="reorder-modal__close" onClick={onClose} aria-label={t('common.close')}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -51,8 +53,7 @@ function ReorderItineraryModal({ itinerary, destinations, onClose }) {
         </div>
 
         <p className="reorder-modal__hint">
-          Tap the destinations in the order you'd like to visit them. You don't need to pick all of them —
-          choose just the ones for today.
+          {t('reorder.hint')}
         </p>
 
         <div className="reorder-modal__body">
@@ -92,14 +93,14 @@ function ReorderItineraryModal({ itinerary, destinations, onClose }) {
             onClick={handleReset}
             disabled={orderedIds.length === 0}
           >
-            Reset
+            {t('reorder.reset')}
           </button>
           <button
             type="button"
             className="reorder-modal__secondary"
             onClick={handleUseCurrentOrder}
           >
-            Use current order
+            {t('reorder.useCurrentOrder')}
           </button>
           <button
             type="button"
@@ -107,7 +108,7 @@ function ReorderItineraryModal({ itinerary, destinations, onClose }) {
             onClick={handleConfirm}
             disabled={!hasSelection}
           >
-            View route
+            {t('reorder.viewRoute')}
           </button>
         </div>
       </div>

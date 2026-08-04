@@ -8,6 +8,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -38,6 +39,7 @@ function DestinationDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t, language } = useTranslation()
   const isAuthenticated = Boolean(getToken())
   const focusComments = Boolean(location.state?.focusComments)
 
@@ -109,10 +111,12 @@ function DestinationDetails() {
 
   const image = destination?.images && destination.images[0]
   const extraPhotos = destination?.images ? destination.images.slice(1, 4) : []
-  const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level) : null
-  const hoursDisplay = destination ? getHoursDisplay(destination.hours) : null
+  const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level, t) : null
+  const hoursDisplay = destination ? getHoursDisplay(destination.hours, t, language) : null
   const nearbyServices = destination?.nearby_services || []
-  const advice = destination?.advice && destination.advice.trim() ? destination.advice : 'No advice.'
+  const advice = destination?.advice && destination.advice.trim()
+    ? destination.advice
+    : t('destinationDetails.noAdvice')
 
   return (
     <div className="destination-details">
@@ -120,7 +124,7 @@ function DestinationDetails() {
         <button
           type="button"
           className="destination-details__back"
-          aria-label="Go back"
+          aria-label={t('common.goBack')}
           onClick={handleBack}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -132,11 +136,11 @@ function DestinationDetails() {
       </header>
 
       <main className="destination-details__content destination-details__content--with-bottom-nav">
-        {loading && <p className="destination-details__status">Loading destination...</p>}
+        {loading && <p className="destination-details__status">{t('destinationDetails.loading')}</p>}
         {error && <p className="destination-details__status destination-details__status--error">{error}</p>}
 
         {!loading && !error && !destination && (
-          <p className="destination-details__status">Destination not found.</p>
+          <p className="destination-details__status">{t('destinationDetails.notFound')}</p>
         )}
 
         {!loading && !error && destination && (
@@ -176,7 +180,7 @@ function DestinationDetails() {
                         type="button"
                         className="destination-details__tag"
                         onClick={() => navigate(`/destinations?tag=${encodeURIComponent(tag)}`)}
-                        title={`Show destinations tagged ${tag}`}
+                        title={t('destinationDetails.showTagged', { tag })}
                       >
                         {tag}
                       </button>
@@ -197,13 +201,13 @@ function DestinationDetails() {
                   type="button"
                   className="destination-details__location"
                   onClick={() => navigate(`/map?destination=${id}`)}
-                  title="View on map"
+                  title={t('common.viewOnMap')}
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
-                  Location
+                  {t('common.location')}
                 </button>
 
                 <button
@@ -212,7 +216,7 @@ function DestinationDetails() {
                     isFavorite ? 'destination-details__favorite--active' : ''
                   }`}
                   onClick={handleToggleFavorite}
-                  aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  aria-label={isFavorite ? t('common.removeFromFavorites') : t('common.addToFavorites')}
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -224,7 +228,7 @@ function DestinationDetails() {
                   >
                     <path d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.5 4.5 6 4c2-.3 3.8.8 6 3.2C14.2 4.8 16 3.7 18 4c3.5.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" />
                   </svg>
-                  {isFavorite ? 'Saved to favorites' : 'Add to favorites'}
+                  {isFavorite ? t('destinationDetails.savedToFavorites') : t('common.addToFavorites')}
                 </button>
 
                 <AddToItineraryButton
@@ -236,7 +240,7 @@ function DestinationDetails() {
 
               <div className="destination-details__info-grid">
                 <div className="destination-details__info-card">
-                  <span className="destination-details__info-label">Budget to visit</span>
+                  <span className="destination-details__info-label">{t('destinationDetails.budgetToVisit')}</span>
                   <span className="destination-details__info-value">{budgetDisplay.label}</span>
                   {budgetDisplay.note && (
                     <p className="destination-details__info-note">{budgetDisplay.note}</p>
@@ -244,7 +248,7 @@ function DestinationDetails() {
                 </div>
 
                 <div className="destination-details__info-card">
-                  <span className="destination-details__info-label">Opening hours</span>
+                  <span className="destination-details__info-label">{t('destinationDetails.openingHours')}</span>
                   <span className="destination-details__info-value">{hoursDisplay.label}</span>
                   {hoursDisplay.note && (
                     <p className="destination-details__info-note">{hoursDisplay.note}</p>
@@ -254,17 +258,21 @@ function DestinationDetails() {
 
               {destination.description && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">About this place</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.about')}</h2>
                   <p className="destination-details__description">{destination.description}</p>
                 </div>
               )}
 
               {extraPhotos.length > 0 && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">More photos</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.morePhotos')}</h2>
                   <div className="destination-details__photo-grid">
                     {extraPhotos.map((src, index) => (
-                      <ExtraPhoto key={src} src={src} alt={`${destination.name} photo ${index + 2}`} />
+                      <ExtraPhoto
+                        key={src}
+                        src={src}
+                        alt={t('destinationDetails.photoAlt', { name: destination.name, number: index + 2 })}
+                      />
                     ))}
                   </div>
                 </div>
@@ -272,7 +280,7 @@ function DestinationDetails() {
 
               {nearbyServices.length > 0 && (
                 <div className="destination-details__section">
-                  <h2 className="destination-details__section-title">Good to know nearby</h2>
+                  <h2 className="destination-details__section-title">{t('destinationDetails.nearby')}</h2>
                   <ul className="destination-details__services">
                     {nearbyServices.map(service => (
                       <li key={service.name} className="destination-details__service">
@@ -285,7 +293,7 @@ function DestinationDetails() {
               )}
 
               <div className="destination-details__section">
-                <h2 className="destination-details__section-title">Advice</h2>
+                <h2 className="destination-details__section-title">{t('destinationDetails.advice')}</h2>
                 <p className="destination-details__advice">{advice}</p>
               </div>
 

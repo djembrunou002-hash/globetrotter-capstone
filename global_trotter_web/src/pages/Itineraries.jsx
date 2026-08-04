@@ -4,6 +4,7 @@ import { getItineraries, createItinerary, deleteItinerary, deleteItineraries } f
 import { getDestinations } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import ItineraryCard from '../components/Itinerarycard.jsx'
@@ -15,6 +16,7 @@ import '../styles/Itineraries.css'
 function Itineraries() {
   const navigate = useNavigate()
   const { formOpen, openForm, closeForm } = useItineraryDraft()
+  const { t } = useTranslation()
 
   const [itineraries, setItineraries] = useState([])
   const [destinations, setDestinations] = useState([])
@@ -143,18 +145,27 @@ function Itineraries() {
     setShareTarget(null)
   }
 
+  function confirmDialogMessage() {
+    if (!confirmTarget) return ''
+    if (confirmTarget.type === 'single') return t('itineraries.deleteSingleMessage')
+    const count = confirmTarget.ids.length
+    return count === 1
+      ? t('itineraries.deleteBulkMessageOne', { count })
+      : t('itineraries.deleteBulkMessageMany', { count })
+  }
+
   return (
     <div className="itineraries">
       <header className="itineraries__header">
         <Logo theme="dark" />
-        <h1 className="itineraries__title">Itineraries</h1>
+        <h1 className="itineraries__title">{t('itineraries.title')}</h1>
         {itineraries.length > 0 && !deleteMode && (
           <div className="itineraries__header-actions">
             <button type="button" className="itineraries__add-button" onClick={openForm}>
-              + Add itinerary
+              {t('itineraries.addButton')}
             </button>
             <button type="button" className="itineraries__delete-trigger" onClick={handleStartDeleteMode}>
-              Delete
+              {t('itineraries.deleteTrigger')}
             </button>
           </div>
         )}
@@ -166,7 +177,7 @@ function Itineraries() {
             type="button"
             className="itineraries__selection-cancel"
             onClick={handleCancelDeleteMode}
-            aria-label="Cancel itinerary selection"
+            aria-label={t('itineraries.cancelSelection')}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12H19" />
@@ -177,14 +188,14 @@ function Itineraries() {
       )}
 
       <main className="itineraries__content">
-        {loading && <p className="itineraries__status">Loading itineraries...</p>}
+        {loading && <p className="itineraries__status">{t('itineraries.loading')}</p>}
         {error && <p className="itineraries__status itineraries__status--error">{error}</p>}
 
         {!loading && !error && itineraries.length === 0 && (
           <div className="itineraries__empty">
-            <p className="itineraries__empty-text">No itinerary</p>
+            <p className="itineraries__empty-text">{t('itineraries.empty')}</p>
             <button type="button" className="itineraries__empty-button" onClick={openForm}>
-              Add itinerary
+              {t('itineraries.addAction')}
             </button>
           </div>
         )}
@@ -209,7 +220,7 @@ function Itineraries() {
 
       {deleteMode && selectedForDeletion.length > 0 && (
         <button type="button" className="itineraries__confirm-delete" onClick={handleRequestBulkDelete}>
-          Delete selected ({selectedForDeletion.length})
+          {t('itineraries.deleteSelected', { count: selectedForDeletion.length })}
         </button>
       )}
 
@@ -225,12 +236,12 @@ function Itineraries() {
 
       {confirmTarget && (
         <ConfirmDialog
-          title={confirmTarget.type === 'bulk' ? 'Delete itineraries?' : 'Delete itinerary?'}
-          message={
+          title={
             confirmTarget.type === 'bulk'
-              ? `Are you sure you want to delete ${confirmTarget.ids.length} itinerar${confirmTarget.ids.length > 1 ? 'ies' : 'y'}? This can't be undone.`
-              : "Are you sure you want to delete this itinerary? This can't be undone."
+              ? t('itineraries.deleteManyTitle')
+              : t('itineraries.deleteOneTitle')
           }
+          message={confirmDialogMessage()}
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelConfirm}
           submitting={deleting}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFavorites, removeFavorite, rateDestination } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -9,6 +10,7 @@ import '../styles/Favorites.css'
 
 function Favorites() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [favorites, setFavorites] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,7 +72,7 @@ function Favorites() {
         <button
           type="button"
           className="favorites__back"
-          aria-label="Go back"
+          aria-label={t('common.goBack')}
           onClick={handleBack}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -79,16 +81,16 @@ function Favorites() {
           </svg>
         </button>
         <Logo theme="dark" />
-        <h1 className="favorites__title">Favorites</h1>
+        <h1 className="favorites__title">{t('favorites.title')}</h1>
       </header>
 
       <main className="favorites__content favorites__content--with-bottom-nav">
-        {loading && <p className="favorites__status">Loading your favorites...</p>}
+        {loading && <p className="favorites__status">{t('favorites.loading')}</p>}
         {error && <p className="favorites__status favorites__status--error">{error}</p>}
 
         {!loading && !error && favorites.length === 0 && (
           <p className="favorites__status">
-            You haven't favorited any destinations yet. Tap the heart on a destination to save it here.
+            {t('favorites.empty')}
           </p>
         )}
 

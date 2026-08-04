@@ -1,26 +1,29 @@
 import { useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/PendingRequestCard.css'
 
-const TYPE_LABELS = {
-  create: 'New destination',
-  edit: 'Edit request',
-  delete: 'Deletion request'
+const TYPE_KEYS = {
+  create: 'request.typeCreate',
+  edit: 'request.typeEdit',
+  delete: 'request.typeDelete'
 }
 
-function formatDate(iso) {
+function formatDate(iso, locale) {
   if (!iso) return ''
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, submitting = false }) {
+  const { t, locale } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const display = request.display || {}
-  const name = display.name || display.current?.name || 'Untitled destination'
+  const name = display.name || display.current?.name || t('request.untitled')
   const area = display.area || display.current?.area || ''
   const type = display.type || display.current?.type || ''
   const image = (display.images && display.images[0]) || (display.current?.images && display.current.images[0])
+  const typeKey = TYPE_KEYS[request.type]
 
   function handleCardClick() {
     if (onView) onView(request)
@@ -54,9 +57,9 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
           <div className="pending-card__image pending-card__image--placeholder" aria-hidden="true" />
         )}
         <span className={`pending-card__type pending-card__type--${request.type}`}>
-          {TYPE_LABELS[request.type] || request.type}
+          {typeKey ? t(typeKey) : request.type}
         </span>
-        {request.status === 'rejected' && <span className="pending-card__rejected">Rejected</span>}
+        {request.status === 'rejected' && <span className="pending-card__rejected">{t('status.rejected')}</span>}
       </div>
 
       <div className="pending-card__body">
@@ -65,11 +68,14 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
           {area}{area && type ? ' · ' : ''}{type}
         </p>
         <p className="pending-card__submitter">
-          Submitted by {request.submitted_by_name} on {formatDate(request.created_at)}
+          {t('request.submittedBy', {
+            name: request.submitted_by_name,
+            date: formatDate(request.created_at, locale)
+          })}
         </p>
 
         {request.type === 'delete' && (
-          <p className="pending-card__note">This user is requesting to delete this published destination.</p>
+          <p className="pending-card__note">{t('request.deleteNote')}</p>
         )}
 
         <div className="pending-card__actions" onClick={e => e.stopPropagation()}>
@@ -81,7 +87,7 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
                 onClick={() => onReject(request)}
                 disabled={submitting}
               >
-                Review &amp; reject
+                {t('request.reviewAndReject')}
               </button>
               <button
                 type="button"
@@ -89,7 +95,7 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
                 onClick={() => onApprove(request)}
                 disabled={submitting}
               >
-                Accept
+                {t('request.accept')}
               </button>
             </>
           )}
@@ -100,7 +106,7 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
               onClick={() => onDelete(request)}
               disabled={submitting}
             >
-              Remove
+              {t('common.remove')}
             </button>
           )}
         </div>

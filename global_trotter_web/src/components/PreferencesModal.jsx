@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import StyleSelector from './StyleSelector.jsx'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/PreferencesModal.css'
 
 function PreferencesModal({ initialSelected, onSave, onCancel }) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(initialSelected)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -30,11 +32,11 @@ function PreferencesModal({ initialSelected, onSave, onCancel }) {
         className="preferences-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Select your preferences"
+        aria-label={t('preferences.title')}
         onClick={e => e.stopPropagation()}
       >
-        <h3 className="preferences-modal__title">Select your preferences</h3>
-        <p className="preferences-modal__hint">Choose the travel styles that interest you most.</p>
+        <h3 className="preferences-modal__title">{t('preferences.title')}</h3>
+        <p className="preferences-modal__hint">{t('preferences.hint')}</p>
 
         {error && <p className="preferences-modal__error">{error}</p>}
 
@@ -47,7 +49,7 @@ function PreferencesModal({ initialSelected, onSave, onCancel }) {
             onClick={onCancel}
             disabled={submitting}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -55,7 +57,7 @@ function PreferencesModal({ initialSelected, onSave, onCancel }) {
             onClick={handleSave}
             disabled={submitting}
           >
-            {submitting ? 'Saving...' : 'Save'}
+            {submitting ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>

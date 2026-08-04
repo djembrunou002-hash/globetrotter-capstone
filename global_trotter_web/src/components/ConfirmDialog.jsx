@@ -1,15 +1,18 @@
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/ConfirmDialog.css'
 
 function ConfirmDialog({
   title,
   message,
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   submitting = false,
   error = ''
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="confirm-dialog__backdrop" onClick={submitting ? undefined : onCancel}>
       <div
@@ -31,7 +34,7 @@ function ConfirmDialog({
             onClick={onCancel}
             disabled={submitting}
           >
-            {cancelLabel}
+            {cancelLabel || t('common.cancel')}
           </button>
           <button
             type="button"
@@ -39,7 +42,7 @@ function ConfirmDialog({
             onClick={onConfirm}
             disabled={submitting}
           >
-            {submitting ? 'Deleting...' : confirmLabel}
+            {submitting ? t('common.deleting') : confirmLabel || t('common.delete')}
           </button>
         </div>
       </div>

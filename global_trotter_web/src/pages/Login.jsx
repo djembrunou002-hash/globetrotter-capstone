@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loginUser, loginWithGoogle } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
 import PhoneInput from '../components/Phoneinput.jsx'
@@ -12,6 +13,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function Login() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [formData, setFormData] = useState({
     email: '',
     number: '',
@@ -34,22 +36,22 @@ function Login() {
     setError('')
 
     if (!formData.password) {
-      setError('Password is required')
+      setError(t('validation.passwordRequired'))
       return
     }
 
     if (!formData.email && !formData.number) {
-      setError('Provide an email or a phone number')
+      setError(t('validation.contactRequired'))
       return
     }
 
     if (formData.email && !EMAIL_REGEX.test(formData.email)) {
-      setError('Enter a valid email address')
+      setError(t('validation.invalidEmail'))
       return
     }
 
     if (formData.number && formData.number.length !== 9) {
-      setError('Phone number must be exactly 9 digits')
+      setError(t('validation.phoneLength'))
       return
     }
 
@@ -94,11 +96,11 @@ function Login() {
   }, [navigate])
 
   return (
-    <AuthLayout tagline="Pick up where you left off." forceLogoLink>
+    <AuthLayout tagline={t('login.tagline')} forceLogoLink>
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
-        <span className="auth__eyebrow">Welcome back</span>
-        <h1>Log in to GlobalTrotter</h1>
-        <p className="auth__hint">Use the email or phone number you registered with.</p>
+        <span className="auth__eyebrow">{t('login.eyebrow')}</span>
+        <h1>{t('login.title')}</h1>
+        <p className="auth__hint">{t('login.hint')}</p>
 
         {error && <p className="auth__error">{error}</p>}
 
@@ -109,13 +111,13 @@ function Login() {
         <PasswordField value={formData.password} onChange={handleChange} />
 
         <button type="submit" className="auth__submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Log in'}
+          {loading ? t('login.submitting') : t('login.submit')}
         </button>
 
         <GoogleButton onCredential={handleGoogleCredential} onError={setError} />
 
         <p className="auth__switch">
-          Don't have an account? <Link to="/register">Sign up</Link>
+          {t('login.noAccount')} <Link to="/register">{t('login.signUpLink')}</Link>
         </p>
       </form>
     </AuthLayout>

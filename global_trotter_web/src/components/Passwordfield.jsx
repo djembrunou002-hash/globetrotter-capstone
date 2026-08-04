@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/AuthForm.css'
 
 function getPasswordStrength(password) {
@@ -14,20 +15,26 @@ function getPasswordStrength(password) {
 function PasswordField({
   id = 'password',
   name = 'password',
-  label = 'Password',
+  label,
   value,
   onChange,
   withStrengthMeter = false,
   hint
 }) {
+  const { t } = useTranslation()
   const [showPassword, setShowPassword] = useState(false)
   const score = getPasswordStrength(value)
   const strengthClass = score <= 2 ? 'weak' : score <= 4 ? 'fair' : 'strong'
-  const strengthLabel = score <= 2 ? 'Weak' : score <= 4 ? 'Fair' : 'Strong'
+  const strengthLabel =
+    score <= 2
+      ? t('fields.strengthWeak')
+      : score <= 4
+        ? t('fields.strengthFair')
+        : t('fields.strengthStrong')
 
   return (
     <>
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{label || t('fields.password')}</label>
       <div className="auth__password-row">
         <input
           id={id}
@@ -40,7 +47,7 @@ function PasswordField({
           type="button"
           className="auth__toggle-visibility"
           onClick={() => setShowPassword(prev => !prev)}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-label={showPassword ? t('fields.hidePassword') : t('fields.showPassword')}
         >
           {showPassword ? (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">

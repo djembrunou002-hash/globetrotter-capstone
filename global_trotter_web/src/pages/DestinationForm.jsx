@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getMyDestinations, submitDestination, requestDestinationUpdate, updateSubmission } from '../services/myDestinationService.js'
 import { getAllDestinations, adminUpdateDestination } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import '../styles/DestinationForm.css'
@@ -30,10 +31,10 @@ const EMPTY_FIELDS = {
 }
 
 const IMAGE_SLOTS = [
-  { key: 'image_1', label: 'Principal photo' },
-  { key: 'image_2', label: 'Photo 2' },
-  { key: 'image_3', label: 'Photo 3' },
-  { key: 'image_4', label: 'Photo 4' }
+  { key: 'image_1', number: 1 },
+  { key: 'image_2', number: 2 },
+  { key: 'image_3', number: 3 },
+  { key: 'image_4', number: 4 }
 ]
 
 function destinationToFields(destination) {
@@ -63,6 +64,7 @@ function destinationToFields(destination) {
 function DestinationForm({ mode }) {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { t } = useTranslation()
   const isEdit = mode === 'edit' || mode === 'admin-edit'
   const isAdminEdit = mode === 'admin-edit'
 
@@ -74,6 +76,7 @@ function DestinationForm({ mode }) {
   const [loading, setLoading] = useState(isEdit)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [notFound, setNotFound] = useState(false)
   const [isPendingSubmission, setIsPendingSubmission] = useState(false)
 
   useEffect(() => {
@@ -96,12 +99,13 @@ function DestinationForm({ mode }) {
     async function loadExisting() {
       setLoading(true)
       setError('')
+      setNotFound(false)
       try {
         const response = isAdminEdit ? await getAllDestinations() : await getMyDestinations()
         if (cancelled) return
         const found = response.destinations.find(d => d.id === id)
         if (!found) {
-          setError('Destination not found.')
+          setNotFound(true)
           return
         }
         setFields(destinationToFields(found))
@@ -155,7 +159,7 @@ function DestinationForm({ mode }) {
     setError('')
 
     if (!isEdit && !imageFiles.image_1) {
-      setError('A principal photo is required.')
+      setError(t('form.principalPhotoRequired'))
       return
     }
 
@@ -191,26 +195,32 @@ function DestinationForm({ mode }) {
     navigate(-1)
   }
 
+  function slotLabel(slot) {
+    return slot.number === 1 ? t('form.principalPhoto') : t('form.photoNumber', { number: slot.number })
+  }
+
   const title =
     mode === 'create'
-      ? 'Add your destination'
+      ? t('form.titleCreate')
       : mode === 'edit'
-        ? 'Edit your destination'
-        : 'Edit destination'
+        ? t('form.titleEdit')
+        : t('form.titleAdminEdit')
 
   const submitLabel =
     mode === 'create'
-      ? 'Submit for review'
+      ? t('form.submitCreate')
       : mode === 'edit'
         ? isPendingSubmission
-          ? 'Update submission'
-          : 'Send edit for review'
-        : 'Save changes'
+          ? t('form.submitUpdate')
+          : t('form.submitSendEdit')
+        : t('form.submitSaveChanges')
+
+  const displayedError = notFound ? t('destinationDetails.notFound') : error
 
   return (
     <div className="destination-form-page">
       <header className="destination-form-page__header">
-        <button type="button" className="destination-form-page__back" aria-label="Go back" onClick={handleBack}>
+        <button type="button" className="destination-form-page__back" aria-label={t('common.goBack')} onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
@@ -221,32 +231,31 @@ function DestinationForm({ mode }) {
       </header>
 
       <main className="destination-form-page__content destination-form-page__content--with-bottom-nav">
-        {loading && <p className="destination-form__status">Loading...</p>}
+        {loading && <p className="destination-form__status">{t('common.loading')}</p>}
 
         {!loading && (
           <form className="destination-form" onSubmit={handleSubmit} noValidate>
-            {error && <p className="destination-form__error">{error}</p>}
+            {displayedError && <p className="destination-form__error">{displayedError}</p>}
 
             {mode === 'edit' && (
               <p className="destination-form__hint">
-                {isPendingSubmission
-                  ? "This submission hasn't been reviewed yet. You can keep changing it until an admin responds."
-                  : 'Changes you save here will be sent to an admin for review before they go live.'}
+                {isPendingSubmission ? t('form.hintPending') : t('form.hintEdit')}
               </p>
             )}
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Photos</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionPhotos')}</h2>
               <div className="destination-form__images">
                 {IMAGE_SLOTS.map(slot => {
                   const index = IMAGE_SLOTS.indexOf(slot)
                   const preview = imagePreviews[slot.key] || existingImages[index]
+                  const label = slotLabel(slot)
                   return (
                     <label key={slot.key} className="destination-form__image-slot">
                       {preview ? (
-                        <img src={preview} alt={slot.label} className="destination-form__image-preview" />
+                        <img src={preview} alt={label} className="destination-form__image-preview" />
                       ) : (
-                        <span className="destination-form__image-placeholder">{slot.label}</span>
+                        <span className="destination-form__image-placeholder">{label}</span>
                       )}
                       <input
                         type="file"
@@ -254,7 +263,7 @@ function DestinationForm({ mode }) {
                         onChange={e => handleImageChange(slot.key, e.target.files[0] || null)}
                         hidden
                       />
-                      <span className="destination-form__image-label">{slot.label}</span>
+                      <span className="destination-form__image-label">{label}</span>
                     </label>
                   )
                 })}
@@ -262,73 +271,73 @@ function DestinationForm({ mode }) {
             </section>
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Basics</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionBasics')}</h2>
 
               <label className="destination-form__field">
-                <span>Name</span>
+                <span>{t('form.name')}</span>
                 <input type="text" name="name" value={fields.name} onChange={handleFieldChange} required />
               </label>
 
               <div className="destination-form__row">
                 <label className="destination-form__field">
-                  <span>Country</span>
+                  <span>{t('form.country')}</span>
                   <input type="text" name="country" value={fields.country} onChange={handleFieldChange} required />
                 </label>
                 <label className="destination-form__field">
-                  <span>Region</span>
+                  <span>{t('form.region')}</span>
                   <input type="text" name="region" value={fields.region} onChange={handleFieldChange} required />
                 </label>
               </div>
 
               <div className="destination-form__row">
                 <label className="destination-form__field">
-                  <span>Area</span>
+                  <span>{t('form.area')}</span>
                   <input type="text" name="area" value={fields.area} onChange={handleFieldChange} required />
                 </label>
                 <label className="destination-form__field">
-                  <span>Type</span>
+                  <span>{t('form.type')}</span>
                   <input
                     type="text"
                     name="type"
                     value={fields.type}
                     onChange={handleFieldChange}
-                    placeholder="e.g. market, nature, museum"
+                    placeholder={t('form.typePlaceholder')}
                     required
                   />
                 </label>
               </div>
 
               <label className="destination-form__field">
-                <span>Tags (comma separated)</span>
+                <span>{t('form.tags')}</span>
                 <input
                   type="text"
                   name="tags"
                   value={fields.tags}
                   onChange={handleFieldChange}
-                  placeholder="food, hiking, local"
+                  placeholder={t('form.tagsPlaceholder')}
                 />
               </label>
 
               <label className="destination-form__field">
-                <span>Description</span>
+                <span>{t('form.description')}</span>
                 <textarea name="description" value={fields.description} onChange={handleFieldChange} rows={3} />
               </label>
 
               <label className="destination-form__field">
-                <span>Advice for visitors</span>
+                <span>{t('form.advice')}</span>
                 <textarea name="advice" value={fields.advice} onChange={handleFieldChange} rows={3} />
               </label>
             </section>
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Budget</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionBudget')}</h2>
 
               <label className="destination-form__field">
-                <span>Budget level</span>
+                <span>{t('form.budgetLevel')}</span>
                 <select name="budget_level" value={fields.budget_level} onChange={handleFieldChange}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+                  <option value="low">{t('form.levelLow')}</option>
+                  <option value="medium">{t('form.levelMedium')}</option>
+                  <option value="high">{t('form.levelHigh')}</option>
                 </select>
               </label>
 
@@ -339,35 +348,35 @@ function DestinationForm({ mode }) {
                   checked={fields.budget_is_free}
                   onChange={handleFieldChange}
                 />
-                <span>Free to enter</span>
+                <span>{t('form.freeToEnter')}</span>
               </label>
 
               <div className="destination-form__row">
                 <label className="destination-form__field">
-                  <span>Amount label</span>
+                  <span>{t('form.amountLabel')}</span>
                   <input
                     type="text"
                     name="budget_amount_label"
                     value={fields.budget_amount_label}
                     onChange={handleFieldChange}
-                    placeholder="e.g. Free to browse"
+                    placeholder={t('form.amountPlaceholder')}
                   />
                 </label>
                 <label className="destination-form__field">
-                  <span>Budget note</span>
+                  <span>{t('form.budgetNote')}</span>
                   <input
                     type="text"
                     name="budget_note"
                     value={fields.budget_note}
                     onChange={handleFieldChange}
-                    placeholder="Extra detail about cost"
+                    placeholder={t('form.budgetNotePlaceholder')}
                   />
                 </label>
               </div>
             </section>
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Hours</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionHours')}</h2>
 
               <label className="destination-form__checkbox">
                 <input
@@ -376,34 +385,34 @@ function DestinationForm({ mode }) {
                   checked={fields.hours_always_open}
                   onChange={handleFieldChange}
                 />
-                <span>Always open</span>
+                <span>{t('form.alwaysOpen')}</span>
               </label>
 
               {!fields.hours_always_open && (
                 <div className="destination-form__row">
                   <label className="destination-form__field">
-                    <span>Opens at</span>
+                    <span>{t('form.opensAt')}</span>
                     <input type="time" name="hours_open" value={fields.hours_open} onChange={handleFieldChange} />
                   </label>
                   <label className="destination-form__field">
-                    <span>Closes at</span>
+                    <span>{t('form.closesAt')}</span>
                     <input type="time" name="hours_close" value={fields.hours_close} onChange={handleFieldChange} />
                   </label>
                 </div>
               )}
 
               <label className="destination-form__field">
-                <span>Hours note</span>
+                <span>{t('form.hoursNote')}</span>
                 <input type="text" name="hours_note" value={fields.hours_note} onChange={handleFieldChange} />
               </label>
             </section>
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Location</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionLocation')}</h2>
 
               <div className="destination-form__row">
                 <label className="destination-form__field">
-                  <span>Latitude</span>
+                  <span>{t('form.latitude')}</span>
                   <input
                     type="number"
                     step="any"
@@ -413,7 +422,7 @@ function DestinationForm({ mode }) {
                   />
                 </label>
                 <label className="destination-form__field">
-                  <span>Longitude</span>
+                  <span>{t('form.longitude')}</span>
                   <input
                     type="number"
                     step="any"
@@ -425,7 +434,7 @@ function DestinationForm({ mode }) {
               </div>
 
               <label className="destination-form__field">
-                <span>Address</span>
+                <span>{t('form.address')}</span>
                 <input
                   type="text"
                   name="location_address"
@@ -436,19 +445,19 @@ function DestinationForm({ mode }) {
             </section>
 
             <section className="destination-form__section">
-              <h2 className="destination-form__section-title">Nearby services</h2>
+              <h2 className="destination-form__section-title">{t('form.sectionServices')}</h2>
 
               {nearbyServices.map((service, index) => (
                 <div className="destination-form__service-row" key={index}>
                   <input
                     type="text"
-                    placeholder="Name"
+                    placeholder={t('form.serviceName')}
                     value={service.name}
                     onChange={e => handleServiceChange(index, 'name', e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder="Type (e.g. Transport)"
+                    placeholder={t('form.serviceType')}
                     value={service.type}
                     onChange={e => handleServiceChange(index, 'type', e.target.value)}
                   />
@@ -456,7 +465,7 @@ function DestinationForm({ mode }) {
                     type="button"
                     className="destination-form__service-remove"
                     onClick={() => handleRemoveService(index)}
-                    aria-label="Remove nearby service"
+                    aria-label={t('form.removeService')}
                   >
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M6 6l12 12M18 6L6 18" />
@@ -466,12 +475,12 @@ function DestinationForm({ mode }) {
               ))}
 
               <button type="button" className="destination-form__service-add" onClick={handleAddService}>
-                + Add nearby service
+                {t('form.addService')}
               </button>
             </section>
 
             <button type="submit" className="destination-form__submit" disabled={submitting}>
-              {submitting ? 'Submitting...' : submitLabel}
+              {submitting ? t('form.submitting') : submitLabel}
             </button>
           </form>
         )}

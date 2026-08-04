@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
 
 function StarRating({ average, count, isAuthenticated, onRate, readOnly = false }) {
+  const { t } = useTranslation()
   const [hovered, setHovered] = useState(0)
   const [userRating, setUserRating] = useState(null)
   const rounded = Math.round(average)
@@ -29,7 +31,7 @@ function StarRating({ average, count, isAuthenticated, onRate, readOnly = false 
             className="destination-card__star"
             onMouseEnter={() => !readOnly && setHovered(star)}
             onClick={() => handleClick(star)}
-            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+            aria-label={star === 1 ? t('rating.rateOne', { count: star }) : t('rating.rateMany', { count: star })}
             disabled={readOnly}
             tabIndex={readOnly ? -1 : 0}
           >
@@ -47,7 +49,9 @@ function StarRating({ average, count, isAuthenticated, onRate, readOnly = false 
         ))}
       </div>
       <span className="destination-card__rating-count">
-        {userRating && <span className="destination-card__your-rating">You rated {userRating} · </span>}
+        {userRating && (
+          <span className="destination-card__your-rating">{t('rating.youRated', { stars: userRating })}</span>
+        )}
         {average.toFixed(1)} ({count})
       </span>
     </div>

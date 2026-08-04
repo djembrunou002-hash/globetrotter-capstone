@@ -10,6 +10,7 @@ import {
   adminDeleteDestination
 } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import PendingRequestCard from '../components/PendingRequestCard.jsx'
@@ -20,6 +21,7 @@ import '../styles/AdminDashboard.css'
 
 function AdminDashboard() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [activeTab, setActiveTab] = useState('pending')
   const [requests, setRequests] = useState([])
@@ -164,14 +166,14 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <header className="admin-dashboard__header">
-        <button type="button" className="admin-dashboard__back" aria-label="Go back" onClick={handleBack}>
+        <button type="button" className="admin-dashboard__back" aria-label={t('common.goBack')} onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
         <Logo theme="dark" />
-        <h1 className="admin-dashboard__title">Admin dashboard</h1>
+        <h1 className="admin-dashboard__title">{t('admin.title')}</h1>
       </header>
 
       <div className="admin-dashboard__tabs" role="tablist">
@@ -182,7 +184,7 @@ function AdminDashboard() {
           className={`admin-dashboard__tab ${activeTab === 'pending' ? 'admin-dashboard__tab--active' : ''}`}
           onClick={() => handleTabChange('pending')}
         >
-          Pending destinations
+          {t('admin.tabPending')}
         </button>
         <button
           type="button"
@@ -191,16 +193,16 @@ function AdminDashboard() {
           className={`admin-dashboard__tab ${activeTab === 'actual' ? 'admin-dashboard__tab--active' : ''}`}
           onClick={() => handleTabChange('actual')}
         >
-          Actual destinations
+          {t('admin.tabActual')}
         </button>
       </div>
 
       <main className="admin-dashboard__content admin-dashboard__content--with-bottom-nav">
-        {loading && <p className="admin-dashboard__status">Loading...</p>}
+        {loading && <p className="admin-dashboard__status">{t('common.loading')}</p>}
         {error && <p className="admin-dashboard__status admin-dashboard__status--error">{error}</p>}
 
         {!loading && !error && activeTab === 'pending' && requests.length === 0 && (
-          <p className="admin-dashboard__status">No pending requests right now.</p>
+          <p className="admin-dashboard__status">{t('admin.noPending')}</p>
         )}
 
         {!loading && activeTab === 'pending' && requests.length > 0 && (
@@ -220,7 +222,7 @@ function AdminDashboard() {
         )}
 
         {!loading && !error && activeTab === 'actual' && destinations.length === 0 && (
-          <p className="admin-dashboard__status">No destinations found.</p>
+          <p className="admin-dashboard__status">{t('admin.noDestinations')}</p>
         )}
 
         {!loading && activeTab === 'actual' && destinations.length > 0 && (
@@ -252,9 +254,9 @@ function AdminDashboard() {
 
       {pendingDelete && (
         <ConfirmDialog
-          title="Delete this destination?"
-          message={`"${pendingDelete.name}" will be removed immediately for all users.`}
-          confirmLabel="Delete"
+          title={t('manage.deleteDestinationTitle')}
+          message={t('admin.deleteMessage', { name: pendingDelete.name })}
+          confirmLabel={t('common.delete')}
           submitting={dialogSubmitting}
           error={dialogError}
           onConfirm={handleConfirmDeleteDestination}

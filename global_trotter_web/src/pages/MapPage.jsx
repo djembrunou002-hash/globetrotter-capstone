@@ -6,6 +6,7 @@ import { searchPlaces, getNearbyPlaces, getRoute } from '../services/mapService.
 import { getToken } from '../services/tokenStorage.js'
 import { useGeolocation } from '../hooks/useGeolocation.js'
 import { useVisitedStops } from '../hooks/useVisitedStops.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import { CATEGORY_META, buildStraightLineGeoJson } from '../utils/mapCategories.js'
 import { haversineDistanceMeters, formatDistance } from '../utils/geo.js'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -85,9 +86,15 @@ function toMarker(destination, position, visited) {
 function MapPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { t } = useTranslation()
   const isAuthenticated = Boolean(getToken())
   const mapViewRef = useRef(null)
-  const { position: userLocation, error: locationError, requestHeadingPermission } = useGeolocation()
+  const {
+    position: userLocation,
+    errorCode: locationErrorCode,
+    errorMessage: locationErrorMessage,
+    requestHeadingPermission
+  } = useGeolocation()
 
   const destinationParam = searchParams.get('destination')
   const itineraryParam = searchParams.get('itinerary')
@@ -526,18 +533,24 @@ function MapPage() {
     Boolean(itineraryParam) && !loading && !itineraries.some(itinerary => itinerary.id === itineraryParam)
 
   const statusMessage = loading
-    ? 'Loading map...'
+    ? t('map.loading')
     : error
       ? error
       : itineraryParamMissing
-        ? 'That itinerary is not available on your account.'
+        ? t('map.itineraryUnavailable')
         : destinationParam && focusMarkers.length === 0
-          ? 'That destination has no map location yet.'
+          ? t('map.destinationNoLocation')
           : routeNeedsLocation
-            ? 'Waiting for your location to draw the route.'
+            ? t('map.waitingForLocation')
             : servicesAreRemote
-              ? 'Showing services around the itinerary, not around you.'
+              ? t('map.servicesAreRemote')
               : ''
+
+  const locationMessage = !locationErrorCode
+    ? ''
+    : locationErrorCode === 'browser'
+      ? locationErrorMessage
+      : t(`geolocation.${locationErrorCode}`)
 
   return (
     <div className="map-page">
@@ -559,7 +572,7 @@ function MapPage() {
       <button
         type="button"
         className="map-page__menu-trigger"
-        aria-label="Map options"
+        aria-label={t('map.options')}
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen(previous => !previous)}
       >
@@ -577,7 +590,7 @@ function MapPage() {
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M22 12h-3M5 12H2" />
             </svg>
-            My location
+            {t('map.myLocation')}
           </button>
 
           <button type="button" onClick={handleMenuOptionDestination} disabled={destinationMarkers.length === 0}>
@@ -585,7 +598,7 @@ function MapPage() {
               <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
               <circle cx="12" cy="10" r="2.5" />
             </svg>
-            Destination
+            {t('map.destination')}
           </button>
 
           <button
@@ -599,7 +612,7 @@ function MapPage() {
               <circle cx="4" cy="19" r="1.6" />
               <circle cx="20" cy="19" r="1.6" />
             </svg>
-            {showRoute ? 'Hide itinerary path' : 'Show itinerary path'}
+            {showRoute ? t('map.hidePath') : t('map.showPath')}
           </button>
 
           {isItineraryMode && (
@@ -611,7 +624,7 @@ function MapPage() {
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
-              {showVisited ? 'Hide visited stops' : 'Show visited stops'}
+              {showVisited ? t('map.hideVisited') : t('map.showVisited')}
             </button>
           )}
 
@@ -624,7 +637,7 @@ function MapPage() {
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 3" />
             </svg>
-            {showServices ? 'Hide nearby services' : 'Show nearby services'}
+            {showServices ? t('map.hideServices') : t('map.showServices')}
           </button>
 
           <button type="button" onClick={handleReset}>
@@ -632,18 +645,18 @@ function MapPage() {
               <path d="M3 12a9 9 0 1 0 3-6.7" />
               <path d="M3 4v5h5" />
             </svg>
-            Reset map
+            {t('map.reset')}
           </button>
 
           {itineraries.length > 0 && (
             <label className="map-page__menu-field">
-              <span className="map-page__menu-label">Itinerary on map</span>
+              <span className="map-page__menu-label">{t('map.itineraryOnMap')}</span>
               <select
                 className="map-page__menu-select"
                 value={selectedItineraryId || ''}
                 onChange={event => handleSelectItinerary(event.target.value)}
               >
-                <option value="">No itinerary</option>
+                <option value="">{t('map.noItinerary')}</option>
                 {itineraries.map(itinerary => (
                   <option key={itinerary.id} value={itinerary.id}>
                     {itinerary.title}
@@ -653,7 +666,7 @@ function MapPage() {
             </label>
           )}
 
-          {!userLocation && locationError && <p className="map-page__menu-hint">{locationError}</p>}
+          {!userLocation && locationMessage && <p className="map-page__menu-hint">{locationMessage}</p>}
         </div>
       )}
 
@@ -661,7 +674,7 @@ function MapPage() {
         <button
           type="button"
           className="map-page__search-trigger"
-          aria-label="Search a place"
+          aria-label={t('map.searchTrigger')}
           onClick={() => setSearchOpen(true)}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -681,20 +694,20 @@ function MapPage() {
             <input
               type="text"
               className="map-page__search-input"
-              placeholder="Search a place on the map"
+              placeholder={t('map.searchPlaceholder')}
               value={searchQuery}
               onChange={event => setSearchQuery(event.target.value)}
-              aria-label="Search a place on the map"
+              aria-label={t('map.searchPlaceholder')}
               autoFocus
             />
             {(searchQuery || searchedPlace) && (
-              <button type="button" className="map-page__search-clear" onClick={handleClearSearch} aria-label="Clear search">
+              <button type="button" className="map-page__search-clear" onClick={handleClearSearch} aria-label={t('common.clearSearch')}>
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
               </button>
             )}
-            <button type="button" className="map-page__search-close" onClick={handleCloseSearch} aria-label="Close search">
+            <button type="button" className="map-page__search-close" onClick={handleCloseSearch} aria-label={t('map.closeSearch')}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
@@ -719,25 +732,27 @@ function MapPage() {
         <div className="map-page__itinerary-chip">
           <span className="map-page__itinerary-title">{activeItinerary.title}</span>
           <span className="map-page__itinerary-progress">
-            {visitedCount}/{itineraryStops.length} visited
+            {t('map.progress', { visited: visitedCount, total: itineraryStops.length })}
           </span>
         </div>
       )}
 
       {allStopsVisited && (
         <div className="map-page__banner">
-          Every stop is marked visited. Reopen the itinerary to unmark one.
+          {t('map.allVisited')}
         </div>
       )}
 
       {routeEnabled && nextStop && routeSummary && (
         <div className="map-page__distance-panel">
           <span className="map-page__distance-label">
-            {stopIndex + 1}/{pendingStops.length} · Next: {nextStop.name}
+            {t('map.nextStop', { index: stopIndex + 1, total: pendingStops.length, name: nextStop.name })}
           </span>
           <span className="map-page__distance-value">{formatDistance(routeSummary.toNext)}</span>
           {hasMultipleStops && (
-            <span className="map-page__distance-total">Total left: {formatDistance(routeSummary.total)}</span>
+            <span className="map-page__distance-total">
+              {t('map.totalLeft', { distance: formatDistance(routeSummary.total) })}
+            </span>
           )}
         </div>
       )}
@@ -750,7 +765,7 @@ function MapPage() {
                 className="map-page__legend-dot"
                 style={{ background: CATEGORY_META[category]?.color || CATEGORY_META.other.color }}
               />
-              {CATEGORY_META[category]?.label || 'Other service'}
+              {t(CATEGORY_META[category]?.labelKey || CATEGORY_META.other.labelKey)}
             </span>
           ))}
         </div>

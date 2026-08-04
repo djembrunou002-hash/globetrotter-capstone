@@ -11,6 +11,7 @@ import { getRecommendations } from '../services/recommendationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -30,6 +31,7 @@ const DEFAULT_FILTERS = {
 
 function Home() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const isAuthenticated = Boolean(getToken())
 
   const [recommendedDestinations, setRecommendedDestinations] = useState([])
@@ -183,11 +185,11 @@ function Home() {
     <div className="home">
       <header className="home__header">
         <Logo theme="dark" />
-        <h1 className="home__title">Recommended for you</h1>
+        <h1 className="home__title">{t('home.title')}</h1>
       </header>
 
       {availableTypes.length > 0 && (
-        <div className="home__filters" role="group" aria-label="Filter recommendations">
+        <div className="home__filters" role="group" aria-label={t('home.filtersLabel')}>
           <div className="home__filter-row">
             {availableTypes.map(type => (
               <button
@@ -211,29 +213,29 @@ function Home() {
                 onClick={() => toggleBudgetFilter(level)}
                 aria-pressed={budgetFilters.has(level)}
               >
-                {level.charAt(0).toUpperCase() + level.slice(1)} budget
+                {t(`budgetLevels.${level}`)}
               </button>
             ))}
           </div>
 
           <div className="home__budget-range">
             <label className="home__budget-range-field">
-              <span>Min (FCFA)</span>
+              <span>{t('common.minFcfa')}</span>
               <input
                 type="number"
                 min="0"
-                placeholder="0"
+                placeholder={t('common.zero')}
                 value={minBudget}
                 onChange={e => setMinBudget(e.target.value)}
               />
             </label>
             <span className="home__budget-range-separator">-</span>
             <label className="home__budget-range-field">
-              <span>Max (FCFA)</span>
+              <span>{t('common.maxFcfa')}</span>
               <input
                 type="number"
                 min="0"
-                placeholder="Any"
+                placeholder={t('common.any')}
                 value={maxBudget}
                 onChange={e => setMaxBudget(e.target.value)}
               />
@@ -246,9 +248,9 @@ function Home() {
         {aiResult ? (
           <div className="home__ai-results">
             <div className="home__ai-results-header">
-              <p className="home__ai-results-query">AI results for "{aiResult.query}"</p>
+              <p className="home__ai-results-query">{t('home.aiResultsFor', { query: aiResult.query })}</p>
               <button type="button" className="home__ai-results-clear" onClick={handleClearAiResult}>
-                Back to recommendations
+                {t('home.backToRecommendations')}
               </button>
             </div>
 
@@ -256,13 +258,13 @@ function Home() {
 
             {!aiResult.inScope && (
               <p className="home__status home__status--ai-off-topic">
-                I can only help you find places to visit -- try describing a trip, vibe, or activity instead.
+                {t('home.aiOffTopic')}
               </p>
             )}
 
             {aiResult.inScope && aiDestinations.length === 0 && (
               <p className="home__status">
-                No destinations match that yet -- try describing it a little differently.
+                {t('home.aiNoMatches')}
               </p>
             )}
 
@@ -283,14 +285,12 @@ function Home() {
           </div>
         ) : (
           <>
-            {loading && <p className="home__status">Loading recommendations...</p>}
+            {loading && <p className="home__status">{t('home.loading')}</p>}
             {error && <p className="home__status home__status--error">{error}</p>}
 
             {!loading && !error && filteredRecommended.length === 0 && (
               <p className="home__status">
-                {hasActiveFilters
-                  ? 'No recommendations match your filters -- try clearing a filter.'
-                  : 'No recommendations yet -- rate or favorite a few destinations to get personalized picks.'}
+                {hasActiveFilters ? t('home.noneForFilters') : t('home.noneYet')}
               </p>
             )}
 

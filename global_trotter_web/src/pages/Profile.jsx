@@ -4,9 +4,11 @@ import { getFavorites } from '../services/destinationService.js'
 import { updatePreferences } from '../services/userService.js'
 import { getToken, getUser, setUser, clearToken, clearUser } from '../services/tokenStorage.js'
 import { TRAVEL_STYLES } from '../constants/travelStyles.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import PreferencesModal from '../components/PreferencesModal.jsx'
+import LanguageToggle from '../components/LanguageToggle.jsx'
 import '../styles/Profile.css'
 
 const STYLE_BY_VALUE = TRAVEL_STYLES.reduce((map, style) => {
@@ -14,16 +16,15 @@ const STYLE_BY_VALUE = TRAVEL_STYLES.reduce((map, style) => {
   return map
 }, {})
 
-function formatMemberSince(dateString) {
+function formatMemberSince(dateString, locale) {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
 }
 
 function formatPhoneNumber(number) {
   if (!number) return ''
-  // Stored as "+237XXXXXXXXX" -- show it with a small gap after the country code
   const match = number.match(/^(\+237)(\d{9})$/)
   if (!match) return number
   return `${match[1]} ${match[2]}`
@@ -31,6 +32,7 @@ function formatPhoneNumber(number) {
 
 function Profile() {
   const navigate = useNavigate()
+  const { t, locale } = useTranslation()
   const [favoriteCount, setFavoriteCount] = useState(null)
   const [error, setError] = useState('')
   const [user, setUserState] = useState(getUser())
@@ -77,11 +79,11 @@ function Profile() {
     <div className="profile">
       <header className="profile__header">
         <Logo theme="dark" />
-        <h1 className="profile__title">Profile</h1>
+        <h1 className="profile__title">{t('profile.title')}</h1>
       </header>
 
       <main className="profile__content profile__content--with-bottom-nav">
-        {!user && <p className="profile__status">Profile information isn't available for this session.</p>}
+        {!user && <p className="profile__status">{t('profile.unavailable')}</p>}
         {error && <p className="profile__status profile__status--error">{error}</p>}
 
         {user && (
@@ -96,7 +98,7 @@ function Profile() {
                     const style = STYLE_BY_VALUE[styleValue]
                     return (
                       <span key={styleValue} className="profile__bio-chip">
-                        {style ? `${style.emoji} ${style.label}` : styleValue}
+                        {style ? `${style.emoji} ${t(`travelStyles.${style.value}`)}` : styleValue}
                       </span>
                     )
                   })}
@@ -105,12 +107,12 @@ function Profile() {
                     className="profile__bio-edit"
                     onClick={() => setShowPreferences(true)}
                   >
-                    Edit
+                    {t('common.edit')}
                   </button>
                 </div>
               ) : (
                 <button type="button" className="profile__bio-empty" onClick={() => setShowPreferences(true)}>
-                  + Add your travel style
+                  {t('profile.addTravelStyle')}
                 </button>
               )}
             </div>
@@ -118,28 +120,35 @@ function Profile() {
             <dl className="profile__info">
               {user.email && (
                 <div className="profile__info-row">
-                  <dt>Email</dt>
+                  <dt>{t('profile.email')}</dt>
                   <dd>{user.email}</dd>
                 </div>
               )}
 
               {user.number && (
                 <div className="profile__info-row">
-                  <dt>Phone</dt>
+                  <dt>{t('profile.phone')}</dt>
                   <dd>{formatPhoneNumber(user.number)}</dd>
                 </div>
               )}
 
               {user.created_at && (
                 <div className="profile__info-row">
-                  <dt>Member since</dt>
-                  <dd>{formatMemberSince(user.created_at)}</dd>
+                  <dt>{t('profile.memberSince')}</dt>
+                  <dd>{formatMemberSince(user.created_at, locale)}</dd>
                 </div>
               )}
 
+              <div className="profile__info-row profile__info-row--language">
+                <dt>{t('profile.language')}</dt>
+                <dd>
+                  <LanguageToggle />
+                </dd>
+              </div>
+
               {favoriteCount !== null && (
                 <Link to="/favorites" className="profile__info-row profile__info-row--link">
-                  <dt>Favorite destinations</dt>
+                  <dt>{t('profile.favoriteDestinations')}</dt>
                   <dd className="profile__favorites-value">
                     {favoriteCount}
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -151,7 +160,7 @@ function Profile() {
 
               {user.role === 'admin' ? (
                 <Link to="/admin" className="profile__info-row profile__info-row--link">
-                  <dt>Admin dashboard</dt>
+                  <dt>{t('profile.adminDashboard')}</dt>
                   <dd className="profile__favorites-value">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M9 6l6 6-6 6" />
@@ -160,7 +169,7 @@ function Profile() {
                 </Link>
               ) : (
                 <Link to="/my-destinations" className="profile__info-row profile__info-row--link">
-                  <dt>Manage your destinations</dt>
+                  <dt>{t('profile.manageDestinations')}</dt>
                   <dd className="profile__favorites-value">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M9 6l6 6-6 6" />
@@ -171,7 +180,7 @@ function Profile() {
             </dl>
 
             <button type="button" className="profile__logout" onClick={handleLogout}>
-              Log out
+              {t('profile.logout')}
             </button>
           </>
         )}

@@ -1,7 +1,10 @@
 import { TRAVEL_STYLES } from '../constants/travelStyles.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/StyleSelector.css'
 
 function StyleSelector({ selected, onToggle }) {
+  const { t } = useTranslation()
+
   return (
     <div className="style-selector">
       {TRAVEL_STYLES.map(style => {
@@ -15,7 +18,7 @@ function StyleSelector({ selected, onToggle }) {
             aria-pressed={isSelected}
           >
             <span className="style-selector__emoji">{style.emoji}</span>
-            {style.label}
+            {t(`travelStyles.${style.value}`)}
           </button>
         )
       })}

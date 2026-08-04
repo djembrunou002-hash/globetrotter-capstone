@@ -293,3 +293,20 @@
     height: 18px;
   }
 }
+
+.profile__info-row--language {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.profile__info-row--language dd {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (min-width: 1024px) {
+  .profile__info-row--language {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+}

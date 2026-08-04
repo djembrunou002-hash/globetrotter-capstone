@@ -1,48 +1,59 @@
 import { useState } from 'react'
 import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/RequestDetailModal.css'
 
-const TYPE_LABELS = {
-  create: 'New destination',
-  edit: 'Edit request',
-  delete: 'Deletion request'
+const TYPE_KEYS = {
+  create: 'request.typeCreate',
+  edit: 'request.typeEdit',
+  delete: 'request.typeDelete'
 }
 
-function formatDate(iso) {
+function formatDate(iso, locale) {
   if (!iso) return ''
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function buildChanges(payload, current) {
+function buildChanges(payload, current, t, language) {
   if (!current) return []
   const changes = []
+  const notSet = t('request.notSet')
   const add = (label, before, after) => {
-    const beforeText = before || 'Not set'
-    const afterText = after || 'Not set'
+    const beforeText = before || notSet
+    const afterText = after || notSet
     if (beforeText !== afterText) {
       changes.push({ label, before: beforeText, after: afterText })
     }
   }
 
-  add('Name', current.name, payload.name)
-  add('Country', current.country, payload.country)
-  add('Region', current.region, payload.region)
-  add('Area', current.area, payload.area)
-  add('Type', current.type, payload.type)
-  add('Tags', (current.tags || []).join(', '), (payload.tags || []).join(', '))
-  add('Budget level', current.budget_level, payload.budget_level)
-  add('Budget', getBudgetDisplay(current.budget, current.budget_level).label, getBudgetDisplay(payload.budget, payload.budget_level).label)
-  add('Hours', getHoursDisplay(current.hours).label, getHoursDisplay(payload.hours).label)
-  add('Address', current.location?.address, payload.location?.address)
-  add('Description', current.description, payload.description)
-  add('Advice', current.advice, payload.advice)
+  add(t('changes.name'), current.name, payload.name)
+  add(t('changes.country'), current.country, payload.country)
+  add(t('changes.region'), current.region, payload.region)
+  add(t('changes.area'), current.area, payload.area)
+  add(t('changes.type'), current.type, payload.type)
+  add(t('changes.tags'), (current.tags || []).join(', '), (payload.tags || []).join(', '))
+  add(t('changes.budgetLevel'), current.budget_level, payload.budget_level)
+  add(
+    t('changes.budget'),
+    getBudgetDisplay(current.budget, current.budget_level, t).label,
+    getBudgetDisplay(payload.budget, payload.budget_level, t).label
+  )
+  add(
+    t('changes.hours'),
+    getHoursDisplay(current.hours, t, language).label,
+    getHoursDisplay(payload.hours, t, language).label
+  )
+  add(t('changes.address'), current.location?.address, payload.location?.address)
+  add(t('changes.description'), current.description, payload.description)
+  add(t('changes.advice'), current.advice, payload.advice)
 
   return changes
 }
 
 function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote, onDelete, submitting = false }) {
+  const { t, locale, language } = useTranslation()
   const [activeImage, setActiveImage] = useState(0)
   const [note, setNote] = useState(request.admin_note || '')
   const [noteError, setNoteError] = useState('')
@@ -62,7 +73,7 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
   function handleRejectClick() {
     const trimmed = note.trim()
     if (!trimmed) {
-      setNoteError('Add a note explaining why this request is being rejected.')
+      setNoteError(t('request.noteRequired'))
       return
     }
     onReject(request, trimmed)
@@ -71,27 +82,28 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
   const display = request.display || {}
   const current = display.current || null
   const images = display.images || []
-  const name = display.name || current?.name || 'Untitled destination'
+  const name = display.name || current?.name || t('request.untitled')
   const area = display.area || current?.area || ''
   const type = display.type || current?.type || ''
   const tags = display.tags || current?.tags || []
-  const budgetDisplay = getBudgetDisplay(display.budget, display.budget_level)
-  const hoursDisplay = getHoursDisplay(display.hours)
+  const budgetDisplay = getBudgetDisplay(display.budget, display.budget_level, t)
+  const hoursDisplay = getHoursDisplay(display.hours, t, language)
   const address = display.location?.address || ''
   const nearbyServices = display.nearby_services || []
   const description = display.description || ''
   const advice = display.advice || ''
-  const changes = request.type === 'edit' ? buildChanges(display, current) : []
+  const changes = request.type === 'edit' ? buildChanges(display, current, t, language) : []
   const mainImage = images[activeImage]
+  const typeKey = TYPE_KEYS[request.type]
 
   return (
     <div className="request-modal__backdrop" onClick={submitting ? undefined : onClose}>
       <div className="request-modal" role="dialog" aria-modal="true" aria-label={name} onClick={e => e.stopPropagation()}>
         <div className="request-modal__header">
           <span className={`request-modal__type request-modal__type--${request.type}`}>
-            {TYPE_LABELS[request.type] || request.type}
+            {typeKey ? t(typeKey) : request.type}
           </span>
-          <button type="button" className="request-modal__close" aria-label="Close" onClick={onClose} disabled={submitting}>
+          <button type="button" className="request-modal__close" aria-label={t('common.close')} onClick={onClose} disabled={submitting}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -114,7 +126,7 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
                     className={`request-modal__thumb ${index === activeImage ? 'request-modal__thumb--active' : ''}`}
                     onClick={() => setActiveImage(index)}
                   >
-                    <img src={src} alt={`${name} photo ${index + 1}`} />
+                    <img src={src} alt={t('destinationDetails.photoAlt', { name, number: index + 1 })} />
                   </button>
                 ))}
               </div>
@@ -126,11 +138,14 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
             {area}{area && type ? ' · ' : ''}{type}
           </p>
           <p className="request-modal__submitter">
-            Submitted by {request.submitted_by_name} on {formatDate(request.created_at)}
+            {t('request.submittedBy', {
+              name: request.submitted_by_name,
+              date: formatDate(request.created_at, locale)
+            })}
           </p>
 
           {request.type === 'delete' && (
-            <p className="request-modal__note">This user is requesting to delete this published destination.</p>
+            <p className="request-modal__note">{t('request.deleteNote')}</p>
           )}
 
           {tags.length > 0 && (
@@ -143,12 +158,12 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
 
           <div className="request-modal__info-grid">
             <div className="request-modal__info-card">
-              <span className="request-modal__info-label">Budget to visit</span>
+              <span className="request-modal__info-label">{t('destinationDetails.budgetToVisit')}</span>
               <span className="request-modal__info-value">{budgetDisplay.label}</span>
               {budgetDisplay.note && <p className="request-modal__info-note">{budgetDisplay.note}</p>}
             </div>
             <div className="request-modal__info-card">
-              <span className="request-modal__info-label">Opening hours</span>
+              <span className="request-modal__info-label">{t('destinationDetails.openingHours')}</span>
               <span className="request-modal__info-value">{hoursDisplay.label}</span>
               {hoursDisplay.note && <p className="request-modal__info-note">{hoursDisplay.note}</p>}
             </div>
@@ -156,21 +171,21 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
 
           {address && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Location</h3>
+              <h3 className="request-modal__section-title">{t('common.location')}</h3>
               <p className="request-modal__text">{address}</p>
             </div>
           )}
 
           {description && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Description</h3>
+              <h3 className="request-modal__section-title">{t('changes.description')}</h3>
               <p className="request-modal__text">{description}</p>
             </div>
           )}
 
           {nearbyServices.length > 0 && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Nearby services</h3>
+              <h3 className="request-modal__section-title">{t('form.sectionServices')}</h3>
               <ul className="request-modal__services">
                 {nearbyServices.map(service => (
                   <li key={service.name} className="request-modal__service">
@@ -184,48 +199,48 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
 
           {advice && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Advice</h3>
+              <h3 className="request-modal__section-title">{t('destinationDetails.advice')}</h3>
               <p className="request-modal__text">{advice}</p>
             </div>
           )}
 
           {request.status === 'pending' && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Note to submitter</h3>
+              <h3 className="request-modal__section-title">{t('request.noteHeading')}</h3>
               <p className="request-modal__text request-modal__text--muted">
-                Let the user know what to fix or confirm to get this published. Required if you reject.
+                {t('request.noteHint')}
               </p>
               <textarea
                 className="request-modal__note-input"
                 rows={3}
                 value={note}
                 onChange={handleNoteChange}
-                placeholder="e.g. Please add a clearer main photo and double-check the opening hours."
+                placeholder={t('request.notePlaceholder')}
                 disabled={submitting}
               />
               {noteError && <p className="request-modal__note-error">{noteError}</p>}
-              {noteSaved && !noteError && <p className="request-modal__note-saved">Note saved.</p>}
+              {noteSaved && !noteError && <p className="request-modal__note-saved">{t('request.noteSaved')}</p>}
               <button
                 type="button"
                 className="request-modal__note-save"
                 onClick={handleSaveNote}
                 disabled={submitting || !note.trim()}
               >
-                Save note
+                {t('request.saveNote')}
               </button>
             </div>
           )}
 
           {request.status === 'rejected' && request.admin_note && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">Rejection note</h3>
+              <h3 className="request-modal__section-title">{t('request.rejectionNoteHeading')}</h3>
               <p className="request-modal__text">{request.admin_note}</p>
             </div>
           )}
 
           {changes.length > 0 && (
             <div className="request-modal__section">
-              <h3 className="request-modal__section-title">What's changing</h3>
+              <h3 className="request-modal__section-title">{t('request.whatsChanging')}</h3>
               <ul className="request-modal__changes">
                 {changes.map(change => (
                   <li key={change.label} className="request-modal__change">
@@ -244,16 +259,16 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
           {request.status === 'pending' && (
             <>
               <button type="button" className="request-modal__reject" onClick={handleRejectClick} disabled={submitting}>
-                Reject
+                {t('request.reject')}
               </button>
               <button type="button" className="request-modal__approve" onClick={() => onApprove(request)} disabled={submitting}>
-                Accept
+                {t('request.accept')}
               </button>
             </>
           )}
           {request.status === 'rejected' && (
             <button type="button" className="request-modal__delete" onClick={() => onDelete(request)} disabled={submitting}>
-              Remove
+              {t('common.remove')}
             </button>
           )}
         </div>

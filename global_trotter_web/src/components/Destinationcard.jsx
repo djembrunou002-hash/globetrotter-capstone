@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import StarRating from './Starrating.jsx'
 import AddToItineraryButton from './AddToItineraryButton.jsx'
 import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/DestinationCard.css'
 
 function DestinationCard({
@@ -19,11 +20,12 @@ function DestinationCard({
   onToggleVisited
 }) {
   const navigate = useNavigate()
+  const { t, language } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
   const commentCount = destination.comment_count || 0
-  const budgetDisplay = getBudgetDisplay(destination.budget, destination.budget_level)
-  const hoursDisplay = getHoursDisplay(destination.hours)
+  const budgetDisplay = getBudgetDisplay(destination.budget, destination.budget_level, t)
+  const hoursDisplay = getHoursDisplay(destination.hours, t, language)
 
   function handleOpenDetails() {
     navigate(`/destinations/${destination.id}`)
@@ -50,7 +52,7 @@ function DestinationCard({
       tabIndex={0}
       onClick={handleOpenDetails}
       onKeyDown={handleKeyDown}
-      aria-label={`View details for ${destination.name}`}
+      aria-label={t('destinationCard.viewDetails', { name: destination.name })}
     >
       <div className="destination-card__image-wrap">
         {image && !imageFailed ? (
@@ -75,7 +77,11 @@ function DestinationCard({
               e.stopPropagation()
               onToggleSelect(destination.id)
             }}
-            aria-label={selected ? `Deselect ${destination.name}` : `Select ${destination.name}`}
+            aria-label={
+              selected
+                ? t('destinationCard.deselect', { name: destination.name })
+                : t('destinationCard.select', { name: destination.name })
+            }
             aria-pressed={selected}
           >
             {selected && (
@@ -96,7 +102,11 @@ function DestinationCard({
               e.stopPropagation()
               onToggleVisited(destination.id)
             }}
-            aria-label={visited ? `Mark ${destination.name} as not visited` : `Mark ${destination.name} as visited`}
+            aria-label={
+              visited
+                ? t('destinationCard.markNotVisited', { name: destination.name })
+                : t('destinationCard.markVisited', { name: destination.name })
+            }
             aria-pressed={visited}
           >
             {visited && (
@@ -144,20 +154,24 @@ function DestinationCard({
             type="button"
             className="destination-card__location"
             onClick={() => navigate(`/map?destination=${destination.id}`)}
-            title="View on map"
+            title={t('common.viewOnMap')}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
               <circle cx="12" cy="10" r="2.5" />
             </svg>
-            Location
+            {t('common.location')}
           </button>
 
           <button
             type="button"
             className="destination-card__comments"
             onClick={handleOpenComments}
-            aria-label={`View ${commentCount} comment${commentCount === 1 ? '' : 's'} for ${destination.name}`}
+            aria-label={
+              commentCount === 1
+                ? t('destinationCard.commentsOne', { count: commentCount, name: destination.name })
+                : t('destinationCard.commentsMany', { count: commentCount, name: destination.name })
+            }
           >
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-4-1L3 21l1.5-5.5a8.38 8.38 0 0 1-1-4A8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 9 8.5z" />
@@ -169,7 +183,7 @@ function DestinationCard({
             type="button"
             className={`destination-card__favorite ${isFavorite ? 'destination-card__favorite--active' : ''}`}
             onClick={() => onToggleFavorite(destination.id)}
-            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={isFavorite ? t('common.removeFromFavorites') : t('common.addToFavorites')}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill={isFavorite ? '#C8102E' : 'none'} stroke="#C8102E" strokeWidth="2">
               <path d="M12 21s-7.5-4.6-10-9.3C.6 8.1 2.5 4.5 6 4c2-.3 3.8.8 6 3.2C14.2 4.8 16 3.7 18 4c3.5.5 5.4 4.1 4 7.7C19.5 16.4 12 21 12 21z" />

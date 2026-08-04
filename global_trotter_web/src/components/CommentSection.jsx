@@ -2,17 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getComments, addComment, replyToComment, editComment, deleteComment, likeComment, unlikeComment, dislikeComment, undislikeComment, pinComment, unpinComment } from '../services/commentService.js'
 import { getUser } from '../services/tokenStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/CommentSection.css'
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000
 const ROOT_PAGE_SIZE = 3
 const REPLY_PAGE_SIZE = 3
 
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return ''
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 function countAllNodes(nodes) {
@@ -101,6 +102,7 @@ function removeNode(nodes, targetId) {
 }
 
 function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentUserId, isReply, replyingTo, canPin, onPinToggled, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
+  const { t, locale } = useTranslation()
   const navigate = useNavigate()
 
   const [isReplying, setIsReplying] = useState(false)
@@ -309,17 +311,17 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
       </div>
       <div className="comment-section__body">
         <div className="comment-section__meta">
-          {node.pinned && <span className="comment-section__pinned-tag">📌 Pinned</span>}
-          <span className="comment-section__author">{node.author?.name || 'Traveler'}</span>
-          {isDestinationOwner && <span className="comment-section__owner-tag">Owner</span>}
-          <span className="comment-section__date">{formatDate(node.created_at)}</span>
-          {node.edited && <span className="comment-section__edited-tag">(edited)</span>}
+          {node.pinned && <span className="comment-section__pinned-tag">{t('comments.pinned')}</span>}
+          <span className="comment-section__author">{node.author?.name || t('comments.traveler')}</span>
+          {isDestinationOwner && <span className="comment-section__owner-tag">{t('comments.owner')}</span>}
+          <span className="comment-section__date">{formatDate(node.created_at, locale)}</span>
+          {node.edited && <span className="comment-section__edited-tag">{t('comments.edited')}</span>}
         </div>
 
         {replyingTo && (
           <div className="comment-section__reply-context">
             <span className="comment-section__reply-context-icon">↳</span>
-            Replying to <strong>{replyingTo.author?.name || 'Traveler'}</strong>
+            {t('comments.replyingTo')}<strong>{replyingTo.author?.name || t('comments.traveler')}</strong>
           </div>
         )}
 
@@ -334,14 +336,14 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
             />
             <div className="comment-section__reply-actions">
               <button type="button" className="comment-section__cancel" onClick={() => setIsEditing(false)}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 className="comment-section__submit comment-section__submit--reply"
                 disabled={editSubmitting || !editText.trim()}
               >
-                {editSubmitting ? 'Saving...' : 'Save'}
+                {editSubmitting ? t('common.saving') : t('common.save')}
               </button>
             </div>
           </form>
@@ -359,7 +361,7 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
               onClick={handleToggleLike}
               disabled={likeSubmitting}
               aria-pressed={likedByMe}
-              aria-label="Like this comment"
+              aria-label={t('comments.like')}
             >
               <span aria-hidden="true">👍</span>{likeCount > 0 ? ` ${likeCount}` : ''}
             </button>
@@ -369,12 +371,12 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
               onClick={handleToggleDislike}
               disabled={dislikeSubmitting}
               aria-pressed={dislikedByMe}
-              aria-label="Dislike this comment"
+              aria-label={t('comments.dislike')}
             >
               <span aria-hidden="true">👎</span>{dislikeCount > 0 ? ` ${dislikeCount}` : ''}
             </button>
             <button type="button" className="comment-section__reply-trigger" onClick={handleStartReply}>
-              Reply
+              {t('comments.reply')}
             </button>
             {canPin && (
               <button
@@ -383,12 +385,12 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
                 onClick={handleTogglePin}
                 disabled={pinSubmitting}
               >
-                {pinSubmitting ? 'Saving...' : node.pinned ? 'Unpin' : 'Pin'}
+                {pinSubmitting ? t('common.saving') : node.pinned ? t('comments.unpin') : t('comments.pin')}
               </button>
             )}
             {canEdit && (
               <button type="button" className="comment-section__reply-trigger" onClick={handleStartEdit}>
-                Edit
+                {t('common.edit')}
               </button>
             )}
             {canDelete && (
@@ -398,7 +400,7 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
                 onClick={handleDelete}
                 disabled={deleteSubmitting}
               >
-                {deleteSubmitting ? 'Deleting...' : 'Delete'}
+                {deleteSubmitting ? t('common.deleting') : t('common.delete')}
               </button>
             )}
           </div>
@@ -408,7 +410,7 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
           <form className="comment-section__reply-form" onSubmit={handleSubmitReply}>
             <textarea
               className="comment-section__textarea comment-section__textarea--reply"
-              placeholder={`Reply to ${node.author?.name || 'this comment'}...`}
+              placeholder={t('comments.replyPlaceholder', { name: node.author?.name || t('comments.thisComment') })}
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
               rows={2}
@@ -416,14 +418,14 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
             />
             <div className="comment-section__reply-actions">
               <button type="button" className="comment-section__cancel" onClick={() => setIsReplying(false)}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 className="comment-section__submit comment-section__submit--reply"
                 disabled={replySubmitting || !replyText.trim()}
               >
-                {replySubmitting ? 'Posting...' : 'Post reply'}
+                {replySubmitting ? t('comments.posting') : t('comments.postReply')}
               </button>
             </div>
           </form>
@@ -434,6 +436,7 @@ function CommentBubble({ node, destinationId, ownerId, isAuthenticated, currentU
 }
 
 function RootComment({ comment, destinationId, ownerId, isAuthenticated, currentUserId, canPin, onPinToggled, onReplyPosted, onCommentUpdated, onCommentDeleted }) {
+  const { t } = useTranslation()
   const [repliesExpanded, setRepliesExpanded] = useState(false)
   const [visibleReplyCount, setVisibleReplyCount] = useState(REPLY_PAGE_SIZE)
 
@@ -470,14 +473,14 @@ function RootComment({ comment, destinationId, ownerId, isAuthenticated, current
 
       {replyCount > 0 && !repliesExpanded && (
         <button type="button" className="comment-section__view-replies" onClick={() => setRepliesExpanded(true)}>
-          View replies ({replyCount})
+          {t('comments.viewReplies', { count: replyCount })}
         </button>
       )}
 
       {replyCount > 0 && repliesExpanded && (
         <>
           <button type="button" className="comment-section__view-replies" onClick={handleHideReplies}>
-            Hide replies
+            {t('comments.hideReplies')}
           </button>
 
           <div className="comment-section__replies">
@@ -503,7 +506,7 @@ function RootComment({ comment, destinationId, ownerId, isAuthenticated, current
                 className="comment-section__view-replies"
                 onClick={() => setVisibleReplyCount(prev => prev + REPLY_PAGE_SIZE)}
               >
-                View more replies ({remainingReplies} remaining)
+                {t('comments.viewMoreReplies', { count: remainingReplies })}
               </button>
             )}
           </div>
@@ -522,6 +525,7 @@ function sortRoots(nodes) {
 
 function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const sectionRef = useRef(null)
   const textareaRef = useRef(null)
   const currentUserId = getUser()?.id || null
@@ -611,14 +615,14 @@ function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount 
 
   return (
     <section className="comment-section" ref={sectionRef} id="comments">
-      <h2 className="comment-section__title">Comments ({totalCount})</h2>
+      <h2 className="comment-section__title">{t('comments.title', { count: totalCount })}</h2>
 
       {isAuthenticated ? (
         <form className="comment-section__form" onSubmit={handleSubmitComment}>
           <textarea
             ref={textareaRef}
             className="comment-section__textarea"
-            placeholder="Share your thoughts about this place..."
+            placeholder={t('comments.placeholder')}
             value={commentText}
             onChange={e => setCommentText(e.target.value)}
             rows={3}
@@ -628,20 +632,20 @@ function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount 
             className="comment-section__submit"
             disabled={submitting || !commentText.trim()}
           >
-            {submitting ? 'Posting...' : 'Post comment'}
+            {submitting ? t('comments.posting') : t('comments.postComment')}
           </button>
         </form>
       ) : (
         <button type="button" className="comment-section__login-prompt" onClick={() => navigate('/login')}>
-          Log in to leave a comment
+          {t('comments.loginPrompt')}
         </button>
       )}
 
       {error && <p className="comment-section__status comment-section__status--error">{error}</p>}
-      {loading && <p className="comment-section__status">Loading comments...</p>}
+      {loading && <p className="comment-section__status">{t('comments.loading')}</p>}
 
       {!loading && comments.length === 0 && !error && (
-        <p className="comment-section__status">No comments yet. Be the first to share your thoughts.</p>
+        <p className="comment-section__status">{t('comments.empty')}</p>
       )}
 
       {!loading && comments.length > 0 && (
@@ -671,7 +675,7 @@ function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount 
           className="comment-section__view-more"
           onClick={() => setVisibleRootCount(prev => prev + ROOT_PAGE_SIZE)}
         >
-          View more comments ({remainingRoots} remaining)
+          {t('comments.viewMore', { count: remainingRoots })}
         </button>
       )}
 
@@ -681,7 +685,7 @@ function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount 
           className="comment-section__view-more"
           onClick={() => setVisibleRootCount(ROOT_PAGE_SIZE)}
         >
-          Hide comments
+          {t('comments.hide')}
         </button>
       )}
     </section>

@@ -1,14 +1,15 @@
 import { useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/DestinationManageCard.css'
 
-const STATUS_LABELS = {
-  published: { label: 'Published', tone: 'success' },
-  pending_review: { label: 'Pending review', tone: 'pending' },
-  rejected: { label: 'Rejected', tone: 'danger' },
-  pending_edit: { label: 'Edit pending review', tone: 'pending' },
-  pending_delete: { label: 'Deletion pending review', tone: 'pending' },
-  deleted: { label: 'Deleted', tone: 'danger' },
-  edited: { label: 'Edited by admin', tone: 'info' }
+const STATUS_TONES = {
+  published: 'success',
+  pending_review: 'pending',
+  rejected: 'danger',
+  pending_edit: 'pending',
+  pending_delete: 'pending',
+  deleted: 'danger',
+  edited: 'info'
 }
 
 function DestinationManageCard({
@@ -17,13 +18,14 @@ function DestinationManageCard({
   onDelete,
   onAcknowledge,
   onView,
-  deleteLabel = 'Delete',
+  deleteLabel,
   editDisabled = false,
   deleteDisabled = false
 }) {
+  const { t } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const image = destination.images && destination.images[0]
-  const status = STATUS_LABELS[destination.status] || null
+  const tone = STATUS_TONES[destination.status] || null
 
   function handleCardClick() {
     if (onView) onView(destination)
@@ -56,12 +58,14 @@ function DestinationManageCard({
         ) : (
           <div className="manage-card__image manage-card__image--placeholder" aria-hidden="true" />
         )}
-        {status && destination.status !== 'edited' && (
-          <span className={`manage-card__status manage-card__status--${status.tone}`}>{status.label}</span>
+        {tone && destination.status !== 'edited' && (
+          <span className={`manage-card__status manage-card__status--${tone}`}>
+            {t(`status.${destination.status}`)}
+          </span>
         )}
         {destination.status === 'edited' && (
           <div className="manage-card__notice">
-            An admin edited this spot's details.
+            {t('manage.adminEdited')}
             {onAcknowledge && (
               <button
                 type="button"
@@ -71,7 +75,7 @@ function DestinationManageCard({
                   onAcknowledge(destination)
                 }}
               >
-                Got it
+                {t('manage.gotIt')}
               </button>
             )}
           </div>
@@ -86,14 +90,14 @@ function DestinationManageCard({
 
         {destination.admin_note && (
           <p className={`manage-card__admin-note ${destination.status === 'rejected' ? 'manage-card__admin-note--danger' : ''}`}>
-            {destination.status === 'rejected' ? 'Rejection note — open to view' : 'Note sent — open to view'}
+            {destination.status === 'rejected' ? t('manage.rejectionNote') : t('manage.noteSent')}
           </p>
         )}
 
         <div className="manage-card__actions" onClick={e => e.stopPropagation()}>
           {onEdit && (
             <button type="button" className="manage-card__edit" onClick={() => onEdit(destination)} disabled={editDisabled}>
-              Edit
+              {t('common.edit')}
             </button>
           )}
           {onDelete && (
@@ -103,7 +107,7 @@ function DestinationManageCard({
               onClick={() => onDelete(destination)}
               disabled={deleteDisabled}
             >
-              {deleteLabel}
+              {deleteLabel || t('common.delete')}
             </button>
           )}
         </div>

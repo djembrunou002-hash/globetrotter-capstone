@@ -11,6 +11,7 @@ import { getToken } from '../services/tokenStorage.js'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
+import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
@@ -30,6 +31,7 @@ const DEFAULT_FILTERS = {
 
 function Destinations() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const tagParam = searchParams.get('tag')
   const isAuthenticated = Boolean(getToken())
@@ -236,7 +238,7 @@ function Destinations() {
     <div className="destinations">
       <header className="destinations__header">
         <Logo theme="dark" />
-        <h1 className="destinations__title">Destinations</h1>
+        <h1 className="destinations__title">{t('destinations.title')}</h1>
       </header>
 
       <div className="destinations__search-bar">
@@ -256,17 +258,17 @@ function Destinations() {
         <input
           type="text"
           className="destinations__search-input"
-          placeholder="Search by name or area"
+          placeholder={t('destinations.searchPlaceholder')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          aria-label="Search destinations by name or area"
+          aria-label={t('destinations.searchLabel')}
         />
         {searchQuery && (
           <button
             type="button"
             className="destinations__search-clear"
             onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
+            aria-label={t('destinations.clearSearch')}
           >
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -276,7 +278,7 @@ function Destinations() {
       </div>
 
       {(availableTypes.length > 0 || availableTags.length > 0) && (
-        <div className="destinations__filters" role="group" aria-label="Filter destinations">
+        <div className="destinations__filters" role="group" aria-label={t('destinations.filtersLabel')}>
           {hasActiveFilters && (
             <div className="destinations__filter-row destinations__filter-row--actions">
               <button
@@ -284,7 +286,7 @@ function Destinations() {
                 className="destinations__filter-clear"
                 onClick={handleClearFilters}
               >
-                Clear filters
+                {t('destinations.clearFilters')}
               </button>
             </div>
           )}
@@ -312,7 +314,7 @@ function Destinations() {
                 onClick={() => toggleBudgetFilter(level)}
                 aria-pressed={budgetFilters.has(level)}
               >
-                {level.charAt(0).toUpperCase() + level.slice(1)} budget
+                {t(`budgetLevels.${level}`)}
               </button>
             ))}
           </div>
@@ -335,22 +337,22 @@ function Destinations() {
 
           <div className="destinations__budget-range">
             <label className="destinations__budget-range-field">
-              <span>Min (FCFA)</span>
+              <span>{t('common.minFcfa')}</span>
               <input
                 type="number"
                 min="0"
-                placeholder="0"
+                placeholder={t('common.zero')}
                 value={minBudget}
                 onChange={e => setMinBudget(e.target.value)}
               />
             </label>
             <span className="destinations__budget-range-separator">-</span>
             <label className="destinations__budget-range-field">
-              <span>Max (FCFA)</span>
+              <span>{t('common.maxFcfa')}</span>
               <input
                 type="number"
                 min="0"
-                placeholder="Any"
+                placeholder={t('common.any')}
                 value={maxBudget}
                 onChange={e => setMaxBudget(e.target.value)}
               />
@@ -365,7 +367,7 @@ function Destinations() {
             type="button"
             className="destinations__selection-cancel"
             onClick={handleCancelSelection}
-            aria-label="Cancel destination selection"
+            aria-label={t('destinations.cancelSelection')}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12H19" />
@@ -376,14 +378,14 @@ function Destinations() {
       )}
 
       <main className="destinations__content destinations__content--with-bottom-nav">
-        {loading && <p className="destinations__status">Loading destinations...</p>}
+        {loading && <p className="destinations__status">{t('destinations.loading')}</p>}
         {error && <p className="destinations__status destinations__status--error">{error}</p>}
 
         {!loading && !error && filteredDestinations.length === 0 && (
           <p className="destinations__status">
             {searchQuery
-              ? `No destinations match "${searchQuery}".`
-              : 'No destinations match this filter.'}
+              ? t('destinations.noSearchMatches', { query: searchQuery })
+              : t('destinations.noFilterMatches')}
           </p>
         )}
 
@@ -408,7 +410,7 @@ function Destinations() {
 
       {selectionMode && draft.selectedDestinationIds.length > 0 && (
         <button type="button" className="destinations__confirm-selection" onClick={handleConfirmSelection}>
-          Confirm selected ({draft.selectedDestinationIds.length})
+          {t('destinations.confirmSelected', { count: draft.selectedDestinationIds.length })}
         </button>
       )}
 
