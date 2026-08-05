@@ -520,7 +520,8 @@ export const translations = {
       destinations: 'Destinations',
       home: 'Home',
       itineraries: 'Itineraries',
-      profile: 'Profile'
+      profile: 'Profile',
+      finishSelectionFirst: 'Confirm or cancel your destination selection first'
     },
     profile: {
       title: 'Profile',
@@ -1072,7 +1073,8 @@ export const translations = {
       destinations: 'Destinations',
       home: 'Accueil',
       itineraries: 'Itinéraires',
-      profile: 'Profil'
+      profile: 'Profil',
+      finishSelectionFirst: "Confirmez ou annulez d'abord votre sélection de destinations"
     },
     profile: {
       title: 'Profil',

@@ -362,3 +362,20 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Route geometry is fetched from Geoapify on every request with no caching, and is noticeably slow on mobile connections. The map draws markers immediately and the route line some seconds later, with no loading indicator to explain the gap
 - `cameroon-showcase-2.jpg` is 1 MB and sits on the landing page, unaffected by the destination-image compression above
 - Google Fonts is loaded from a CDN that responds slowly or times out from the deployment's network; self-hosting the three font files would remove the dependency
+
+## [05-08-2026]
+
+### Added
+- Forgot-password flow by email OTP: `ForgotPassword.jsx` and `ResetPassword.jsx` (+ `/forgot-password`, `/reset-password` routes) — enter your email, verify the 6-digit code sent to it (reusing the existing `/forgot-password`, `/verify-reset-code` endpoints), then set a new password twice
+- "Forgot password?" link on `Login.jsx`
+- `forgotPassword` / `resetPassword` i18n sections and a `validation.passwordMismatch` string, in both English and French
+- `nav.finishSelectionFirst` i18n string, shown as a tooltip on the now-disabled nav during destination selection (see Changed)
+
+### Changed
+- `routes/auth.py` (user-service) — `/reset-password` now mints a JWT and returns `token` + `user`, the same shape as `/login`/`/register`, so finishing a password reset logs the user straight into the app instead of sending them back to the login screen
+- `Bottomnav.jsx` — reads `selectionMode` from the existing `ItineraryDraftContext` and renders every tab as a disabled, non-navigable element (with an explanatory tooltip) for as long as a destination selection is in progress on the Destinations page, rather than leaving the nav fully clickable mid-selection. Applies to both the mobile bottom bar and its desktop top-bar variant, since they're the same component
+- `AuthForm.css` — small `.auth__forgot` style for the new Login page link
+
+### Fixed
+- Profile page: the Favorites and Manage Destinations/Admin Dashboard rows would disappear and reappear while offline or on a flaky connection. The Favorites row was gated on `favoriteCount !== null`, which stayed `null` for as long as the fetch to `/favorites` hadn't succeeded — and reset to `null` on every remount of the page, so it kept popping in and out as the user navigated back to Profile. Both rows now always render, like the other rows on the page; the favorites count shows a `···` placeholder instead of hiding the row while it loads or fails
+- On desktop, the destination-selection cancel button rendered hidden behind the sticky top nav bar. Both elements shared `z-index: 30`, and the nav — painted later in the DOM — won the tie. Raised the button's `z-index` above the nav's, and set its `top` offset to fall inside the nav bar's own height band: before the user scrolls, the nav hasn't stuck yet (it's still below the header in normal flow), so the button simply sits a little above it; once the user scrolls past the header, the nav locks to the top of the viewport and the button — unmoved, since it's `position: fixed` — now lines up perfectly inside it

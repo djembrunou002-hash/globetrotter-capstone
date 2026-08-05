@@ -34,6 +34,7 @@ function Profile() {
   const navigate = useNavigate()
   const { t, locale } = useTranslation()
   const [favoriteCount, setFavoriteCount] = useState(null)
+  const [favoritesLoading, setFavoritesLoading] = useState(true)
   const [error, setError] = useState('')
   const [user, setUserState] = useState(getUser())
   const [showPreferences, setShowPreferences] = useState(false)
@@ -49,11 +50,14 @@ function Profile() {
     }
 
     async function loadFavorites() {
+      setFavoritesLoading(true)
       try {
         const response = await getFavorites()
         setFavoriteCount(response.favorites.length)
       } catch (err) {
         setError(err.message)
+      } finally {
+        setFavoritesLoading(false)
       }
     }
 
@@ -146,18 +150,20 @@ function Profile() {
                 </dd>
               </div>
 
-              {favoriteCount !== null && (
-                <Link to="/favorites" className="profile__info-row profile__info-row--link">
-                  <dt>{t('profile.favoriteDestinations')}</dt>
-                  <dd className="profile__favorites-value">
-                    {favoriteCount}
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path d="M9 6l6 6-6 6" />
-                    </svg>
-                  </dd>
-                </Link>
-              )}
+              {/* Always visible, like the other rows below — never hidden while
+                  loading or offline. Shows a placeholder until the count arrives. */}
+              <Link to="/favorites" className="profile__info-row profile__info-row--link">
+                <dt>{t('profile.favoriteDestinations')}</dt>
+                <dd className="profile__favorites-value">
+                  {favoritesLoading && favoriteCount === null ? '···' : (favoriteCount ?? 0)}
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                </dd>
+              </Link>
 
+              {/* Always visible too — based purely on the locally-stored user role,
+                  never on a network call, so it never flickers on/off. */}
               {user.role === 'admin' ? (
                 <Link to="/admin" className="profile__info-row profile__info-row--link">
                   <dt>{t('profile.adminDashboard')}</dt>

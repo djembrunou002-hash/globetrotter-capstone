@@ -55,7 +55,7 @@
   position: fixed;
   top: 20px;
   right: clamp(20px, 5vw, 48px);
-  z-index: 30;
+  z-index: 40;
 }
 
 .destinations__selection-cancel {
@@ -247,5 +247,18 @@
     width: 100%;
     max-width: 1120px;
     margin-inline: auto;
+  }
+
+  /* The nav bar becomes a sticky top bar on desktop. Since this button is
+     `position: fixed` (constant viewport offset, doesn't move with scroll),
+     picking a `top` inside the nav bar's own height band means: before the
+     user scrolls past the header, the nav hasn't stuck yet (it's still
+     below the header in normal flow), so the button simply sits a little
+     above it, inside the header area. Once the user scrolls past the
+     header, the nav locks to the top of the viewport and now occupies
+     exactly this same band — so the button ends up aligned perfectly
+     inside the nav bar, no JS/scroll-listener needed. */
+  .destinations__selection-bar {
+    top: calc((var(--desktop-nav-height, 56px) - 40px) / 2);
   }
 }
