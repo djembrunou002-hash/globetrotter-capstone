@@ -91,8 +91,10 @@
   cursor: pointer;
 }
 
-.map-page__menu button:hover:not(:disabled) {
-  background: #F5EFE0;
+@media (hover: hover) {
+  .map-page__menu button:hover:not(:disabled) {
+    background: #F5EFE0;
+  }
 }
 
 .map-page__menu button:disabled {
@@ -100,7 +102,8 @@
   cursor: not-allowed;
 }
 
-.map-page__menu button.is-active {
+.map-page__menu button.is-active,
+.map-page__menu button.is-active:hover:not(:disabled) {
   background: var(--color-forest);
   color: #fff;
 }

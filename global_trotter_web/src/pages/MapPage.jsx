@@ -9,7 +9,6 @@ import { useVisitedStops } from '../hooks/useVisitedStops.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { CATEGORY_META, buildStraightLineGeoJson } from '../utils/mapCategories.js'
 import { haversineDistanceMeters, formatDistance } from '../utils/geo.js'
-import { linkNearbyPlaces } from '../utils/nearbyMatch.js'
 import BottomNav from '../components/Bottomnav.jsx'
 import MapView from '../components/MapView.jsx'
 import '../styles/MapPage.css'
@@ -17,6 +16,8 @@ import '../styles/MapPage.css'
 const ARRIVAL_THRESHOLD_METERS = 60
 const REROUTE_THRESHOLD_METERS = 50
 const NEARBY_REFRESH_THRESHOLD_METERS = 400
+const NEARBY_RADIUS_METERS = 1500
+const NEARBY_MERGE_DISTANCE_METERS = 500
 const MAX_ROUTE_WAYPOINTS = 10
 const MAP_STATE_STORAGE_KEY = 'globaltrotter:map-last-view'
 
@@ -26,7 +27,7 @@ const DEFAULT_MAP_STATE = {
   itineraryId: null,
   destinationId: null,
   showRoute: true,
-  showServices: true,
+  showServices: false,
   showVisited: false,
   stopIds: null,
   searchedPlace: null
@@ -141,7 +142,7 @@ function MapPage() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   const [routeOrigin, setRouteOrigin] = useState(null)
-  const [servicesCenter, setServicesCenter] = useState(null)
+  const [userServicesCenter, setUserServicesCenter] = useState(null)
 
   const { visitedIds } = useVisitedStops(selectedItineraryId)
 
@@ -366,40 +367,73 @@ function MapPage() {
     }
   }, [routeEnabled, routeWaypoints])
 
-  const rawServicesCenter = useMemo(() => {
-    if (userLocation) return { lat: userLocation.lat, lng: userLocation.lng, source: 'user' }
-    if (destinationMarkers.length === 0) return null
-    return {
-      lat: destinationMarkers.reduce((sum, marker) => sum + marker.lat, 0) / destinationMarkers.length,
-      lng: destinationMarkers.reduce((sum, marker) => sum + marker.lng, 0) / destinationMarkers.length,
-      source: 'itinerary'
-    }
-  }, [userLocation, destinationMarkers])
+  const rawUserServicesCenter = useMemo(() => {
+    if (!userLocation) return null
+    return { lat: userLocation.lat, lng: userLocation.lng }
+  }, [userLocation])
 
-  if (!rawServicesCenter) {
-    if (servicesCenter !== null) setServicesCenter(null)
+  if (!rawUserServicesCenter) {
+    if (userServicesCenter !== null) setUserServicesCenter(null)
   } else if (
-    !servicesCenter ||
-    servicesCenter.source !== rawServicesCenter.source ||
-    haversineDistanceMeters(servicesCenter, rawServicesCenter) >= NEARBY_REFRESH_THRESHOLD_METERS
+    !userServicesCenter ||
+    haversineDistanceMeters(userServicesCenter, rawUserServicesCenter) >= NEARBY_REFRESH_THRESHOLD_METERS
   ) {
-    setServicesCenter(rawServicesCenter)
+    setUserServicesCenter(rawUserServicesCenter)
   }
 
-  const servicesRadius = destinationMarkers.length > 1 ? 2500 : 1500
+  const stopServicesCenter = useMemo(() => {
+    const stop = remainingStops[0] || destinationMarkers[0]
+    if (!stop) return null
+    return { id: stop.id, lat: stop.lat, lng: stop.lng }
+  }, [remainingStops, destinationMarkers])
+
+  const extraStopServicesCenter = useMemo(() => {
+    if (!stopServicesCenter) return null
+    if (!userServicesCenter) return stopServicesCenter
+    const apart = haversineDistanceMeters(userServicesCenter, stopServicesCenter)
+    return apart < NEARBY_MERGE_DISTANCE_METERS ? null : stopServicesCenter
+  }, [stopServicesCenter, userServicesCenter])
+
+  const userCenterKey = userServicesCenter
+    ? `${userServicesCenter.lat.toFixed(4)},${userServicesCenter.lng.toFixed(4)}`
+    : ''
+  const stopCenterKey = extraStopServicesCenter ? extraStopServicesCenter.id : ''
 
   useEffect(() => {
-    if (!showServices || !servicesCenter) return undefined
+    if (!showServices) return undefined
+    if (!userServicesCenter && !extraStopServicesCenter) return undefined
 
     let active = true
 
     async function loadNearby() {
-      try {
-        const response = await getNearbyPlaces(servicesCenter.lat, servicesCenter.lng, { radius: servicesRadius })
-        if (active) setNearbyPlaces(response.results || [])
-      } catch {
-        if (active) setNearbyPlaces(EMPTY_PLACES)
-      }
+      const centers = []
+      if (userServicesCenter) centers.push(userServicesCenter)
+      if (extraStopServicesCenter) centers.push(extraStopServicesCenter)
+
+      const settled = await Promise.allSettled(
+        centers.map(center => getNearbyPlaces(center.lat, center.lng, { radius: NEARBY_RADIUS_METERS }))
+      )
+
+      if (!active) return
+
+      const seen = new Set()
+      const merged = []
+
+      settled.forEach(outcome => {
+        if (outcome.status !== 'fulfilled') return
+        const results = outcome.value?.results || []
+        results.forEach(place => {
+          const lat = Number(place.lat)
+          const lng = Number(place.lng)
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+          const key = `${place.name}@${lat.toFixed(5)},${lng.toFixed(5)}`
+          if (seen.has(key)) return
+          seen.add(key)
+          merged.push(place)
+        })
+      })
+
+      setNearbyPlaces(merged.length > 0 ? merged : EMPTY_PLACES)
     }
 
     loadNearby()
@@ -407,11 +441,12 @@ function MapPage() {
     return () => {
       active = false
     }
-  }, [showServices, servicesCenter, servicesRadius])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showServices, userCenterKey, stopCenterKey])
 
   const visibleNearbyPlaces = useMemo(
-    () => (showServices ? linkNearbyPlaces(nearbyPlaces, destinations) : EMPTY_PLACES),
-    [showServices, nearbyPlaces, destinations]
+    () => (showServices ? nearbyPlaces : EMPTY_PLACES),
+    [showServices, nearbyPlaces]
   )
 
   useEffect(() => {
@@ -440,14 +475,6 @@ function MapPage() {
   const handleDestinationMarkerClick = useCallback(
     marker => {
       navigate(`/destinations/${marker.id}`)
-    },
-    [navigate]
-  )
-
-  const handleNearbyPlaceClick = useCallback(
-    place => {
-      if (!place.destinationId) return
-      navigate(`/destinations/${place.destinationId}`)
     },
     [navigate]
   )
@@ -502,7 +529,7 @@ function MapPage() {
     setCustomStopIds(null)
     setFocusDestinationId(null)
     setShowRoute(true)
-    setShowServices(true)
+    setShowServices(false)
     setShowVisited(false)
     setSearchedPlace(null)
     setSearchQuery('')
@@ -514,7 +541,7 @@ function MapPage() {
     setNearbyPlaces(EMPTY_PLACES)
     setStopIndex(0)
     setRouteOrigin(null)
-    setServicesCenter(null)
+    setUserServicesCenter(null)
     mapViewRef.current?.resetView()
     if (itineraryParam || destinationParam || stopsParam) {
       navigate('/map', { replace: true })
@@ -527,11 +554,10 @@ function MapPage() {
     if (destinationMarkers.some(marker => marker.visited)) set.add('visited')
     if (searchedPlace) set.add('searched')
     visibleNearbyPlaces.forEach(place => set.add(place.category))
-    if (visibleNearbyPlaces.some(place => place.destinationId)) set.add('linked')
     return [...set]
   }, [destinationMarkers, searchedPlace, visibleNearbyPlaces])
 
-  const servicesAreRemote = showServices && servicesCenter?.source === 'itinerary'
+  const servicesAreRemote = showServices && !userServicesCenter && Boolean(extraStopServicesCenter)
   const routeNeedsLocation = showRoute && !canRoute && pendingStops.length > 0 && !routeOrigin
 
   const visitedCount = itineraryStops.filter(stop => stop.visited).length
@@ -573,8 +599,6 @@ function MapPage() {
         routeIsFallback={routeIsFallback}
         userLocation={userLocation}
         onDestinationClick={handleDestinationMarkerClick}
-        onNearbyClick={handleNearbyPlaceClick}
-        nearbyActionLabel={t('map.viewDetails')}
       />
 
       {statusMessage && (

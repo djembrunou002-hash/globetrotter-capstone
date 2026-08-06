@@ -10,6 +10,8 @@ import {
 } from '../../src/services/destinationService.js'
 import { getRecommendations } from '../../src/services/recommendationService.js'
 import { getToken } from '../../src/services/tokenStorage.js'
+import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
+
 
 jest.mock('../../src/services/destinationService.js')
 jest.mock('../../src/services/recommendationService.js')
@@ -46,7 +48,9 @@ const MONT_FEBE = {
 function renderHome() {
   render(
     <MemoryRouter>
-      <Home />
+      <ItineraryDraftProvider>
+        <Home />
+      </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }

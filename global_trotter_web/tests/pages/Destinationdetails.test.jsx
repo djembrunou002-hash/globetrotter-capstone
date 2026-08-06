@@ -9,6 +9,7 @@ import {
   rateDestination
 } from '../../src/services/destinationService.js'
 import { getToken } from '../../src/services/tokenStorage.js'
+import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 
 jest.mock('../../src/services/destinationService.js')
 jest.mock('../../src/services/tokenStorage.js')
@@ -46,9 +47,11 @@ const DESTINATION = {
 function renderDestinationDetails(id = 'dest_001') {
   return render(
     <MemoryRouter initialEntries={[`/destinations/${id}`]}>
-      <Routes>
-        <Route path="/destinations/:id" element={<DestinationDetails />} />
-      </Routes>
+      <ItineraryDraftProvider>
+        <Routes>
+          <Route path="/destinations/:id" element={<DestinationDetails />} />
+        </Routes>
+      </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }

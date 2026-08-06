@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import Profile from '../../src/pages/Profile.jsx'
 import { getFavorites } from '../../src/services/destinationService.js'
 import { getToken, getUser, clearToken, clearUser } from '../../src/services/tokenStorage.js'
+import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 
 jest.mock('../../src/services/destinationService.js')
 jest.mock('../../src/services/tokenStorage.js')
@@ -25,7 +26,9 @@ const USER = {
 function renderProfile() {
   return render(
     <MemoryRouter>
-      <Profile />
+      <ItineraryDraftProvider>
+        <Profile />
+      </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }

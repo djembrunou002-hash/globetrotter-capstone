@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import Favorites from '../../src/pages/Favorites.jsx'
 import { getFavorites, removeFavorite, rateDestination } from '../../src/services/destinationService.js'
 import { getToken } from '../../src/services/tokenStorage.js'
+import ItineraryDraftProvider from '../../src/context/ItineraryDraftProvider.jsx'
 
 jest.mock('../../src/services/destinationService.js')
 jest.mock('../../src/services/tokenStorage.js')
@@ -40,7 +41,9 @@ const MONT_FEBE = {
 function renderFavorites() {
   return render(
     <MemoryRouter>
-      <Favorites />
+      <ItineraryDraftProvider>
+        <Favorites />
+      </ItineraryDraftProvider>
     </MemoryRouter>
   )
 }
