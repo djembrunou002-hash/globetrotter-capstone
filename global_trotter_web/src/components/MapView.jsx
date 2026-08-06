@@ -16,16 +16,18 @@ const EMPTY_COLLECTION = { type: 'FeatureCollection', features: [] }
 
 const MARKER_Z = {
   nearby: '3',
+  nearbyLinked: '5',
   destination: '6',
   searched: '7',
   user: '10'
 }
 
-function createMarkerElement(category, { label, visited } = {}) {
+function createMarkerElement(category, { label, visited, linked } = {}) {
   const meta = CATEGORY_META[category] || CATEGORY_META.other
   const el = document.createElement('div')
   el.className = `map-marker map-marker--${category === 'destination' ? 'large' : 'small'}`
   if (visited) el.classList.add('map-marker--visited')
+  if (linked) el.classList.add('map-marker--linked')
   el.style.setProperty('--marker-color', visited ? CATEGORY_META.visited.color : meta.color)
   if (label != null) {
     const badge = document.createElement('span')
@@ -34,6 +36,37 @@ function createMarkerElement(category, { label, visited } = {}) {
     el.appendChild(badge)
   }
   return el
+}
+
+function createPlacePopupContent(place, actionLabel, onSelect) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'map-popup'
+
+  const title = document.createElement('span')
+  title.className = 'map-popup__title'
+  title.textContent = place.name
+  wrapper.appendChild(title)
+
+  if (place.address) {
+    const address = document.createElement('span')
+    address.className = 'map-popup__address'
+    address.textContent = place.address
+    wrapper.appendChild(address)
+  }
+
+  if (place.destinationId && onSelect && actionLabel) {
+    const action = document.createElement('button')
+    action.type = 'button'
+    action.className = 'map-popup__action'
+    action.textContent = actionLabel
+    action.addEventListener('click', event => {
+      event.stopPropagation()
+      onSelect(place)
+    })
+    wrapper.appendChild(action)
+  }
+
+  return wrapper
 }
 
 function createUserMarkerElement() {
@@ -113,6 +146,8 @@ const MapView = forwardRef(function MapView(
     routeIsFallback = false,
     userLocation = null,
     onDestinationClick,
+    onNearbyClick,
+    nearbyActionLabel = '',
     center,
     zoom = DEFAULT_ZOOM
   },
@@ -301,12 +336,17 @@ const MapView = forwardRef(function MapView(
     if (!map || !ready) return undefined
 
     const created = nearbyPlaces.map(place => {
-      const el = createMarkerElement(place.category)
-      el.style.zIndex = MARKER_Z.nearby
+      const linked = Boolean(place.destinationId)
+      const el = createMarkerElement(place.category, { linked })
+      el.style.zIndex = linked ? MARKER_Z.nearbyLinked : MARKER_Z.nearby
+
+      const popup = new maplibregl.Popup({ offset: 20, maxWidth: '260px' }).setDOMContent(
+        createPlacePopupContent(place, nearbyActionLabel, onNearbyClick)
+      )
 
       return new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([place.lng, place.lat])
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(place.name))
+        .setPopup(popup)
         .addTo(map)
     })
 
@@ -316,7 +356,7 @@ const MapView = forwardRef(function MapView(
       created.forEach(marker => marker.remove())
       nearbyMarkersRef.current = []
     }
-  }, [nearbyPlaces, ready])
+  }, [nearbyPlaces, ready, onNearbyClick, nearbyActionLabel])
 
   useEffect(() => {
     const map = mapRef.current

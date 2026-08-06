@@ -2,6 +2,7 @@ export const CATEGORY_META = {
   destination: { labelKey: 'mapCategories.destination', color: '#F2B705' },
   visited: { labelKey: 'mapCategories.visited', color: '#8A8372' },
   searched: { labelKey: 'mapCategories.searched', color: '#2461A6' },
+  linked: { labelKey: 'mapCategories.linked', color: '#F2B705' },
   restaurant: { labelKey: 'mapCategories.restaurant', color: '#C8102E' },
   cafe: { labelKey: 'mapCategories.cafe', color: '#D9702E' },
   hotel: { labelKey: 'mapCategories.hotel', color: '#2461A6' },

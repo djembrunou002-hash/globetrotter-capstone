@@ -32,6 +32,17 @@
   height: 18px;
 }
 
+.map-marker--small::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.map-marker--linked {
+  border-color: #F2B705;
+  box-shadow: 0 0 0 2px rgba(242, 183, 5, 0.9), 0 2px 6px rgba(11, 61, 36, 0.35);
+}
+
 .map-marker--visited {
   opacity: 0.55;
   border-style: dashed;
@@ -44,12 +55,62 @@
   line-height: 1;
 }
 
+.maplibregl-popup {
+  z-index: 12;
+}
+
 .maplibregl-popup-content {
   font-family: var(--font-body);
   font-size: 0.85rem;
   color: var(--color-ink);
   border-radius: 10px;
   padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(11, 61, 36, 0.22);
+}
+
+.maplibregl-popup-close-button {
+  width: 24px;
+  height: 24px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+.map-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 10px;
+}
+
+.map-popup__title {
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.map-popup__address {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.map-popup__action {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-forest);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-popup__action:hover {
+  background: var(--color-forest-mid);
 }
 
 .map-marker-user {

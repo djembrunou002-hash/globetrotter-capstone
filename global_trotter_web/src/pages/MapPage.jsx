@@ -9,6 +9,7 @@ import { useVisitedStops } from '../hooks/useVisitedStops.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { CATEGORY_META, buildStraightLineGeoJson } from '../utils/mapCategories.js'
 import { haversineDistanceMeters, formatDistance } from '../utils/geo.js'
+import { linkNearbyPlaces } from '../utils/nearbyMatch.js'
 import BottomNav from '../components/Bottomnav.jsx'
 import MapView from '../components/MapView.jsx'
 import '../styles/MapPage.css'
@@ -409,8 +410,8 @@ function MapPage() {
   }, [showServices, servicesCenter, servicesRadius])
 
   const visibleNearbyPlaces = useMemo(
-    () => (showServices ? nearbyPlaces : EMPTY_PLACES),
-    [showServices, nearbyPlaces]
+    () => (showServices ? linkNearbyPlaces(nearbyPlaces, destinations) : EMPTY_PLACES),
+    [showServices, nearbyPlaces, destinations]
   )
 
   useEffect(() => {
@@ -439,6 +440,14 @@ function MapPage() {
   const handleDestinationMarkerClick = useCallback(
     marker => {
       navigate(`/destinations/${marker.id}`)
+    },
+    [navigate]
+  )
+
+  const handleNearbyPlaceClick = useCallback(
+    place => {
+      if (!place.destinationId) return
+      navigate(`/destinations/${place.destinationId}`)
     },
     [navigate]
   )
@@ -518,6 +527,7 @@ function MapPage() {
     if (destinationMarkers.some(marker => marker.visited)) set.add('visited')
     if (searchedPlace) set.add('searched')
     visibleNearbyPlaces.forEach(place => set.add(place.category))
+    if (visibleNearbyPlaces.some(place => place.destinationId)) set.add('linked')
     return [...set]
   }, [destinationMarkers, searchedPlace, visibleNearbyPlaces])
 
@@ -563,6 +573,8 @@ function MapPage() {
         routeIsFallback={routeIsFallback}
         userLocation={userLocation}
         onDestinationClick={handleDestinationMarkerClick}
+        onNearbyClick={handleNearbyPlaceClick}
+        nearbyActionLabel={t('map.viewDetails')}
       />
 
       {statusMessage && (
