@@ -322,6 +322,33 @@
   text-align: center;
 }
 
+.map-page__travel-modes {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.map-page__travel-modes button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+
+.map-page__travel-modes button.is-active {
+  background: #fff;
+  color: var(--color-forest);
+}
+
 .map-page__distance-label {
   font-family: var(--font-body);
   font-size: 0.72rem;

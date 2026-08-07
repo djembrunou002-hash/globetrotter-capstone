@@ -8,7 +8,7 @@ import { useGeolocation } from '../hooks/useGeolocation.js'
 import { useVisitedStops } from '../hooks/useVisitedStops.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { CATEGORY_META, buildStraightLineGeoJson } from '../utils/mapCategories.js'
-import { haversineDistanceMeters, formatDistance } from '../utils/geo.js'
+import { haversineDistanceMeters, formatDistance, formatDuration } from '../utils/geo.js'
 import BottomNav from '../components/Bottomnav.jsx'
 import MapView from '../components/MapView.jsx'
 import '../styles/MapPage.css'
@@ -18,6 +18,9 @@ const REROUTE_THRESHOLD_METERS = 50
 const NEARBY_REFRESH_THRESHOLD_METERS = 400
 const NEARBY_RADIUS_METERS = 1500
 const NEARBY_MERGE_DISTANCE_METERS = 500
+const TRAVEL_MODES = ['drive', 'walk']
+const DEFAULT_TRAVEL_MODE = 'drive'
+const FALLBACK_SPEED_MPS = { drive: 6.9, walk: 1.35 }
 const MAX_ROUTE_WAYPOINTS = 10
 const MAP_STATE_STORAGE_KEY = 'globaltrotter:map-last-view'
 
@@ -27,6 +30,7 @@ const DEFAULT_MAP_STATE = {
   itineraryId: null,
   destinationId: null,
   showRoute: true,
+  travelMode: DEFAULT_TRAVEL_MODE,
   showServices: false,
   showVisited: false,
   stopIds: null,
@@ -127,6 +131,9 @@ function MapPage() {
   const [showRoute, setShowRoute] = useState(() => (itineraryParam || destinationParam ? true : persisted.showRoute))
   const [showServices, setShowServices] = useState(persisted.showServices)
   const [showVisited, setShowVisited] = useState(persisted.showVisited)
+  const [travelMode, setTravelMode] = useState(() =>
+    TRAVEL_MODES.includes(persisted.travelMode) ? persisted.travelMode : DEFAULT_TRAVEL_MODE
+  )
 
   const [nearbyPlaces, setNearbyPlaces] = useState([])
   const [route, setRoute] = useState(null)
@@ -309,12 +316,22 @@ function MapPage() {
       itineraryId: selectedItineraryId,
       destinationId: focusDestinationId,
       showRoute,
+      travelMode,
       showServices,
       showVisited,
       stopIds: customStopIds,
       searchedPlace
     })
-  }, [selectedItineraryId, focusDestinationId, showRoute, showServices, showVisited, customStopIds, searchedPlace])
+  }, [
+    selectedItineraryId,
+    focusDestinationId,
+    showRoute,
+    travelMode,
+    showServices,
+    showVisited,
+    customStopIds,
+    searchedPlace
+  ])
 
   useEffect(() => {
     if (!routeEnabled) return undefined
@@ -323,7 +340,7 @@ function MapPage() {
 
     async function loadRoute() {
       try {
-        const geojson = await getRoute(routeWaypoints, 'drive', 'short')
+        const geojson = await getRoute(routeWaypoints, travelMode, travelMode === 'walk' ? 'short' : 'balanced')
         if (!active) return
         setRoute(geojson)
         setRouteIsFallback(false)
@@ -334,9 +351,19 @@ function MapPage() {
         if (legs && legs.length) {
           const toNext = legs[0].distance
           const total = legs.reduce((sum, leg) => sum + (leg.distance || 0), 0)
-          setRouteSummary({ toNext, total, source: 'route' })
+          const timeToNext = legs[0].time ?? null
+          const timeTotal = legs.every(leg => leg.time == null)
+            ? null
+            : legs.reduce((sum, leg) => sum + (leg.time || 0), 0)
+          setRouteSummary({ toNext, total, timeToNext, timeTotal, source: 'route' })
         } else if (properties?.distance != null) {
-          setRouteSummary({ toNext: properties.distance, total: properties.distance, source: 'route' })
+          setRouteSummary({
+            toNext: properties.distance,
+            total: properties.distance,
+            timeToNext: properties.time ?? null,
+            timeTotal: properties.time ?? null,
+            source: 'route'
+          })
         } else {
           setRouteSummary(null)
         }
@@ -356,7 +383,14 @@ function MapPage() {
             { lat: routeWaypoints[i + 1][0], lng: routeWaypoints[i + 1][1] }
           )
         }
-        setRouteSummary({ toNext, total, source: 'straight-line' })
+        const speed = FALLBACK_SPEED_MPS[travelMode] || FALLBACK_SPEED_MPS[DEFAULT_TRAVEL_MODE]
+        setRouteSummary({
+          toNext,
+          total,
+          timeToNext: toNext / speed,
+          timeTotal: total / speed,
+          source: 'straight-line'
+        })
       }
     }
 
@@ -365,7 +399,7 @@ function MapPage() {
     return () => {
       active = false
     }
-  }, [routeEnabled, routeWaypoints])
+  }, [routeEnabled, routeWaypoints, travelMode])
 
   const rawUserServicesCenter = useMemo(() => {
     if (!userLocation) return null
@@ -529,6 +563,7 @@ function MapPage() {
     setCustomStopIds(null)
     setFocusDestinationId(null)
     setShowRoute(true)
+    setTravelMode(DEFAULT_TRAVEL_MODE)
     setShowServices(false)
     setShowVisited(false)
     setSearchedPlace(null)
@@ -781,15 +816,57 @@ function MapPage() {
 
       {routeEnabled && nextStop && routeSummary && (
         <div className="map-page__distance-panel">
+          <div className="map-page__travel-modes" role="group" aria-label={t('map.travelMode')}>
+            <button
+              type="button"
+              className={travelMode === 'walk' ? 'is-active' : ''}
+              aria-pressed={travelMode === 'walk'}
+              aria-label={t('map.onFoot')}
+              title={t('map.onFoot')}
+              onClick={() => setTravelMode('walk')}
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="13.5" cy="4" r="1.6" />
+                <path d="M13 8l-3 2 1 4 3 2 1 4" />
+                <path d="M11 14l-2 6" />
+                <path d="M13 8l3 1 1 3" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={travelMode === 'drive' ? 'is-active' : ''}
+              aria-pressed={travelMode === 'drive'}
+              aria-label={t('map.byCar')}
+              title={t('map.byCar')}
+              onClick={() => setTravelMode('drive')}
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 16h16" />
+                <path d="M5.5 16V10l1.8-3.4h9.4L18.5 10v6" />
+                <circle cx="8" cy="18" r="1.4" />
+                <circle cx="16" cy="18" r="1.4" />
+              </svg>
+            </button>
+          </div>
+
           <span className="map-page__distance-label">
             {t('map.nextStop', { index: stopIndex + 1, total: pendingStops.length, name: nextStop.name })}
           </span>
-          <span className="map-page__distance-value">{formatDistance(routeSummary.toNext)}</span>
-          {hasMultipleStops && (
-            <span className="map-page__distance-total">
-              {t('map.totalLeft', { distance: formatDistance(routeSummary.total) })}
-            </span>
-          )}
+
+          <span className="map-page__distance-value">
+            {routeSummary.source === 'straight-line' ? '≈ ' : ''}
+            {formatDuration(routeSummary.timeToNext) || formatDistance(routeSummary.toNext)}
+          </span>
+
+          <span className="map-page__distance-total">
+            {formatDistance(routeSummary.toNext)}
+            {hasMultipleStops
+              ? ` · ${t('map.totalLeft', { distance: formatDistance(routeSummary.total) })}`
+              : ''}
+            {hasMultipleStops && formatDuration(routeSummary.timeTotal)
+              ? ` (${formatDuration(routeSummary.timeTotal)})`
+              : ''}
+          </span>
         </div>
       )}
 

@@ -32,3 +32,14 @@ export function formatDistance(meters) {
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(meters < 10000 ? 1 : 0)} km`
 }
+
+export function formatDuration(seconds) {
+  if (seconds == null || Number.isNaN(seconds)) return null
+  const totalMinutes = Math.round(seconds / 60)
+  if (totalMinutes < 1) return '< 1 min'
+  if (totalMinutes < 60) return `${totalMinutes} min`
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (minutes === 0) return `${hours} h`
+  return `${hours} h ${minutes} min`
+}
