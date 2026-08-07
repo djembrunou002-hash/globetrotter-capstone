@@ -311,6 +311,16 @@ function MapPage() {
   const canRoute = routeWaypoints.length >= 2
   const routeEnabled = showRoute && canRoute
 
+  const routeKey = useMemo(() => {
+    if (!routeEnabled) return ''
+    const points = routeWaypoints.map(([lat, lng]) => `${lat.toFixed(5)},${lng.toFixed(5)}`).join('|')
+    return `${travelMode}@${points}`
+  }, [routeEnabled, travelMode, routeWaypoints])
+
+  const routeLoading = routeEnabled && (!routeSummary || routeSummary.key !== routeKey)
+  const routeSummaryReady =
+    Boolean(routeSummary) && routeSummary.key === routeKey && routeSummary.toNext != null
+
   useEffect(() => {
     writePersistedMapState({
       itineraryId: selectedItineraryId,
@@ -355,9 +365,10 @@ function MapPage() {
           const timeTotal = legs.every(leg => leg.time == null)
             ? null
             : legs.reduce((sum, leg) => sum + (leg.time || 0), 0)
-          setRouteSummary({ toNext, total, timeToNext, timeTotal, source: 'route' })
+          setRouteSummary({ key: routeKey, toNext, total, timeToNext, timeTotal, source: 'route' })
         } else if (properties?.distance != null) {
           setRouteSummary({
+            key: routeKey,
             toNext: properties.distance,
             total: properties.distance,
             timeToNext: properties.time ?? null,
@@ -365,7 +376,14 @@ function MapPage() {
             source: 'route'
           })
         } else {
-          setRouteSummary(null)
+          setRouteSummary({
+            key: routeKey,
+            toNext: null,
+            total: null,
+            timeToNext: null,
+            timeTotal: null,
+            source: 'route'
+          })
         }
       } catch {
         if (!active) return
@@ -385,6 +403,7 @@ function MapPage() {
         }
         const speed = FALLBACK_SPEED_MPS[travelMode] || FALLBACK_SPEED_MPS[DEFAULT_TRAVEL_MODE]
         setRouteSummary({
+          key: routeKey,
           toNext,
           total,
           timeToNext: toNext / speed,
@@ -399,7 +418,7 @@ function MapPage() {
     return () => {
       active = false
     }
-  }, [routeEnabled, routeWaypoints, travelMode])
+  }, [routeEnabled, routeWaypoints, travelMode, routeKey])
 
   const rawUserServicesCenter = useMemo(() => {
     if (!userLocation) return null
@@ -814,12 +833,13 @@ function MapPage() {
         </div>
       )}
 
-      {routeEnabled && nextStop && routeSummary && (
+      {routeEnabled && nextStop && (routeLoading || routeSummaryReady) && (
         <div className="map-page__distance-panel">
           <div className="map-page__travel-modes" role="group" aria-label={t('map.travelMode')}>
             <button
               type="button"
               className={travelMode === 'walk' ? 'is-active' : ''}
+              disabled={routeLoading}
               aria-pressed={travelMode === 'walk'}
               aria-label={t('map.onFoot')}
               title={t('map.onFoot')}
@@ -835,6 +855,7 @@ function MapPage() {
             <button
               type="button"
               className={travelMode === 'drive' ? 'is-active' : ''}
+              disabled={routeLoading}
               aria-pressed={travelMode === 'drive'}
               aria-label={t('map.byCar')}
               title={t('map.byCar')}
@@ -853,20 +874,33 @@ function MapPage() {
             {t('map.nextStop', { index: stopIndex + 1, total: pendingStops.length, name: nextStop.name })}
           </span>
 
-          <span className="map-page__distance-value">
-            {routeSummary.source === 'straight-line' ? '≈ ' : ''}
-            {formatDuration(routeSummary.timeToNext) || formatDistance(routeSummary.toNext)}
-          </span>
+          {routeLoading ? (
+            <>
+              <span className="map-page__distance-value map-page__distance-value--loading">
+                <span className="map-page__dot" />
+                <span className="map-page__dot" />
+                <span className="map-page__dot" />
+              </span>
+              <span className="map-page__distance-total">{t('map.calculating')}</span>
+            </>
+          ) : (
+            <>
+              <span className="map-page__distance-value">
+                {routeSummary.source === 'straight-line' ? '≈ ' : ''}
+                {formatDuration(routeSummary.timeToNext) || formatDistance(routeSummary.toNext)}
+              </span>
 
-          <span className="map-page__distance-total">
-            {formatDistance(routeSummary.toNext)}
-            {hasMultipleStops
-              ? ` · ${t('map.totalLeft', { distance: formatDistance(routeSummary.total) })}`
-              : ''}
-            {hasMultipleStops && formatDuration(routeSummary.timeTotal)
-              ? ` (${formatDuration(routeSummary.timeTotal)})`
-              : ''}
-          </span>
+              <span className="map-page__distance-total">
+                {formatDistance(routeSummary.toNext)}
+                {hasMultipleStops
+                  ? ` · ${t('map.totalLeft', { distance: formatDistance(routeSummary.total) })}`
+                  : ''}
+                {hasMultipleStops && formatDuration(routeSummary.timeTotal)
+                  ? ` (${formatDuration(routeSummary.timeTotal)})`
+                  : ''}
+              </span>
+            </>
+          )}
         </div>
       )}
 
