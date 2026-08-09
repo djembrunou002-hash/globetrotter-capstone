@@ -20,6 +20,8 @@ export function buildDestinationFormData(fields, imageFiles) {
   formData.append('location_lat', fields.location_lat || '')
   formData.append('location_lng', fields.location_lng || '')
   formData.append('location_address', fields.location_address || '')
+  formData.append('contact_phone', fields.contact_phone || '')
+  formData.append('contact_email', fields.contact_email || '')
   formData.append('advice', fields.advice || '')
   formData.append('description', fields.description || '')
   formData.append('nearby_services', JSON.stringify(fields.nearby_services || []))

@@ -14,7 +14,7 @@ import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import CommentSection from '../components/CommentSection.jsx'
 import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
-import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
+import { getBudgetDisplay, getHoursDisplay, getContactDisplay } from '../utils/destinationDisplay.js'
 import '../styles/DestinationDetails.css'
 
 function ExtraPhoto({ src, alt }) {
@@ -114,6 +114,7 @@ function DestinationDetails() {
   const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level, t) : null
   const hoursDisplay = destination ? getHoursDisplay(destination.hours, t, language) : null
   const nearbyServices = destination?.nearby_services || []
+  const contactDisplay = destination ? getContactDisplay(destination.contact) : null
   const advice = destination?.advice && destination.advice.trim()
     ? destination.advice
     : t('destinationDetails.noAdvice')
@@ -274,6 +275,34 @@ function DestinationDetails() {
                         alt={t('destinationDetails.photoAlt', { name: destination.name, number: index + 2 })}
                       />
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {contactDisplay && (
+                <div className="destination-details__section">
+                  <h2 className="destination-details__section-title">{t('destinationDetails.contact')}</h2>
+                  <div className="destination-details__contact">
+                    {contactDisplay.phone && (
+                      <a
+                        className="destination-details__contact-item"
+                        href={`tel:${contactDisplay.phone.replace(/\s+/g, '')}`}
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        {contactDisplay.phone}
+                      </a>
+                    )}
+                    {contactDisplay.email && (
+                      <a className="destination-details__contact-item" href={`mailto:${contactDisplay.email}`}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="2" y="4" width="20" height="16" rx="2" />
+                          <path d="M22 6l-10 7L2 6" />
+                        </svg>
+                        {contactDisplay.email}
+                      </a>
+                    )}
                   </div>
                 </div>
               )}

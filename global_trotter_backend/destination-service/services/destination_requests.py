@@ -107,6 +107,20 @@ def parse_destination_form(form, files, existing=None):
         else existing_location.get("address", ""),
     }
 
+    existing_contact = existing.get("contact", {})
+    contact = {
+        "phone": form.get("contact_phone", existing_contact.get("phone", "")).strip()
+        if form.get("contact_phone") is not None
+        else existing_contact.get("phone", ""),
+        "email": form.get("contact_email", existing_contact.get("email", "")).strip()
+        if form.get("contact_email") is not None
+        else existing_contact.get("email", ""),
+    }
+    contact = {
+        "phone": contact["phone"] or None,
+        "email": contact["email"] or None,
+    }
+
     nearby_services = existing.get("nearby_services", [])
     nearby_raw = form.get("nearby_services")
     if nearby_raw:
@@ -149,6 +163,7 @@ def parse_destination_form(form, files, existing=None):
         "location": location,
         "images": [img for img in images if img],
         "nearby_services": nearby_services,
+        "contact": contact,
         "advice": advice,
         "description": description,
     }

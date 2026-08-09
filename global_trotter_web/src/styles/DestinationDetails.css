@@ -254,6 +254,35 @@
   background: linear-gradient(160deg, var(--color-gold-soft), var(--color-forest-mid));
 }
 
+.destination-details__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.destination-details__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #E7DFC9;
+  border-radius: 10px;
+  background: #fff;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.destination-details__contact-item svg {
+  flex-shrink: 0;
+  color: var(--color-forest);
+}
+
+.destination-details__contact-item:hover {
+  border-color: var(--color-forest);
+}
+
 .destination-details__services {
   list-style: none;
   margin: 0;

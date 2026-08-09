@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
+import { getBudgetDisplay, getHoursDisplay, getContactDisplay } from '../utils/destinationDisplay.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/RequestDetailModal.css'
 
@@ -46,6 +46,8 @@ function buildChanges(payload, current, t, language) {
     getHoursDisplay(payload.hours, t, language).label
   )
   add(t('changes.address'), current.location?.address, payload.location?.address)
+  add(t('changes.contactPhone'), current.contact?.phone, payload.contact?.phone)
+  add(t('changes.contactEmail'), current.contact?.email, payload.contact?.email)
   add(t('changes.description'), current.description, payload.description)
   add(t('changes.advice'), current.advice, payload.advice)
 
@@ -90,6 +92,7 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
   const hoursDisplay = getHoursDisplay(display.hours, t, language)
   const address = display.location?.address || ''
   const nearbyServices = display.nearby_services || []
+  const contactDisplay = getContactDisplay(display.contact)
   const description = display.description || ''
   const advice = display.advice || ''
   const changes = request.type === 'edit' ? buildChanges(display, current, t, language) : []
@@ -180,6 +183,15 @@ function RequestDetailModal({ request, onClose, onApprove, onReject, onSaveNote,
             <div className="request-modal__section">
               <h3 className="request-modal__section-title">{t('changes.description')}</h3>
               <p className="request-modal__text">{description}</p>
+            </div>
+          )}
+
+          {contactDisplay && (
+            <div className="request-modal__section">
+              <h3 className="request-modal__section-title">{t('destinationDetails.contact')}</h3>
+              <p className="request-modal__text">
+                {[contactDisplay.phone, contactDisplay.email].filter(Boolean).join(' · ')}
+              </p>
             </div>
           )}
 

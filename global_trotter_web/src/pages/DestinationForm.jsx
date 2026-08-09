@@ -26,6 +26,8 @@ const EMPTY_FIELDS = {
   location_lat: '',
   location_lng: '',
   location_address: '',
+  contact_phone: '',
+  contact_email: '',
   advice: '',
   description: ''
 }
@@ -56,6 +58,8 @@ function destinationToFields(destination) {
     location_lat: destination.location?.lat ?? '',
     location_lng: destination.location?.lng ?? '',
     location_address: destination.location?.address || '',
+    contact_phone: destination.contact?.phone || '',
+    contact_email: destination.contact?.email || '',
     advice: destination.advice || '',
     description: destination.description || ''
   }
@@ -442,6 +446,33 @@ function DestinationForm({ mode }) {
                   onChange={handleFieldChange}
                 />
               </label>
+            </section>
+
+            <section className="destination-form__section">
+              <h2 className="destination-form__section-title">{t('form.sectionContact')}</h2>
+
+              <div className="destination-form__row">
+                <label className="destination-form__field">
+                  <span>{t('form.contactPhone')}</span>
+                  <input
+                    type="tel"
+                    name="contact_phone"
+                    value={fields.contact_phone}
+                    onChange={handleFieldChange}
+                    placeholder={t('form.contactPhonePlaceholder')}
+                  />
+                </label>
+                <label className="destination-form__field">
+                  <span>{t('form.contactEmail')}</span>
+                  <input
+                    type="email"
+                    name="contact_email"
+                    value={fields.contact_email}
+                    onChange={handleFieldChange}
+                    placeholder={t('form.contactEmailPlaceholder')}
+                  />
+                </label>
+              </div>
             </section>
 
             <section className="destination-form__section">

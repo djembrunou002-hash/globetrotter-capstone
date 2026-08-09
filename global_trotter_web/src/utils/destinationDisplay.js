@@ -33,6 +33,13 @@ export function getHoursDisplay(hours, t = defaultT, language = DEFAULT_LANGUAGE
   return { label: t('hours.eventBased'), note: hours.note || null }
 }
 
+export function getContactDisplay(contact) {
+  const phone = contact?.phone && contact.phone.trim() ? contact.phone.trim() : null
+  const email = contact?.email && contact.email.trim() ? contact.email.trim() : null
+  if (!phone && !email) return null
+  return { phone, email }
+}
+
 export function getBudgetDisplay(budget, budgetLevel, t = defaultT) {
   if (budget && budget.amount_label) {
     return { label: budget.amount_label, note: budget.note || null, isFree: Boolean(budget.is_free) }

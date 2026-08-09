@@ -320,6 +320,12 @@
   box-shadow: 0 8px 20px rgba(11, 61, 36, 0.28);
   max-width: min(86vw, 320px);
   text-align: center;
+  cursor: pointer;
+}
+
+.map-page__distance-panel--sunk {
+  z-index: 12;
+  opacity: 0.55;
 }
 
 .map-page__travel-modes {

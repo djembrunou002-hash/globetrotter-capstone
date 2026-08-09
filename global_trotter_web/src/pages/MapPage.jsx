@@ -147,6 +147,7 @@ function MapPage() {
   const [searchedPlace, setSearchedPlace] = useState(persisted.searchedPlace)
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [distancePanelSunk, setDistancePanelSunk] = useState(false)
 
   const [routeOrigin, setRouteOrigin] = useState(null)
   const [userServicesCenter, setUserServicesCenter] = useState(null)
@@ -834,7 +835,19 @@ function MapPage() {
       )}
 
       {routeEnabled && nextStop && (routeLoading || routeSummaryReady) && (
-        <div className="map-page__distance-panel">
+        <div
+          className={`map-page__distance-panel${distancePanelSunk ? ' map-page__distance-panel--sunk' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-label={t('map.bringDistanceForward')}
+          onClick={() => setDistancePanelSunk(false)}
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              setDistancePanelSunk(false)
+            }
+          }}
+        >
           <div className="map-page__travel-modes" role="group" aria-label={t('map.travelMode')}>
             <button
               type="button"
@@ -843,7 +856,10 @@ function MapPage() {
               aria-pressed={travelMode === 'walk'}
               aria-label={t('map.onFoot')}
               title={t('map.onFoot')}
-              onClick={() => setTravelMode('walk')}
+              onClick={event => {
+                event.stopPropagation()
+                setTravelMode('walk')
+              }}
             >
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="13.5" cy="4" r="1.6" />
@@ -859,7 +875,10 @@ function MapPage() {
               aria-pressed={travelMode === 'drive'}
               aria-label={t('map.byCar')}
               title={t('map.byCar')}
-              onClick={() => setTravelMode('drive')}
+              onClick={event => {
+                event.stopPropagation()
+                setTravelMode('drive')
+              }}
             >
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 16h16" />
@@ -905,7 +924,10 @@ function MapPage() {
       )}
 
       {presentCategories.length > 0 && (
-        <div className="map-page__legend">
+        <div
+          className="map-page__legend"
+          onClick={() => setDistancePanelSunk(true)}
+        >
           {presentCategories.map(category => (
             <span key={category} className="map-page__legend-item">
               <span
