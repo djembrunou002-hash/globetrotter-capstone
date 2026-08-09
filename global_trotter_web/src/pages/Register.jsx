@@ -76,11 +76,12 @@ function Register() {
       if (response.token) {
         setToken(response.token)
         setUser(response.user)
-        navigate('/select-style')
+        navigate('/select-style', { replace: true })
         return
       }
 
       navigate('/verify-otp', {
+        replace: true,
         state: {
           email: payload.email || undefined,
           number: formData.number || undefined,
@@ -101,7 +102,7 @@ function Register() {
       const response = await loginWithGoogle(credential)
       setToken(response.token)
       setUser(response.user)
-      navigate(response.user.role === 'admin' ? '/admin' : '/home')
+      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

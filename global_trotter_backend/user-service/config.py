@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from dotenv import load_dotenv
 
@@ -10,6 +11,12 @@ class Config:
     PORT = int(os.environ.get("PORT", "5001"))
 
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-me")
+    # flask-jwt-extended defaults to a 15-minute access token when this isn't
+    # set, which is why sessions were expiring after a few minutes. Override
+    # via JWT_ACCESS_TOKEN_EXPIRES_DAYS in the environment for production.
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        days=int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES_DAYS", "30"))
+    )
     INTERNAL_API_KEY = os.environ.get("INTERNAL_API_KEY", "dev-internal-key")
 
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")

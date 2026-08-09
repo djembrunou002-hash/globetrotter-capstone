@@ -131,7 +131,7 @@ describe('Register', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/select-style')
+      expect(mockNavigate).toHaveBeenCalledWith('/select-style', { replace: true })
     })
   })
 

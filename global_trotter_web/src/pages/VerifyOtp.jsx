@@ -40,7 +40,7 @@ function VerifyOtp() {
       const response = await verifyOtp({ email, number, code: code.trim() })
       setToken(response.token)
       setUser(response.user)
-      navigate('/select-style')
+      navigate('/select-style', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

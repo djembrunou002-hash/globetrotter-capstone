@@ -113,7 +113,7 @@ describe('Login', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/home')
+      expect(mockNavigate).toHaveBeenCalledWith('/home', { replace: true })
     })
   })
 

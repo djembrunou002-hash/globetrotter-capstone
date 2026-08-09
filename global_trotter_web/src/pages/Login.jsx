@@ -66,8 +66,7 @@ function Login() {
       const response = await loginUser(payload)
       setToken(response.token)
       setUser(response.user)
-      navigate('/profile', { replace: true })
-      navigate(response.user.role === 'admin' ? '/admin' : '/home')
+      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
     } catch (err) {
       if (err.message === 'Please verify your account first') {
         navigate('/verify-otp', {
@@ -88,8 +87,7 @@ function Login() {
       const response = await loginWithGoogle(credential)
       setToken(response.token)
       setUser(response.user)
-      navigate('/profile', { replace: true })
-      navigate(response.user.role === 'admin' ? '/admin' : '/home')
+      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {

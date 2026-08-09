@@ -15,7 +15,7 @@ function SelectStyle() {
 
   useEffect(() => {
     if (!getToken()) {
-      navigate('/login')
+      navigate('/login', { replace: true })
     }
   }, [navigate])
 
@@ -31,7 +31,7 @@ function SelectStyle() {
     try {
       const response = await updatePreferences(selected)
       setUser(response.user)
-      navigate('/home')
+      navigate('/home', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -40,7 +40,7 @@ function SelectStyle() {
   }
 
   function handleSkip() {
-    navigate('/home')
+    navigate('/home', { replace: true })
   }
 
   return (
