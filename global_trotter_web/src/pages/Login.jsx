@@ -66,6 +66,7 @@ function Login() {
       const response = await loginUser(payload)
       setToken(response.token)
       setUser(response.user)
+      navigate('/profile', { replace: true })
       navigate(response.user.role === 'admin' ? '/admin' : '/home')
     } catch (err) {
       if (err.message === 'Please verify your account first') {
@@ -87,6 +88,7 @@ function Login() {
       const response = await loginWithGoogle(credential)
       setToken(response.token)
       setUser(response.user)
+      navigate('/profile', { replace: true })
       navigate(response.user.role === 'admin' ? '/admin' : '/home')
     } catch (err) {
       setError(err.message)
