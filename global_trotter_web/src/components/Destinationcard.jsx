@@ -31,6 +31,15 @@ function DestinationCard({
     navigate(`/destinations/${destination.id}`)
   }
 
+  function handleViewLocation(e) {
+    e.stopPropagation()
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    navigate(`/map?destination=${destination.id}`)
+  }
+
   function handleOpenComments(e) {
     e.stopPropagation()
     navigate(`/destinations/${destination.id}`, { state: { focusComments: true } })
@@ -154,7 +163,7 @@ function DestinationCard({
           <button
             type="button"
             className="destination-card__location"
-            onClick={() => navigate(`/map?destination=${destination.id}`)}
+            onClick={handleViewLocation}
             title={t('common.viewOnMap')}
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">

@@ -4,6 +4,10 @@ export function getDestinations() {
   return apiRequest('/destinations')
 }
 
+export function getDestinationStats() {
+  return apiRequest('/destinations/stats')
+}
+
 export function getFavorites() {
   return apiRequest('/favorites')
 }

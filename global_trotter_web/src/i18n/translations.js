@@ -93,7 +93,13 @@ export const translations = {
       stamp: 'CMR · TRAVEL',
       heroAlt: 'A scenic view representing Cameroon',
       showcaseTitle: 'Beautiful areas to visit',
-      showcaseAlt: 'A beautiful area to visit in Cameroon'
+      showcaseAlt: 'A beautiful area to visit in Cameroon',
+      statsTravelers: 'Travelers',
+      statsDestinations: 'Destinations',
+      exploreTitle: 'Explore real destinations',
+      exploreSubtitle: 'A preview of what\u2019s waiting for you across Cameroon.',
+      loadingDestinations: 'Loading destinations...',
+      seeMore: 'See more'
     },
     login: {
       tagline: 'Pick up where you left off.',
@@ -656,7 +662,13 @@ export const translations = {
       stamp: 'CMR · VOYAGE',
       heroAlt: 'Une vue panoramique représentant le Cameroun',
       showcaseTitle: 'De beaux endroits à visiter',
-      showcaseAlt: 'Un bel endroit à visiter au Cameroun'
+      showcaseAlt: 'Un bel endroit à visiter au Cameroun',
+      statsTravelers: 'Voyageurs',
+      statsDestinations: 'Destinations',
+      exploreTitle: 'Découvrez de vraies destinations',
+      exploreSubtitle: 'Un aperçu de ce qui vous attend à travers le Cameroun.',
+      loadingDestinations: 'Chargement des destinations...',
+      seeMore: 'Voir plus'
     },
     login: {
       tagline: 'Reprenez là où vous vous êtes arrêté.',

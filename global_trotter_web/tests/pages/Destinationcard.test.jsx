@@ -60,6 +60,13 @@ describe('DestinationCard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/map?destination=dest_001')
   })
 
+  test('clicking the location button sends an unauthenticated visitor to log in instead', () => {
+    renderCard({ isAuthenticated: false })
+
+    fireEvent.click(screen.getByRole('button', { name: /location/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/login')
+  })
+
   test('calls onToggleFavorite with the destination id', () => {
     const onToggleFavorite = jest.fn()
     renderCard({ onToggleFavorite })

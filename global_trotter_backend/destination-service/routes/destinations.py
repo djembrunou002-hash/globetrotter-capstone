@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from services.auth_helpers import get_current_user, is_admin
+from services.auth_helpers import get_current_user, is_admin, optional_jwt_identity
 from services.clients import fetch_user, update_favorite
 from services.destination_requests import (
     create_admin_action_request,
@@ -66,10 +66,15 @@ def _with_comment_counts(destinations, user_id=None):
     ]
 
 
+@destinations_bp.route("/destinations/stats", methods=["GET"])
+def destination_stats():
+    destinations = load_json("destinations.json")["destinations"]
+    return jsonify({"destination_count": len(destinations)}), 200
+
+
 @destinations_bp.route("/destinations", methods=["GET"])
-@jwt_required(optional=True)
 def get_destinations():
-    user_id = get_jwt_identity()
+    user_id = optional_jwt_identity()
     data = load_json("destinations.json")
     results = data["destinations"]
 

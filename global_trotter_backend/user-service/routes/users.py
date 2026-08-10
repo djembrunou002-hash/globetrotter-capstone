@@ -6,6 +6,12 @@ from services.storage import load_json, save_json
 users_bp = Blueprint("users", __name__)
 
 
+@users_bp.route("/users/stats", methods=["GET"])
+def user_stats():
+    users = load_json("users.json")["users"]
+    return jsonify({"user_count": len(users)}), 200
+
+
 @users_bp.route("/users/preferences", methods=["PUT"])
 @jwt_required()
 def update_preferences():

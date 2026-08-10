@@ -187,6 +187,105 @@
   background: linear-gradient(160deg, var(--color-gold-soft), var(--color-forest-mid));
 }
 
+.landing__stats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(28px, 6vw, 64px);
+  padding: 0 clamp(20px, 5vw, 64px) 56px;
+}
+
+.landing__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.landing__stat-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.landing__stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 224, 0.72);
+  margin-top: 4px;
+}
+
+.landing__stat-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--color-forest-line);
+}
+
+.landing__explore {
+  position: relative;
+  z-index: 2;
+  padding: 0 clamp(20px, 5vw, 64px) 72px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.landing__explore-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  color: var(--color-cream);
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.landing__explore-subtitle {
+  font-size: 0.95rem;
+  color: rgba(245, 239, 224, 0.72);
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+.landing__explore-status {
+  text-align: center;
+  color: rgba(245, 239, 224, 0.72);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.landing__explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.landing__see-more {
+  display: block;
+  width: fit-content;
+  margin: 0 auto;
+  background: transparent;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.landing__see-more:hover {
+  background: var(--color-gold);
+  color: var(--color-forest);
+  transform: translateY(-1px);
+}
+
 .landing__showcase {
   position: relative;
   z-index: 2;
@@ -273,5 +372,13 @@
 
   .landing__showcase-title {
     padding: 0 8px;
+  }
+
+  .landing__stats {
+    gap: 32px;
+  }
+
+  .landing__explore-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -108,12 +108,21 @@ describe('DestinationDetails', () => {
     expect(await screen.findByText('Destination not found.')).toBeInTheDocument()
   })
 
-  test('clicking the location button navigates to the map for this destination', async () => {
+  test('clicking the location button navigates to the map for this destination when logged in', async () => {
+    getToken.mockReturnValue('fake-jwt')
     renderDestinationDetails()
 
     await screen.findByText('Marche Central')
     fireEvent.click(screen.getByRole('button', { name: /location/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/map?destination=dest_001')
+  })
+
+  test('redirects to /login when viewing the location while logged out', async () => {
+    renderDestinationDetails()
+
+    await screen.findByText('Marche Central')
+    fireEvent.click(screen.getByRole('button', { name: /location/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/login')
   })
 
   test('redirects to /login when favoriting while logged out', async () => {

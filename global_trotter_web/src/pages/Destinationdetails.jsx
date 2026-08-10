@@ -109,6 +109,14 @@ function DestinationDetails() {
     navigate(-1)
   }
 
+  function handleViewLocation() {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    navigate(`/map?destination=${id}`)
+  }
+
   const image = destination?.images && destination.images[0]
   const extraPhotos = destination?.images ? destination.images.slice(1, 4) : []
   const budgetDisplay = destination ? getBudgetDisplay(destination.budget, destination.budget_level, t) : null
@@ -202,7 +210,7 @@ function DestinationDetails() {
                 <button
                   type="button"
                   className="destination-details__location"
-                  onClick={() => navigate(`/map?destination=${id}`)}
+                  onClick={handleViewLocation}
                   title={t('common.viewOnMap')}
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">

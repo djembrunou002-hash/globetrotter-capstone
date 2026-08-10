@@ -1,6 +1,10 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
 import ShowcaseImage from '../components/Showcaseimage.jsx'
+import DestinationCard from '../components/Destinationcard.jsx'
+import { getDestinations, getDestinationStats } from '../services/destinationService.js'
+import { getUserStats } from '../services/userService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/Landing.css'
 
@@ -12,9 +16,66 @@ import showcase4 from '../assets/cameroon-showcase-4.jpg'
 import showcase5 from '../assets/cameroon-showcase-5.jpg'
 
 const SHOWCASE_IMAGES = [showcase1, showcase2, showcase3, showcase4, showcase5]
+const FEATURED_DESTINATION_COUNT = 10
+
+function shuffled(list) {
+  const copy = [...list]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
 
 function Landing() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+
+  const [userCount, setUserCount] = useState(null)
+  const [destinationCount, setDestinationCount] = useState(null)
+  const [featuredDestinations, setFeaturedDestinations] = useState([])
+  const [loadingDestinations, setLoadingDestinations] = useState(true)
+
+  // Re-runs (and re-shuffles) every time the landing page mounts, so a
+  // returning guest sees a different set of destinations each visit.
+  useEffect(() => {
+    let cancelled = false
+
+    getUserStats()
+      .then(response => {
+        if (!cancelled) setUserCount(response.user_count)
+      })
+      .catch(() => {})
+
+    getDestinationStats()
+      .then(response => {
+        if (!cancelled) setDestinationCount(response.destination_count)
+      })
+      .catch(() => {})
+
+    getDestinations()
+      .then(response => {
+        if (!cancelled) {
+          setFeaturedDestinations(shuffled(response.destinations).slice(0, FEATURED_DESTINATION_COUNT))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFeaturedDestinations([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDestinations(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Guests can browse a destination's own page read-only, but every action
+  // on the card itself (rate, favorite) sends them to auth first.
+  function requireAuth() {
+    navigate('/login')
+  }
 
   return (
     <div className="landing">
@@ -91,6 +152,63 @@ function Landing() {
         </div>
 
       </main>
+
+      <section className="landing__stats" aria-label="GlobalTrotter stats">
+
+        <div className="landing__stat">
+          <span className="landing__stat-value">
+            {userCount !== null ? `${userCount}+` : '\u2014'}
+          </span>
+          <span className="landing__stat-label">{t('landing.statsTravelers')}</span>
+        </div>
+
+        <div className="landing__stat-divider" aria-hidden="true" />
+
+        <div className="landing__stat">
+          <span className="landing__stat-value">
+            {destinationCount !== null ? destinationCount : '\u2014'}
+          </span>
+          <span className="landing__stat-label">{t('landing.statsDestinations')}</span>
+        </div>
+
+      </section>
+
+      <section className="landing__explore">
+
+        <h2 className="landing__explore-title">
+          {t('landing.exploreTitle')}
+        </h2>
+
+        <p className="landing__explore-subtitle">
+          {t('landing.exploreSubtitle')}
+        </p>
+
+        {loadingDestinations && (
+          <p className="landing__explore-status">{t('landing.loadingDestinations')}</p>
+        )}
+
+        {!loadingDestinations && featuredDestinations.length > 0 && (
+          <>
+            <div className="landing__explore-grid">
+              {featuredDestinations.map(destination => (
+                <DestinationCard
+                  key={destination.id}
+                  destination={destination}
+                  isFavorite={false}
+                  isAuthenticated={false}
+                  onToggleFavorite={requireAuth}
+                  onRate={requireAuth}
+                />
+              ))}
+            </div>
+
+            <Link to="/register" className="landing__see-more">
+              {t('landing.seeMore')}
+            </Link>
+          </>
+        )}
+
+      </section>
 
       <section className="landing__showcase">
 
