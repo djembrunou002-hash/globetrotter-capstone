@@ -198,6 +198,7 @@ function Landing() {
                   isAuthenticated={false}
                   onToggleFavorite={requireAuth}
                   onRate={requireAuth}
+                  linkState={{ fromLanding: true }}
                 />
               ))}
             </div>

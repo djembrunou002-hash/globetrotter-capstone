@@ -17,7 +17,8 @@ function DestinationCard({
   onToggleSelect,
   visitable = false,
   visited = false,
-  onToggleVisited
+  onToggleVisited,
+  linkState = null
 }) {
   const navigate = useNavigate()
   const { t, language } = useTranslation()
@@ -28,7 +29,7 @@ function DestinationCard({
   const hoursDisplay = getHoursDisplay(destination.hours, t, language)
 
   function handleOpenDetails() {
-    navigate(`/destinations/${destination.id}`)
+    navigate(`/destinations/${destination.id}`, linkState ? { state: linkState } : undefined)
   }
 
   function handleViewLocation(e) {
@@ -42,7 +43,7 @@ function DestinationCard({
 
   function handleOpenComments(e) {
     e.stopPropagation()
-    navigate(`/destinations/${destination.id}`, { state: { focusComments: true } })
+    navigate(`/destinations/${destination.id}`, { state: { ...linkState, focusComments: true } })
   }
 
   function handleKeyDown(e) {

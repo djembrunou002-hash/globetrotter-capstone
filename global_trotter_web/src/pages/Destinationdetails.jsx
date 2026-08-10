@@ -42,6 +42,7 @@ function DestinationDetails() {
   const { t, language } = useTranslation()
   const isAuthenticated = Boolean(getToken())
   const focusComments = Boolean(location.state?.focusComments)
+  const fromLanding = Boolean(location.state?.fromLanding)
 
   const [destination, setDestination] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -141,10 +142,14 @@ function DestinationDetails() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <Logo theme="dark" />
+        {!fromLanding && <Logo theme="dark" />}
       </header>
 
-      <main className="destination-details__content destination-details__content--with-bottom-nav">
+      <main
+        className={`destination-details__content ${
+          fromLanding ? '' : 'destination-details__content--with-bottom-nav'
+        }`}
+      >
         {loading && <p className="destination-details__status">{t('destinationDetails.loading')}</p>}
         {error && <p className="destination-details__status destination-details__status--error">{error}</p>}
 
@@ -346,7 +351,7 @@ function DestinationDetails() {
         )}
       </main>
 
-      <BottomNav />
+      {!fromLanding && <BottomNav />}
     </div>
   )
 }
