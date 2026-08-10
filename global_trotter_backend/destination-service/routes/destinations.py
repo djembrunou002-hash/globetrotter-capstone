@@ -19,8 +19,21 @@ from services.urls import absolute_images
 destinations_bp = Blueprint("destinations", __name__)
 
 
-def _with_absolute_images(destination):
-    return {**destination, "images": absolute_images(destination.get("images", []))}
+def _sanitize_rating(destination, user_id=None):
+    """Strip the internal per-user ratings map before a destination goes out
+    over the wire (it's how we know who rated what, not something to expose
+    to every caller), replacing it with the aggregate plus the requesting
+    user's own rating, if any."""
+    d = dict(destination)
+    ratings = d.pop("ratings", None) or {}
+    d["rating"] = d.get("rating") or {"average": 0, "count": 0}
+    d["your_rating"] = ratings.get(user_id) if user_id else None
+    return d
+
+
+def _with_absolute_images(destination, user_id=None):
+    d = _sanitize_rating(destination, user_id)
+    return {**d, "images": absolute_images(d.get("images", []))}
 
 
 def _discard_pending_owner_request(destination_id, owner_id):
@@ -38,7 +51,7 @@ def _discard_pending_owner_request(destination_id, owner_id):
         delete_request(pending["id"])
 
 
-def _with_comment_counts(destinations):
+def _with_comment_counts(destinations, user_id=None):
     comments = load_json("comments.json")["comments"]
     comment_counts = {}
     for comment in comments:
@@ -48,13 +61,15 @@ def _with_comment_counts(destinations):
         comment_counts[destination_id] = comment_counts.get(destination_id, 0) + 1
 
     return [
-        {**_with_absolute_images(d), "comment_count": comment_counts.get(d["id"], 0)}
+        {**_with_absolute_images(d, user_id), "comment_count": comment_counts.get(d["id"], 0)}
         for d in destinations
     ]
 
 
 @destinations_bp.route("/destinations", methods=["GET"])
+@jwt_required(optional=True)
 def get_destinations():
+    user_id = get_jwt_identity()
     data = load_json("destinations.json")
     results = data["destinations"]
 
@@ -85,7 +100,7 @@ def get_destinations():
             if q in d["name"].lower() or q in d.get("description", "").lower()
         ]
 
-    return jsonify({"destinations": _with_comment_counts(results)}), 200
+    return jsonify({"destinations": _with_comment_counts(results, user_id)}), 200
 
 
 @destinations_bp.route("/destinations", methods=["POST"])
@@ -130,7 +145,7 @@ def update_destination(destination_id):
         save_json("destinations.json", data)
         if destination.get("owner_id") and destination["owner_id"] != user["id"]:
             create_admin_action_request("edit", destination, user["id"])
-        return jsonify({"destination": _with_absolute_images(destination)}), 200
+        return jsonify({"destination": _with_absolute_images(destination, user["id"])}), 200
 
     _discard_pending_owner_request(destination_id, user["id"])
 
@@ -174,6 +189,7 @@ def delete_destination(destination_id):
 @destinations_bp.route("/destinations/<destination_id>/rating", methods=["POST"])
 @jwt_required()
 def rate_destination(destination_id):
+    user_id = get_jwt_identity()
     body = request.get_json(silent=True) or {}
     stars = body.get("stars")
 
@@ -185,16 +201,24 @@ def rate_destination(destination_id):
     if not destination:
         return jsonify({"error": "destination not found"}), 404
 
-    rating = destination.setdefault("rating", {"average": 0, "count": 0})
-    new_count = rating["count"] + 1
-    new_average = ((rating["average"] * rating["count"]) + stars) / new_count
+    # One entry per user, keyed by their id, so re-rating (or switching a
+    # rating) overwrites their previous vote instead of piling a new one on
+    # top of the count.
+    ratings = destination.setdefault("ratings", {})
+    ratings[user_id] = stars
 
-    rating["average"] = round(new_average, 2)
-    rating["count"] = new_count
+    values = list(ratings.values())
+    count = len(values)
+    average = round(sum(values) / count, 2) if count else 0
+    destination["rating"] = {"average": average, "count": count}
 
     save_json("destinations.json", data)
 
-    return jsonify({"destination_id": destination_id, "rating": rating}), 200
+    return jsonify({
+        "destination_id": destination_id,
+        "rating": destination["rating"],
+        "your_rating": stars,
+    }), 200
 
 
 @destinations_bp.route("/destinations/<destination_id>/favorite", methods=["POST"])
@@ -238,4 +262,4 @@ def list_favorites():
     destinations = load_json("destinations.json")["destinations"]
     favorites = [d for d in destinations if d["id"] in favorite_ids]
 
-    return jsonify({"favorites": _with_comment_counts(favorites)}), 200
+    return jsonify({"favorites": _with_comment_counts(favorites, user_id)}), 200

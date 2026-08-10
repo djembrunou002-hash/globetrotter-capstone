@@ -51,9 +51,77 @@ def test_rate_destination_valid(client, users):
     )
 
     assert resp.status_code == 200
-    rating = resp.get_json()["rating"]
-    assert rating["count"] == 57  # seed count was 56
-    assert 0 <= rating["average"] <= 5
+    body = resp.get_json()
+    assert body["rating"] == {"average": 5, "count": 1}
+    assert body["your_rating"] == 5
+
+
+def test_rate_destination_same_user_overwrites_instead_of_stacking(client, users):
+    token = token_for(client, users.add("Test User"))
+
+    client.post(
+        f"/destinations/{DEST_MARKET}/rating",
+        json={"stars": 2},
+        headers=auth_headers(token),
+    )
+    resp = client.post(
+        f"/destinations/{DEST_MARKET}/rating",
+        json={"stars": 5},
+        headers=auth_headers(token),
+    )
+
+    assert resp.status_code == 200
+    body = resp.get_json()
+    # Still one rater, and the average reflects only their latest vote, not
+    # an accumulation of every submission they made.
+    assert body["rating"] == {"average": 5, "count": 1}
+    assert body["your_rating"] == 5
+
+
+def test_rate_destination_counts_distinct_users(client, users):
+    token_a = token_for(client, users.add("Rater A"))
+    token_b = token_for(client, users.add("Rater B"))
+
+    client.post(
+        f"/destinations/{DEST_MARKET}/rating",
+        json={"stars": 4},
+        headers=auth_headers(token_a),
+    )
+    resp = client.post(
+        f"/destinations/{DEST_MARKET}/rating",
+        json={"stars": 2},
+        headers=auth_headers(token_b),
+    )
+
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["rating"] == {"average": 3, "count": 2}
+    assert body["your_rating"] == 2
+
+
+def test_get_destinations_includes_your_rating_when_authenticated(client, users):
+    token = token_for(client, users.add("Test User"))
+    client.post(
+        f"/destinations/{DEST_MARKET}/rating",
+        json={"stars": 3},
+        headers=auth_headers(token),
+    )
+
+    resp = client.get("/destinations", headers=auth_headers(token))
+
+    assert resp.status_code == 200
+    destination = next(d for d in resp.get_json()["destinations"] if d["id"] == DEST_MARKET)
+    assert destination["your_rating"] == 3
+
+
+def test_get_destinations_your_rating_is_null_when_anonymous(client):
+    resp = client.get("/destinations")
+
+    assert resp.status_code == 200
+    destination = next(d for d in resp.get_json()["destinations"] if d["id"] == DEST_MARKET)
+    assert destination["your_rating"] is None
+    # The internal per-user map should never leak to a client.
+    assert "ratings" not in destination
 
 
 def test_rate_destination_rejects_out_of_range_stars(client, users):

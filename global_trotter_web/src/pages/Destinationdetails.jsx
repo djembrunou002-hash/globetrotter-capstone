@@ -99,7 +99,7 @@ function DestinationDetails() {
 
     try {
       const response = await rateDestination(id, stars)
-      setDestination(prev => (prev ? { ...prev, rating: response.rating } : prev))
+      setDestination(prev => (prev ? { ...prev, rating: response.rating, your_rating: response.your_rating } : prev))
     } catch (err) {
       setError(err.message)
     }
@@ -193,6 +193,7 @@ function DestinationDetails() {
               <StarRating
                 average={destination.rating?.average || 0}
                 count={destination.rating?.count || 0}
+                yourRating={destination.your_rating || null}
                 isAuthenticated={isAuthenticated}
                 onRate={handleRate}
               />

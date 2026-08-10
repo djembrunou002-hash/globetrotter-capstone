@@ -1,12 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from '../hooks/useTranslation.js'
 
-function StarRating({ average, count, isAuthenticated, onRate, readOnly = false }) {
+function StarRating({ average, count, isAuthenticated, onRate, readOnly = false, yourRating = null }) {
   const { t } = useTranslation()
   const [hovered, setHovered] = useState(0)
-  const [userRating, setUserRating] = useState(null)
+  const [userRating, setUserRating] = useState(yourRating)
+  const [prevYourRating, setPrevYourRating] = useState(yourRating)
   const rounded = Math.round(average)
   const displayedStars = hovered || userRating || rounded
+
+  // Keep in sync with the server-known rating for this user (e.g. once the
+  // destination list/detail response loads, or after switching destinations).
+  // Adjusted during render rather than in an effect, per
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  if (yourRating !== prevYourRating) {
+    setPrevYourRating(yourRating)
+    setUserRating(yourRating)
+  }
 
   function handleClick(stars) {
     if (readOnly) return

@@ -144,6 +144,7 @@ function DestinationCard({
           <StarRating
             average={destination.rating?.average || 0}
             count={destination.rating?.count || 0}
+            yourRating={destination.your_rating || null}
             isAuthenticated={isAuthenticated}
             onRate={stars => onRate(destination.id, stars)}
           />

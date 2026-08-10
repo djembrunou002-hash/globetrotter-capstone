@@ -57,7 +57,7 @@ function Favorites() {
       setFavorites(prev =>
         prev.map(destination =>
           destination.id === destinationId
-            ? { ...destination, rating: response.rating }
+            ? { ...destination, rating: response.rating, your_rating: response.your_rating }
             : destination
         )
       )
