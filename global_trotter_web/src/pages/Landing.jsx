@@ -6,6 +6,7 @@ import DestinationCard from '../components/Destinationcard.jsx'
 import { getDestinations, getDestinationStats } from '../services/destinationService.js'
 import { getUserStats } from '../services/userService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { readLandingCache, writeLandingCache } from '../utils/landingCache.js'
 import '../styles/Landing.css'
 
 import landingImage from '../assets/Cameroon-landing.jpg'
@@ -17,8 +18,6 @@ import showcase5 from '../assets/cameroon-showcase-5.jpg'
 
 const SHOWCASE_IMAGES = [showcase1, showcase2, showcase3, showcase4, showcase5]
 const FEATURED_DESTINATION_COUNT = 10
-
-let cachedLandingData = null
 
 function shuffled(list) {
   const copy = [...list]
@@ -34,13 +33,14 @@ function Landing() {
   const navigate = useNavigate()
   const navigationType = useNavigationType()
 
-  const [userCount, setUserCount] = useState(cachedLandingData?.userCount ?? null)
-  const [destinationCount, setDestinationCount] = useState(cachedLandingData?.destinationCount ?? null)
-  const [featuredDestinations, setFeaturedDestinations] = useState(cachedLandingData?.featuredDestinations ?? [])
-  const [loadingDestinations, setLoadingDestinations] = useState(!cachedLandingData)
+  const [cached] = useState(readLandingCache)
+  const [userCount, setUserCount] = useState(cached?.userCount ?? null)
+  const [destinationCount, setDestinationCount] = useState(cached?.destinationCount ?? null)
+  const [featuredDestinations, setFeaturedDestinations] = useState(cached?.featuredDestinations ?? [])
+  const [loadingDestinations, setLoadingDestinations] = useState(!cached)
 
   useEffect(() => {
-    if (navigationType === 'POP' && cachedLandingData) {
+    if (navigationType === 'POP' && readLandingCache()) {
       return
     }
 
@@ -50,7 +50,7 @@ function Landing() {
       .then(response => {
         if (!cancelled) {
           setUserCount(response.user_count)
-          cachedLandingData = { ...cachedLandingData, userCount: response.user_count }
+          writeLandingCache({ userCount: response.user_count })
         }
       })
       .catch(() => {})
@@ -59,7 +59,7 @@ function Landing() {
       .then(response => {
         if (!cancelled) {
           setDestinationCount(response.destination_count)
-          cachedLandingData = { ...cachedLandingData, destinationCount: response.destination_count }
+          writeLandingCache({ destinationCount: response.destination_count })
         }
       })
       .catch(() => {})
@@ -69,7 +69,7 @@ function Landing() {
         if (!cancelled) {
           const picked = shuffled(response.destinations).slice(0, FEATURED_DESTINATION_COUNT)
           setFeaturedDestinations(picked)
-          cachedLandingData = { ...cachedLandingData, featuredDestinations: picked }
+          writeLandingCache({ featuredDestinations: picked })
         }
       })
       .catch(() => {

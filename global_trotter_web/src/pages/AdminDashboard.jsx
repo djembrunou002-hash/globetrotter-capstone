@@ -12,9 +12,12 @@ import {
 import { getToken, getUser } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
+import { useNotifications, useClearNotificationsOnLeave } from '../hooks/useNotifications.js'
+import { unseenKeysForRequest } from '../utils/notificationMatch.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
+import NotificationDot from '../components/NotificationDot.jsx'
 import PendingRequestCard from '../components/PendingRequestCard.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -26,6 +29,9 @@ function AdminDashboard() {
   const { t } = useTranslation()
   const headerRef = useRef(null)
   const headerPassed = useHeaderPassed(headerRef)
+  const { unseenItems, unseenCount } = useNotifications()
+
+  useClearNotificationsOnLeave()
 
   const [activeTab, setActiveTab] = useState('pending')
   const [requests, setRequests] = useState([])
@@ -191,6 +197,9 @@ function AdminDashboard() {
           onClick={() => handleTabChange('pending')}
         >
           {t('admin.tabPending')}
+          {unseenCount > 0 && (
+            <NotificationDot className="notif-dot--inline" label={t('notifications.new')} />
+          )}
         </button>
         <button
           type="button"
@@ -222,6 +231,7 @@ function AdminDashboard() {
                 onReject={handleViewRequest}
                 onDelete={handleDeleteRequest}
                 submitting={rowSubmitting === request.id}
+                unseen={unseenKeysForRequest(unseenItems, request.id).length > 0}
               />
             ))}
           </div>

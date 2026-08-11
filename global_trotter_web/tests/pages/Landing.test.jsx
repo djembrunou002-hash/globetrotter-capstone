@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Landing from '../../src/pages/Landing.jsx'
 import { getDestinations, getDestinationStats } from '../../src/services/destinationService.js'
 import { getUserStats } from '../../src/services/userService.js'
+import { clearLandingCache } from '../../src/utils/landingCache.js'
 
 jest.mock('../../src/services/destinationService.js')
 jest.mock('../../src/services/userService.js')
@@ -26,29 +27,32 @@ const DESTINATIONS = Array.from({ length: 12 }, (_, i) => ({
   images: []
 }))
 
-function renderLanding() {
-  return render(
+async function renderLanding() {
+  const result = render(
     <MemoryRouter>
       <Landing />
     </MemoryRouter>
   )
+  await act(async () => {})
+  return result
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
+  clearLandingCache()
   getUserStats.mockResolvedValue({ user_count: 128 })
   getDestinationStats.mockResolvedValue({ destination_count: 45 })
   getDestinations.mockResolvedValue({ destinations: DESTINATIONS })
 })
 
 describe('Landing', () => {
-  test('renders the headline', () => {
-    renderLanding()
+  test('renders the headline', async () => {
+    await renderLanding()
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
   })
 
-  test('renders sign up links pointing to /register', () => {
-    renderLanding()
+  test('renders sign up links pointing to /register', async () => {
+    await renderLanding()
     const links = screen.getAllByRole('link', { name: /sign up/i })
     expect(links).toHaveLength(2)
     links.forEach(link => {
@@ -56,29 +60,29 @@ describe('Landing', () => {
     })
   })
 
-  test('renders a log in link pointing to /login', () => {
-    renderLanding()
+  test('renders a log in link pointing to /login', async () => {
+    await renderLanding()
     const link = screen.getByRole('link', { name: /log in/i })
     expect(link).toHaveAttribute('href', '/login')
   })
 
-  test('renders the logo as a link to /', () => {
-    renderLanding()
+  test('renders the logo as a link to /', async () => {
+    await renderLanding()
     expect(screen.getByRole('link', { name: /globaltrotter/i })).toHaveAttribute('href', '/')
   })
 
-  test('renders the showcase heading', () => {
-    renderLanding()
+  test('renders the showcase heading', async () => {
+    await renderLanding()
     expect(screen.getByText(/beautiful areas to visit/i)).toBeInTheDocument()
   })
 
-  test('renders exactly 5 showcase image tiles', () => {
-    const { container } = renderLanding()
+  test('renders exactly 5 showcase image tiles', async () => {
+    const { container } = await renderLanding()
     expect(container.querySelectorAll('.landing__showcase-image').length).toBe(5)
   })
 
   test('falls back to a placeholder tile when a showcase image fails to load', async () => {
-    renderLanding()
+    await renderLanding()
     const images = screen.getAllByAltText('A beautiful area to visit in Cameroon')
     const firstImage = images[0]
 
@@ -88,7 +92,7 @@ describe('Landing', () => {
   })
 
   test('shows user and destination counts once loaded', async () => {
-    renderLanding()
+    await renderLanding()
 
     expect(await screen.findByText('128+')).toBeInTheDocument()
     expect(screen.getByText('45')).toBeInTheDocument()
@@ -96,14 +100,14 @@ describe('Landing', () => {
 
   test('shows a placeholder for stats that fail to load', async () => {
     getUserStats.mockRejectedValue(new Error('network error'))
-    renderLanding()
+    await renderLanding()
 
     await screen.findByText('45')
     expect(screen.getAllByText('\u2014').length).toBeGreaterThan(0)
   })
 
   test('renders at most 10 featured destination cards', async () => {
-    renderLanding()
+    await renderLanding()
 
     const cards = await screen.findAllByRole('button', { name: /view details for/i })
     expect(cards.length).toBe(10)
@@ -111,21 +115,21 @@ describe('Landing', () => {
 
   test('renders fewer cards when fewer destinations exist', async () => {
     getDestinations.mockResolvedValue({ destinations: DESTINATIONS.slice(0, 3) })
-    renderLanding()
+    await renderLanding()
 
     const cards = await screen.findAllByRole('button', { name: /view details for/i })
     expect(cards.length).toBe(3)
   })
 
   test('renders a "See more" link to /register after the destination cards', async () => {
-    renderLanding()
+    await renderLanding()
 
     await screen.findAllByRole('button', { name: /view details for/i })
     expect(screen.getByRole('link', { name: /see more/i })).toHaveAttribute('href', '/register')
   })
 
   test('sends a guest to /login when they try to favorite a featured card', async () => {
-    renderLanding()
+    await renderLanding()
 
     const buttons = await screen.findAllByRole('button', { name: /add to favorites/i })
     fireEvent.click(buttons[0])
@@ -134,7 +138,7 @@ describe('Landing', () => {
   })
 
   test('sends a guest to /login when they try to rate a featured card', async () => {
-    renderLanding()
+    await renderLanding()
 
     const stars = await screen.findAllByRole('button', { name: /rate 3 stars/i })
     fireEvent.click(stars[0])

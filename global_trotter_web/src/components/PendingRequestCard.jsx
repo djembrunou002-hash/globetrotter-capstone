@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from '../hooks/useTranslation.js'
+import NotificationDot from './NotificationDot.jsx'
 import '../styles/PendingRequestCard.css'
 
 const TYPE_KEYS = {
@@ -15,7 +16,15 @@ function formatDate(iso, locale) {
   return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, submitting = false }) {
+function PendingRequestCard({
+  request,
+  onView,
+  onApprove,
+  onReject,
+  onDelete,
+  submitting = false,
+  unseen = false
+}) {
   const { t, locale } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
   const display = request.display || {}
@@ -60,6 +69,7 @@ function PendingRequestCard({ request, onView, onApprove, onReject, onDelete, su
           {typeKey ? t(typeKey) : request.type}
         </span>
         {request.status === 'rejected' && <span className="pending-card__rejected">{t('status.rejected')}</span>}
+        {unseen && <NotificationDot className="notif-dot--card" />}
       </div>
 
       <div className="pending-card__body">

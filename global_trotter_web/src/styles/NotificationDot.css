@@ -1,0 +1,29 @@
+.notif-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--color-ember);
+  flex-shrink: 0;
+}
+
+.notif-dot--nav {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.notif-dot--inline {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.notif-dot--card {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 11px;
+  height: 11px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+}

@@ -29,7 +29,11 @@ function DestinationCard({
   const hoursDisplay = getHoursDisplay(destination.hours, t, language)
 
   function handleOpenDetails() {
-    navigate(`/destinations/${destination.id}`, linkState ? { state: linkState } : undefined)
+    if (linkState) {
+      navigate(`/destinations/${destination.id}`, { state: linkState })
+      return
+    }
+    navigate(`/destinations/${destination.id}`)
   }
 
   function handleViewLocation(e) {

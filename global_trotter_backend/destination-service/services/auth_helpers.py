@@ -1,4 +1,4 @@
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from services.clients import fetch_user
 
@@ -8,6 +8,14 @@ def get_current_user():
     if not user_id:
         return None
     return fetch_user(user_id)
+
+
+def optional_jwt_identity():
+    try:
+        verify_jwt_in_request(optional=True)
+    except Exception:
+        return None
+    return get_jwt_identity()
 
 
 def is_admin(user):

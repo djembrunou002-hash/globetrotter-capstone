@@ -24,6 +24,7 @@ ROUTE_TABLE = [
     ("destinations", DESTINATION),
     ("favorites", DESTINATION),
     ("my-destinations", DESTINATION),
+    ("notifications", DESTINATION),
     ("admin", DESTINATION),
     ("recommendations", DESTINATION),
     ("places", DESTINATION),

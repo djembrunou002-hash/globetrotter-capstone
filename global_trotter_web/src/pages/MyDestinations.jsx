@@ -8,6 +8,8 @@ import {
 import { getToken } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
+import { useNotifications, useClearNotificationsOnLeave } from '../hooks/useNotifications.js'
+import { unseenKeysForDestinationCard } from '../utils/notificationMatch.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
@@ -36,6 +38,9 @@ function MyDestinations() {
   const { t } = useTranslation()
   const headerRef = useRef(null)
   const headerPassed = useHeaderPassed(headerRef)
+  const { unseenItems } = useNotifications()
+
+  useClearNotificationsOnLeave()
 
   const [destinations, setDestinations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -196,6 +201,7 @@ function MyDestinations() {
                   onDelete={canDelete ? handleDeleteClick : null}
                   onAcknowledge={destination.status === 'edited' ? handleAcknowledgeEdit : null}
                   deleteLabel={deleteLabel}
+                  unseen={unseenKeysForDestinationCard(unseenItems, destination).length > 0}
                 />
               )
             })}

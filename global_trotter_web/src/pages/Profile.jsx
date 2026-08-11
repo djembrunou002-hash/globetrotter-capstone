@@ -5,10 +5,12 @@ import { updatePreferences } from '../services/userService.js'
 import { getToken, getUser, setUser, clearToken, clearUser } from '../services/tokenStorage.js'
 import { TRAVEL_STYLES } from '../constants/travelStyles.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { useNotifications } from '../hooks/useNotifications.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import PreferencesModal from '../components/PreferencesModal.jsx'
 import LanguageToggle from '../components/LanguageToggle.jsx'
+import NotificationDot from '../components/NotificationDot.jsx'
 import '../styles/Profile.css'
 
 const STYLE_BY_VALUE = TRAVEL_STYLES.reduce((map, style) => {
@@ -33,6 +35,7 @@ function formatPhoneNumber(number) {
 function Profile() {
   const navigate = useNavigate()
   const { t, locale } = useTranslation()
+  const { unseenCount } = useNotifications()
   const [favoriteCount, setFavoriteCount] = useState(null)
   const [favoritesLoading, setFavoritesLoading] = useState(true)
   const [error, setError] = useState('')
@@ -150,8 +153,6 @@ function Profile() {
                 </dd>
               </div>
 
-              {/* Always visible, like the other rows below — never hidden while
-                  loading or offline. Shows a placeholder until the count arrives. */}
               <Link to="/favorites" className="profile__info-row profile__info-row--link">
                 <dt>{t('profile.favoriteDestinations')}</dt>
                 <dd className="profile__favorites-value">
@@ -162,11 +163,14 @@ function Profile() {
                 </dd>
               </Link>
 
-              {/* Always visible too — based purely on the locally-stored user role,
-                  never on a network call, so it never flickers on/off. */}
               {user.role === 'admin' ? (
                 <Link to="/admin" className="profile__info-row profile__info-row--link">
-                  <dt>{t('profile.adminDashboard')}</dt>
+                  <dt>
+                    {t('profile.adminDashboard')}
+                    {unseenCount > 0 && (
+                      <NotificationDot className="notif-dot--inline" label={t('notifications.new')} />
+                    )}
+                  </dt>
                   <dd className="profile__favorites-value">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M9 6l6 6-6 6" />
@@ -175,7 +179,12 @@ function Profile() {
                 </Link>
               ) : (
                 <Link to="/my-destinations" className="profile__info-row profile__info-row--link">
-                  <dt>{t('profile.manageDestinations')}</dt>
+                  <dt>
+                    {t('profile.manageDestinations')}
+                    {unseenCount > 0 && (
+                      <NotificationDot className="notif-dot--inline" label={t('notifications.new')} />
+                    )}
+                  </dt>
                   <dd className="profile__favorites-value">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <path d="M9 6l6 6-6 6" />

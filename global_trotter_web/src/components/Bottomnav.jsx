@@ -1,12 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
+import { useNotifications } from '../hooks/useNotifications.js'
+import NotificationDot from './NotificationDot.jsx'
 import '../styles/Bottomnav.css'
 
 function BottomNav() {
   const location = useLocation()
   const { t } = useTranslation()
   const { selectionMode } = useItineraryDraft()
+  const { unseenCount } = useNotifications()
 
   const items = [
     {
@@ -66,6 +69,13 @@ function BottomNav() {
     <nav className="bottom-nav">
       {items.map(item => {
         const isActive = location.pathname === item.to
+        const showDot = item.to === '/profile' && unseenCount > 0
+        const icon = (
+          <span className="bottom-nav__icon">
+            {item.icon}
+            {showDot && <NotificationDot className="notif-dot--nav" label={t('notifications.new')} />}
+          </span>
+        )
 
         if (selectionMode) {
           return (
@@ -75,7 +85,7 @@ function BottomNav() {
               aria-disabled="true"
               title={t('nav.finishSelectionFirst')}
             >
-              {item.icon}
+              {icon}
               <span>{item.label}</span>
             </span>
           )
@@ -87,7 +97,7 @@ function BottomNav() {
             to={item.to}
             className={`bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`}
           >
-            {item.icon}
+            {icon}
             <span>{item.label}</span>
           </Link>
         )

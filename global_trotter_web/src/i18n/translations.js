@@ -540,6 +540,9 @@ export const translations = {
       profile: 'Profile',
       finishSelectionFirst: 'Confirm or cancel your destination selection first'
     },
+    notifications: {
+      new: 'New updates'
+    },
     profile: {
       title: 'Profile',
       unavailable: "Profile information isn't available for this session.",
@@ -1109,6 +1112,9 @@ export const translations = {
       itineraries: 'Itinéraires',
       profile: 'Profil',
       finishSelectionFirst: "Confirmez ou annulez d'abord votre sélection de destinations"
+    },
+    notifications: {
+      new: 'Nouveautés'
     },
     profile: {
       title: 'Profil',

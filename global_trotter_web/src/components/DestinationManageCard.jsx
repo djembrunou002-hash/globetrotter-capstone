@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from '../hooks/useTranslation.js'
+import NotificationDot from './NotificationDot.jsx'
 import '../styles/DestinationManageCard.css'
 
 const STATUS_TONES = {
@@ -20,7 +21,8 @@ function DestinationManageCard({
   onView,
   deleteLabel,
   editDisabled = false,
-  deleteDisabled = false
+  deleteDisabled = false,
+  unseen = false
 }) {
   const { t } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
@@ -58,6 +60,7 @@ function DestinationManageCard({
         ) : (
           <div className="manage-card__image manage-card__image--placeholder" aria-hidden="true" />
         )}
+        {unseen && <NotificationDot className="notif-dot--card" />}
         {tone && destination.status !== 'edited' && (
           <span className={`manage-card__status manage-card__status--${tone}`}>
             {t(`status.${destination.status}`)}

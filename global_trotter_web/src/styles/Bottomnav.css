@@ -24,6 +24,13 @@
   transition: color 0.2s ease;
 }
 
+.bottom-nav__icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .bottom-nav__item:hover {
   color: var(--color-forest);
 }
