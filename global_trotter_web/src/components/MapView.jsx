@@ -19,6 +19,7 @@ const MARKER_Z = {
   nearbyLinked: '5',
   destination: '6',
   searched: '7',
+  start: '8',
   user: '10'
 }
 
@@ -35,6 +36,20 @@ function createMarkerElement(category, { label, visited, linked } = {}) {
     badge.textContent = String(label)
     el.appendChild(badge)
   }
+  return el
+}
+
+function createStartMarkerElement() {
+  const el = document.createElement('div')
+  el.className = 'map-marker map-marker--large map-marker--start'
+  el.style.setProperty('--marker-color', CATEGORY_META.start.color)
+
+  const icon = document.createElement('span')
+  icon.className = 'map-marker__icon'
+  icon.innerHTML =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4" /><path d="M6 4.5h11l-2.2 3.6L17 11.7H6" /></svg>'
+  el.appendChild(icon)
+
   return el
 }
 
@@ -142,6 +157,7 @@ const MapView = forwardRef(function MapView(
     destinations = [],
     nearbyPlaces = [],
     searchedPlace = null,
+    startPlace = null,
     route = null,
     routeIsFallback = false,
     userLocation = null,
@@ -158,6 +174,7 @@ const MapView = forwardRef(function MapView(
   const destinationMarkersRef = useRef([])
   const nearbyMarkersRef = useRef([])
   const searchedMarkerRef = useRef(null)
+  const startMarkerRef = useRef(null)
   const userMarkerRef = useRef(null)
   const userLocationRef = useRef(userLocation)
   const routeRef = useRef({ route, routeIsFallback })
@@ -380,6 +397,26 @@ const MapView = forwardRef(function MapView(
 
   useEffect(() => {
     const map = mapRef.current
+    if (!map || !ready || !startPlace) return undefined
+
+    const el = createStartMarkerElement()
+    el.style.zIndex = MARKER_Z.start
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat([startPlace.lng, startPlace.lat])
+      .setPopup(new maplibregl.Popup({ offset: 28 }).setText(startPlace.name))
+      .addTo(map)
+
+    startMarkerRef.current = marker
+
+    return () => {
+      marker.remove()
+      startMarkerRef.current = null
+    }
+  }, [startPlace, ready])
+
+  useEffect(() => {
+    const map = mapRef.current
     if (!map || !ready) return
     applyRoute(map, route, routeIsFallback)
   }, [route, routeIsFallback, ready])
@@ -387,8 +424,9 @@ const MapView = forwardRef(function MapView(
   const fitSignature = useMemo(() => {
     const parts = destinations.map(destination => `${destination.id}@${destination.lng},${destination.lat}`)
     if (searchedPlace) parts.push(`search@${searchedPlace.lng},${searchedPlace.lat}`)
+    if (startPlace) parts.push(`start@${startPlace.lng},${startPlace.lat}`)
     return parts.join('|')
-  }, [destinations, searchedPlace])
+  }, [destinations, searchedPlace, startPlace])
 
   useEffect(() => {
     const map = mapRef.current
@@ -414,12 +452,13 @@ const MapView = forwardRef(function MapView(
     const bounds = new maplibregl.LngLatBounds()
     destinations.forEach(destination => bounds.extend([destination.lng, destination.lat]))
     if (searchedPlace) bounds.extend([searchedPlace.lng, searchedPlace.lat])
+    if (startPlace) bounds.extend([startPlace.lng, startPlace.lat])
     if (userLocationRef.current) bounds.extend([userLocationRef.current.lng, userLocationRef.current.lat])
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 600 })
     }
-  }, [fitSignature, destinations, searchedPlace, ready])
+  }, [fitSignature, destinations, searchedPlace, startPlace, ready])
 
   useImperativeHandle(
     ref,
@@ -438,6 +477,7 @@ const MapView = forwardRef(function MapView(
         const bounds = new maplibregl.LngLatBounds()
         destinations.forEach(destination => bounds.extend([destination.lng, destination.lat]))
         if (searchedPlace) bounds.extend([searchedPlace.lng, searchedPlace.lat])
+        if (startPlace) bounds.extend([startPlace.lng, startPlace.lat])
 
         if (bounds.isEmpty()) return
         map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 600 })
@@ -457,7 +497,7 @@ const MapView = forwardRef(function MapView(
         })
       }
     }),
-    [destinations, searchedPlace, center]
+    [destinations, searchedPlace, startPlace, center]
   )
 
   return <div ref={containerRef} className="map-view" />

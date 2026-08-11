@@ -49,6 +49,18 @@
   box-shadow: none;
 }
 
+.map-marker--start {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.28), 0 2px 6px rgba(11, 61, 36, 0.35);
+}
+
+.map-marker__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
 .map-marker__badge {
   transform: rotate(45deg);
   font-size: 0.72rem;

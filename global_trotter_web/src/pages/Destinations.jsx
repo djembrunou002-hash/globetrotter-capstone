@@ -12,9 +12,11 @@ import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import '../styles/Destinations.css'
 
 const BUDGET_LEVELS = ['low', 'medium', 'high']
@@ -50,6 +52,8 @@ function Destinations() {
   const [restored] = useState(() => readFilterState(FILTER_KEY, DEFAULT_FILTERS))
   const [showFilterJump, setShowFilterJump] = useState(false)
   const searchBarRef = useRef(null)
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilters, setTypeFilters] = useState(() => new Set(tagParam ? [] : restored.typeFilters))
@@ -254,7 +258,26 @@ function Destinations() {
 
   return (
     <div className="destinations">
-      <header className="destinations__header">
+      <header
+        ref={headerRef}
+        className={`destinations__header page-header ${
+          selectionMode ? 'destinations__header--selecting' : ''
+        }`}
+      >
+        {selectionMode && (
+          <button
+            type="button"
+            className="destinations__back"
+            aria-label={t('destinations.cancelSelection')}
+            title={t('destinations.cancelSelection')}
+            onClick={handleCancelSelection}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         <Logo theme="dark" />
         <h1 className="destinations__title">{t('destinations.title')}</h1>
       </header>
@@ -379,22 +402,6 @@ function Destinations() {
         </div>
       )}
 
-      {selectionMode && (
-        <div className="destinations__selection-bar">
-          <button
-            type="button"
-            className="destinations__selection-cancel"
-            onClick={handleCancelSelection}
-            aria-label={t('destinations.cancelSelection')}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12H19" />
-              <path d="M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      )}
-
       <main className="destinations__content destinations__content--with-bottom-nav">
         {loading && <p className="destinations__status">{t('destinations.loading')}</p>}
         {error && <p className="destinations__status destinations__status--error">{error}</p>}
@@ -445,6 +452,14 @@ function Destinations() {
             <path d="M5 12l7-7 7 7" />
           </svg>
         </button>
+      )}
+
+      {selectionMode && (
+        <FloatingBackButton
+          visible={headerPassed}
+          onClick={handleCancelSelection}
+          label={t('destinations.cancelSelection')}
+        />
       )}
 
       <BottomNav />

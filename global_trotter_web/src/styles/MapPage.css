@@ -153,6 +153,10 @@
   flex-shrink: 0;
 }
 
+.map-page__start-current--custom > svg {
+  color: #00897B;
+}
+
 .map-page__start-current-name {
   flex: 1;
   min-width: 0;
@@ -507,7 +511,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  width: 36px;
   height: 28px;
   border: none;
   border-radius: 999px;
