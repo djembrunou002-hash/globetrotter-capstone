@@ -253,4 +253,4 @@ function Landing() {
   )
 }
 
-export default Landingb
+export default Landing
