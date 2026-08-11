@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getMyDestinations, requestDestinationDelete, discardSubmission } from '../services/myDestinationService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import StarRating from '../components/Starrating.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import CommentSection from '../components/CommentSection.jsx'
@@ -62,6 +64,8 @@ function MyDestinationDetails() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, language } = useTranslation()
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [destination, setDestination] = useState(location.state?.destination || null)
   const [loading, setLoading] = useState(!location.state?.destination)
@@ -197,7 +201,7 @@ function MyDestinationDetails() {
 
   return (
     <div className="destination-details">
-      <header className="destination-details__header">
+      <header ref={headerRef} className="destination-details__header page-header">
         <button
           type="button"
           className="destination-details__back"
@@ -209,7 +213,9 @@ function MyDestinationDetails() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <Logo theme="dark" />
+        <span className="page-header__accessory">
+          <Logo theme="dark" />
+        </span>
       </header>
 
       <main className="destination-details__content destination-details__content--with-bottom-nav">
@@ -429,6 +435,8 @@ function MyDestinationDetails() {
           onCancel={() => setPendingAction(null)}
         />
       )}
+
+      <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 
       <BottomNav />
     </div>

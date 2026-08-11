@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   getDestinations,
@@ -9,9 +9,11 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import CommentSection from '../components/CommentSection.jsx'
 import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
 import { getBudgetDisplay, getHoursDisplay, getContactDisplay } from '../utils/destinationDisplay.js'
@@ -43,6 +45,8 @@ function DestinationDetails() {
   const isAuthenticated = Boolean(getToken())
   const focusComments = Boolean(location.state?.focusComments)
   const fromLanding = Boolean(location.state?.fromLanding)
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [destination, setDestination] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
@@ -130,7 +134,7 @@ function DestinationDetails() {
 
   return (
     <div className="destination-details">
-      <header className="destination-details__header">
+      <header ref={headerRef} className="destination-details__header page-header">
         <button
           type="button"
           className="destination-details__back"
@@ -142,7 +146,11 @@ function DestinationDetails() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        {!fromLanding && <Logo theme="dark" />}
+        {!fromLanding && (
+          <span className="page-header__accessory">
+            <Logo theme="dark" />
+          </span>
+        )}
       </header>
 
       <main
@@ -350,6 +358,8 @@ function DestinationDetails() {
           </>
         )}
       </main>
+
+      <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 
       {!fromLanding && <BottomNav />}
     </div>

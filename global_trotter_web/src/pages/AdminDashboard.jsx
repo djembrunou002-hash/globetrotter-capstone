@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getPendingRequests,
@@ -11,8 +11,10 @@ import {
 } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import PendingRequestCard from '../components/PendingRequestCard.jsx'
 import DestinationManageCard from '../components/DestinationManageCard.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -22,6 +24,8 @@ import '../styles/AdminDashboard.css'
 function AdminDashboard() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [activeTab, setActiveTab] = useState('pending')
   const [requests, setRequests] = useState([])
@@ -165,15 +169,17 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-dashboard__header">
+      <header ref={headerRef} className="admin-dashboard__header page-header">
         <button type="button" className="admin-dashboard__back" aria-label={t('common.goBack')} onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <Logo theme="dark" />
-        <h1 className="admin-dashboard__title">{t('admin.title')}</h1>
+        <span className="page-header__accessory">
+          <Logo theme="dark" />
+        </span>
+        <h1 className="admin-dashboard__title page-header__accessory">{t('admin.title')}</h1>
       </header>
 
       <div className="admin-dashboard__tabs" role="tablist">
@@ -263,6 +269,8 @@ function AdminDashboard() {
           onCancel={() => setPendingDelete(null)}
         />
       )}
+
+      <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 
       <BottomNav />
     </div>

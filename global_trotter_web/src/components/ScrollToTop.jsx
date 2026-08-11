@@ -1,8 +1,12 @@
-import { useEffect, useLayoutEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useLocation, useNavigationType } from 'react-router-dom'
+
+const scrollPositions = new Map()
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const navigationType = useNavigationType()
+  const currentKeyRef = useRef(location.key)
 
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -10,9 +14,23 @@ function ScrollToTop() {
     }
   }, [])
 
+  useEffect(() => {
+    function handleScroll() {
+      scrollPositions.set(currentKeyRef.current, window.scrollY)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   useLayoutEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+    currentKeyRef.current = location.key
+
+    if (navigationType === 'POP' && scrollPositions.has(location.key)) {
+      window.scrollTo(0, scrollPositions.get(location.key))
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [location.pathname, location.key, navigationType])
 
   return null
 }

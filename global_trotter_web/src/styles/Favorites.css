@@ -70,3 +70,16 @@
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 24px;
 }
+
+@media (min-width: 1024px) {
+  .favorites__header {
+    justify-content: center;
+    position: relative;
+    padding-inline: clamp(20px, 5vw, 48px);
+  }
+
+  .favorites__back {
+    position: absolute;
+    left: clamp(20px, 5vw, 48px);
+  }
+}

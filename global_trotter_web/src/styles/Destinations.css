@@ -89,6 +89,36 @@
   box-shadow: 0 8px 20px rgba(11, 61, 36, 0.25);
 }
 
+.destinations__filter-jump {
+  position: fixed;
+  bottom: 90px;
+  right: clamp(20px, 5vw, 48px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--color-forest);
+  color: var(--color-cream);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(11, 61, 36, 0.25);
+  animation: destinations-filter-jump-in 0.25s ease-out;
+}
+
+@keyframes destinations-filter-jump-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .destinations__content--with-bottom-nav {
   padding-bottom: 100px;
 }

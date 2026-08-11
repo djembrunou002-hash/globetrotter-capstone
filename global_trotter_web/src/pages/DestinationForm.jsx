@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMyDestinations, submitDestination, requestDestinationUpdate, updateSubmission } from '../services/myDestinationService.js'
 import { getAllDestinations, adminUpdateDestination } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import '../styles/DestinationForm.css'
 
 const EMPTY_FIELDS = {
@@ -71,6 +73,8 @@ function DestinationForm({ mode }) {
   const { t } = useTranslation()
   const isEdit = mode === 'edit' || mode === 'admin-edit'
   const isAdminEdit = mode === 'admin-edit'
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [fields, setFields] = useState(EMPTY_FIELDS)
   const [nearbyServices, setNearbyServices] = useState([])
@@ -223,15 +227,17 @@ function DestinationForm({ mode }) {
 
   return (
     <div className="destination-form-page">
-      <header className="destination-form-page__header">
+      <header ref={headerRef} className="destination-form-page__header page-header">
         <button type="button" className="destination-form-page__back" aria-label={t('common.goBack')} onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <Logo theme="dark" />
-        <h1 className="destination-form-page__title">{title}</h1>
+        <span className="page-header__accessory">
+          <Logo theme="dark" />
+        </span>
+        <h1 className="destination-form-page__title page-header__accessory">{title}</h1>
       </header>
 
       <main className="destination-form-page__content destination-form-page__content--with-bottom-nav">
@@ -516,6 +522,8 @@ function DestinationForm({ mode }) {
           </form>
         )}
       </main>
+
+      <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 
       <BottomNav />
     </div>

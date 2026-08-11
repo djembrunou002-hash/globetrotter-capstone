@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFavorites, removeFavorite, rateDestination } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import '../styles/Favorites.css'
 
 function Favorites() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [favorites, setFavorites] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +72,7 @@ function Favorites() {
 
   return (
     <div className="favorites">
-      <header className="favorites__header">
+      <header ref={headerRef} className="favorites__header page-header">
         <button
           type="button"
           className="favorites__back"
@@ -80,8 +84,10 @@ function Favorites() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <Logo theme="dark" />
-        <h1 className="favorites__title">{t('favorites.title')}</h1>
+        <span className="page-header__accessory">
+          <Logo theme="dark" />
+        </span>
+        <h1 className="favorites__title page-header__accessory">{t('favorites.title')}</h1>
       </header>
 
       <main className="favorites__content favorites__content--with-bottom-nav">
@@ -109,6 +115,8 @@ function Favorites() {
           </div>
         )}
       </main>
+
+      <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 
       <BottomNav />
     </div>

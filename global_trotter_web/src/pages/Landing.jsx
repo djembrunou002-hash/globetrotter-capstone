@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useNavigationType } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
 import ShowcaseImage from '../components/Showcaseimage.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
@@ -18,6 +18,8 @@ import showcase5 from '../assets/cameroon-showcase-5.jpg'
 const SHOWCASE_IMAGES = [showcase1, showcase2, showcase3, showcase4, showcase5]
 const FEATURED_DESTINATION_COUNT = 10
 
+let cachedLandingData = null
+
 function shuffled(list) {
   const copy = [...list]
   for (let i = copy.length - 1; i > 0; i--) {
@@ -30,33 +32,44 @@ function shuffled(list) {
 function Landing() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const navigationType = useNavigationType()
 
-  const [userCount, setUserCount] = useState(null)
-  const [destinationCount, setDestinationCount] = useState(null)
-  const [featuredDestinations, setFeaturedDestinations] = useState([])
-  const [loadingDestinations, setLoadingDestinations] = useState(true)
+  const [userCount, setUserCount] = useState(cachedLandingData?.userCount ?? null)
+  const [destinationCount, setDestinationCount] = useState(cachedLandingData?.destinationCount ?? null)
+  const [featuredDestinations, setFeaturedDestinations] = useState(cachedLandingData?.featuredDestinations ?? [])
+  const [loadingDestinations, setLoadingDestinations] = useState(!cachedLandingData)
 
-  // Re-runs (and re-shuffles) every time the landing page mounts, so a
-  // returning guest sees a different set of destinations each visit.
   useEffect(() => {
+    if (navigationType === 'POP' && cachedLandingData) {
+      return
+    }
+
     let cancelled = false
 
     getUserStats()
       .then(response => {
-        if (!cancelled) setUserCount(response.user_count)
+        if (!cancelled) {
+          setUserCount(response.user_count)
+          cachedLandingData = { ...cachedLandingData, userCount: response.user_count }
+        }
       })
       .catch(() => {})
 
     getDestinationStats()
       .then(response => {
-        if (!cancelled) setDestinationCount(response.destination_count)
+        if (!cancelled) {
+          setDestinationCount(response.destination_count)
+          cachedLandingData = { ...cachedLandingData, destinationCount: response.destination_count }
+        }
       })
       .catch(() => {})
 
     getDestinations()
       .then(response => {
         if (!cancelled) {
-          setFeaturedDestinations(shuffled(response.destinations).slice(0, FEATURED_DESTINATION_COUNT))
+          const picked = shuffled(response.destinations).slice(0, FEATURED_DESTINATION_COUNT)
+          setFeaturedDestinations(picked)
+          cachedLandingData = { ...cachedLandingData, featuredDestinations: picked }
         }
       })
       .catch(() => {
@@ -69,10 +82,8 @@ function Landing() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [navigationType])
 
-  // Guests can browse a destination's own page read-only, but every action
-  // on the card itself (rate, favorite) sends them to auth first.
   function requireAuth() {
     navigate('/login')
   }

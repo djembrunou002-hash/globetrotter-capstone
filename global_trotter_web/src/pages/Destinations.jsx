@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   getDestinations,
@@ -48,6 +48,8 @@ function Destinations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [restored] = useState(() => readFilterState(FILTER_KEY, DEFAULT_FILTERS))
+  const [showFilterJump, setShowFilterJump] = useState(false)
+  const searchBarRef = useRef(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilters, setTypeFilters] = useState(() => new Set(tagParam ? [] : restored.typeFilters))
@@ -102,6 +104,22 @@ function Destinations() {
       maxBudget
     })
   }, [typeFilters, budgetFilters, tagFilters, minBudget, maxBudget])
+
+  useEffect(() => {
+    const node = searchBarRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowFilterJump(!entry.isIntersecting),
+      { threshold: 0 }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  function handleJumpToFilters() {
+    searchBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   async function handleToggleFavorite(destinationId) {
     if (!isAuthenticated) {
@@ -241,7 +259,7 @@ function Destinations() {
         <h1 className="destinations__title">{t('destinations.title')}</h1>
       </header>
 
-      <div className="destinations__search-bar">
+      <div className="destinations__search-bar" ref={searchBarRef}>
         <svg
           className="destinations__search-icon"
           viewBox="0 0 24 24"
@@ -411,6 +429,21 @@ function Destinations() {
       {selectionMode && draft.selectedDestinationIds.length > 0 && (
         <button type="button" className="destinations__confirm-selection" onClick={handleConfirmSelection}>
           {t('destinations.confirmSelected', { count: draft.selectedDestinationIds.length })}
+        </button>
+      )}
+
+      {showFilterJump && (
+        <button
+          type="button"
+          className="destinations__filter-jump"
+          onClick={handleJumpToFilters}
+          aria-label={t('destinations.jumpToSearch')}
+          title={t('destinations.jumpToSearch')}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20V5" />
+            <path d="M5 12l7-7 7 7" />
+          </svg>
         </button>
       )}
 

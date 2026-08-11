@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { getItineraries, getSharedUsers } from '../services/itineraryService.js'
 import {
@@ -10,9 +10,11 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import ReorderItineraryModal from '../components/ReorderItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
@@ -38,6 +40,8 @@ function ItineraryDetails() {
   const navigate = useNavigate()
   const { t, locale } = useTranslation()
   const isAuthenticated = Boolean(getToken())
+  const headerRef = useRef(null)
+  const headerPassed = useHeaderPassed(headerRef)
 
   const [itinerary, setItinerary] = useState(null)
   const [destinations, setDestinations] = useState([])
@@ -198,14 +202,16 @@ function ItineraryDetails() {
 
   return (
     <div className="itinerary-details">
-      <header className="itinerary-details__header">
+      <header ref={headerRef} className="itinerary-details__header page-header">
         <Link to="/itineraries" className="itinerary-details__back" aria-label={t('itineraryDetails.back')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </Link>
-        <Logo theme="dark" />
+        <span className="page-header__accessory">
+          <Logo theme="dark" />
+        </span>
       </header>
 
       <main className="itinerary-details__content itinerary-details__content--with-bottom-nav">
@@ -361,6 +367,12 @@ function ItineraryDetails() {
           onClose={() => setReorderModalOpen(false)}
         />
       )}
+
+      <FloatingBackButton
+        visible={headerPassed}
+        to="/itineraries"
+        label={t('itineraryDetails.back')}
+      />
 
       <BottomNav />
     </div>

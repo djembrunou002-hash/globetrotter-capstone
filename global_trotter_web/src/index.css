@@ -59,3 +59,8 @@ button {
 img {
   max-width: 100%;
 }
+
+.page-header {
+  position: static;
+  background: var(--color-sand);
+}

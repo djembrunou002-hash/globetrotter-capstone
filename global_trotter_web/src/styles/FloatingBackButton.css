@@ -1,0 +1,43 @@
+.floating-back {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(11, 61, 36, 0.18);
+  animation: floating-back-in 0.18s ease-out;
+}
+
+.floating-back:hover {
+  border-color: var(--color-forest);
+  color: var(--color-forest);
+}
+
+@keyframes floating-back-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .floating-back {
+    top: calc((var(--desktop-nav-height, 56px) - 36px) / 2);
+    left: clamp(20px, 5vw, 48px);
+    box-shadow: none;
+  }
+}
