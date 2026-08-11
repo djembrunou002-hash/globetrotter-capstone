@@ -864,3 +864,57 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Browser back button on `Login`, `Register`, `VerifyOtp`, and `SelectStyle` returned to an auth screen instead of leaving the app. None of the post-auth navigations replaced the history entry they came from, so each step of the sign-up/login → verify → select-style → home flow was pushed as a new entry instead of overwriting the previous one; going back walked back through the whole chain rather than out of the app. See Changed above for the fix
 - Same back-button bug on `AdminDashboard.jsx` — using the admin dashboard and pressing back landed on an auth page instead of Profile
 - The distance/ETA card on the map page was overlapping and hiding the nearby-services panel underneath it
+
+## [10/11-08-2026]
+
+### Ratings
+
+- Fixed the rating count incrementing on every submission, so a user rating the same destination more than once is now counted only once
+
+### Landing page
+
+- Added a guest destination card to the landing page, with the related preview and navigation behaviour for visitors who are not signed in
+- Moved the landing page preview cache out of `Landing.jsx` into `src/utils/landingCache.js` so it can be read, written and reset independently
+
+### Navigation and page headers
+
+- Made `.page-header` non-sticky so page headers scroll away and the desktop nav bar anchors to the top, matching the destinations page behaviour
+- Added the `useHeaderPassed` hook, which reports when a page header has fully scrolled past the top of the viewport
+- Added the `FloatingBackButton` component: it docks into the desktop nav bar at the far left the moment the nav anchors, and persists at the top left on mobile
+- Applied the floating back button to destination details, my destination details, favorites, my destinations, admin dashboard, destination form and itinerary details
+- Replaced the fixed top-right cancel control on the destination selection page with a back button in the header plus the shared floating back button
+- Centred the destination selection header on desktop so its back button pins to the far left
+- Pinned the back button to the far left of the destination form header on desktop
+- Replaced the magnifier icon on the destinations scroll-to-top button with an upward arrow
+- Removed the now unused `useScrolled` hook
+
+### Notifications
+
+- Added `GET /notifications` to destination-service, returning pending requests for admins and reviewed requests for owners, each with a stable key
+- Routed `notifications` through the api-gateway to destination-service
+- Added `NotificationsProvider`, polling notifications on navigation, tab focus and every 60 seconds, with seen keys persisted per user in local storage
+- Added notification dots on the profile nav icon, the profile admin and manage rows, the admin pending tab, and individual request and destination cards
+- Unseen notifications are marked as seen when leaving the admin dashboard or the my destinations page
+- Added the `notifications.new` label in English and French
+- Added 9 backend tests covering notification scoping between admins and owners
+
+### Map
+
+- Added a starting point control to the map options menu, defaulting to the user's location
+- Added a geocoded search field so any address or place can be typed in as the starting point
+- Moved the starting point suggestions into a dedicated floating panel, opening beside the options menu on wide screens and as a bottom sheet on phones
+- Added searching and no-results states to the starting point panel
+- Replaced the starting point dropdown with a current-start line showing the user's location or the chosen place, plus a reset control
+- Persisted the starting point in the session map state and cleared it on map reset and itinerary change
+- Added a `start` map category and rendered custom starting points as a teal flag marker, included in the legend and in map fit bounds
+- Switched the starting point row icon between a crosshair and a flag depending on whether the user's location or a custom place is in use
+- Added a bicycle travel mode to the route toggle, with a matching straight-line fallback speed and the short route profile
+- Capped the map options menu height and made it scrollable
+
+### Fixes
+
+- Added the missing `optional_jwt_identity` helper to destination-service, unblocking service import and the backend test suite
+- Added the missing `map.travelMode`, `map.onFoot` and `map.byCar` translation keys, which were rendering as raw key names in tooltips and aria-labels
+- Fixed `DestinationCard` passing a trailing `undefined` to `navigate` when no link state is set
+- Stubbed `IntersectionObserver` in `jest.polyfills.cjs` for jsdom
+- Cleared the landing page cache between tests and made the landing test helper flush pending fetches inside `act`

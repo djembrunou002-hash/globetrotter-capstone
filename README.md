@@ -88,7 +88,8 @@ Each service owns its data outright and reaches the others only over REST. Cross
 │       ├── data/                     # destinations.json, comments.json, destination_requests.json
 │       ├── uploads/destinations/     # seed images only; live uploads are outside the repo
 │       ├── routes/                   # destinations.py, comments.py, admin.py, my_destinations.py,
-│       │                             # places.py, ai.py, recommendations.py, uploads.py, internal.py
+│       │                             # notifications.py, places.py, ai.py, recommendations.py,
+│       │                             # uploads.py, internal.py
 │       ├── services/                 # geoapify.py, ai_assistant.py, scoring.py, images.py, urls.py
 │       └── tests/
 │
@@ -96,8 +97,11 @@ Each service owns its data outright and reaches the others only over REST. Cross
 │   ├── .env.development
 │   ├── .env.production               # tracked; contains no secrets
 │   ├── vite.config.js
+│   ├── jest.config.cjs
+│   ├── jest.polyfills.cjs
 │   ├── index.html
 │   ├── public/
+│   ├── tests/
 │   └── src/
 │       ├── App.jsx
 │       ├── main.jsx
@@ -107,6 +111,7 @@ Each service owns its data outright and reaches the others only over REST. Cross
 │       ├── services/
 │       ├── utils/
 │       ├── context/
+│       ├── i18n/
 │       └── styles/
 │
 ├── CHANGELOG.md
@@ -191,7 +196,7 @@ cd global_trotter_backend/itinerary-service   && pytest
 cd global_trotter_backend/destination-service && pytest
 ```
 
-134 tests. Cross-service calls are replaced with in-memory fakes; tokens are minted directly with `create_access_token`, since only user-service can register.
+143 tests. Cross-service calls are replaced with in-memory fakes; tokens are minted directly with `create_access_token`, since only user-service can register.
 
 End-to-end against a running stack, through the gateway only:
 
@@ -211,6 +216,8 @@ Frontend:
 ```bash
 cd global_trotter_web && npm test
 ```
+
+145 tests across 12 suites, run under Jest with jsdom. `jest.polyfills.cjs` supplies what jsdom lacks — `TextEncoder`/`TextDecoder` and an `IntersectionObserver` stub, without which any page using a scroll observer fails to render in tests.
 
 ---
 
@@ -303,6 +310,21 @@ Passwords use Werkzeug's `pbkdf2:sha256`. Records created before Phase 2 carry `
 
 ---
 
+# Notifications
+
+`GET /notifications` derives its payload from `destination_requests.json` rather than storing notifications of its own, and returns a different set depending on who is asking:
+
+- **Admins** receive every request still pending review
+- **Owners** receive their own requests that have been resolved — approved, rejected, or acted on directly by an admin
+
+Each item carries a key built from the request id, its status and its review timestamp, so a request that is reviewed twice produces a new key. The frontend keeps the set of keys the user has already seen in `localStorage`, namespaced per user id, and treats anything absent from that set as unseen.
+
+Unseen items surface as a dot in three places at once: the profile icon in the nav, the admin dashboard or manage destinations row inside Profile, and the individual request or destination card. Opening the list that contains them marks them seen on leaving the page, so the dots stay visible for the whole visit rather than vanishing on arrival.
+
+`NotificationsProvider` refreshes on navigation (throttled to five seconds), on tab focus, and every sixty seconds. There is no push channel — see the limitations below.
+
+---
+
 # REST API
 
 All paths are public through the gateway. In production they are reached under `/api/`.
@@ -326,6 +348,7 @@ All paths are public through the gateway. In production they are reached under `
 | GET | `/recommendations` | Yes | destination | Personalised ranking |
 | GET/POST | `/destinations/<id>/comments` | Mixed | destination | Read or post comments |
 | POST/DELETE | `/destinations/<id>/comments/<cid>/pin` | Yes | destination | Pin or unpin a comment |
+| GET | `/notifications` | Yes | destination | Pending requests for admins, resolved requests for owners |
 | GET | `/my-destinations` | Yes | destination | Your submissions |
 | PUT | `/my-destinations/requests/<id>` | Yes | destination | Edit a pending submission |
 | GET | `/admin/requests` | Admin | destination | Pending review queue |
@@ -381,11 +404,19 @@ curl -X POST https://globaltrotter.duckdns.org/api/itineraries \
 
 # Frontend
 
-React 19, Vite 8, React Router 7, MapLibre GL 6. Maps render with OpenFreeMap tiles; search, nearby places and routing go through the backend so the Geoapify key stays server-side.
+React 19, Vite 8, React Router 7, MapLibre GL 6. Maps render with OpenFreeMap tiles; search, nearby places and routing go through the backend so the Geoapify key stays server-side. The interface is fully bilingual, English and French, driven by `src/i18n/translations.js` and the `useTranslation` hook.
 
 ## Pages
 
 Landing · Register · Login · Verify OTP · Select style · Home · Destinations · Destination detail · Itineraries · Itinerary detail · Map · Favorites · My Destinations · My Destination detail · Destination form · Profile · Admin dashboard
+
+## Navigation
+
+The bottom nav becomes a sticky top bar from 1024px up. Page headers scroll away with the content, and `useHeaderPassed` detects the moment a header clears the top of the viewport — the same moment the nav anchors. At that point `FloatingBackButton` appears: docked at the far left of the nav bar on desktop, floating at the top left on mobile.
+
+## Map
+
+The map draws the active itinerary, nearby services, searched places and the route between stops. Routing defaults to starting from the user's live position, re-routing when they move more than 50 metres; any address can be typed in instead, in which case it is pinned with its own flag marker and the live position is ignored. Three travel modes are available — on foot, by bike, by car — each with a straight-line fallback speed used when Geoapify cannot return a route.
 
 ## Build note
 
@@ -400,3 +431,5 @@ MapLibre v6 constructs its worker URL at runtime from `import.meta.url`, which R
 - All communication is synchronous REST, so a slow dependency slows its caller
 - Deleting a user does not cascade to their itineraries or comments; those services degrade to placeholder names
 - Route geometry is fetched from Geoapify uncached on every request
+- Notifications are polled rather than pushed, and which items a user has already seen lives in `localStorage`, so the dots reappear on a different browser or after clearing site data
+- Backend fields written by users — descriptions, advice — are stored in a single language; only closed-vocabulary fields and interface strings are translated
