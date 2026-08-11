@@ -34,7 +34,8 @@ const DEFAULT_MAP_STATE = {
   showServices: false,
   showVisited: false,
   stopIds: null,
-  searchedPlace: null
+  searchedPlace: null,
+  startPlace: null
 }
 
 function readPersistedMapState() {
@@ -145,6 +146,11 @@ function MapPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searchedPlace, setSearchedPlace] = useState(persisted.searchedPlace)
+
+  const [customStart, setCustomStart] = useState(persisted.startPlace)
+  const [startQuery, setStartQuery] = useState('')
+  const [startResults, setStartResults] = useState([])
+  const [startSearching, setStartSearching] = useState(false)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [distancePanelSunk, setDistancePanelSunk] = useState(false)
@@ -305,9 +311,10 @@ function MapPage() {
   const routeWaypoints = useMemo(() => {
     if (remainingStops.length === 0) return EMPTY_PLACES
     const points = remainingStops.slice(0, MAX_ROUTE_WAYPOINTS).map(stop => [stop.lat, stop.lng])
+    if (customStart) return [[customStart.lat, customStart.lng], ...points]
     if (routeOrigin) return [[routeOrigin.lat, routeOrigin.lng], ...points]
     return points
-  }, [remainingStops, routeOrigin])
+  }, [remainingStops, routeOrigin, customStart])
 
   const canRoute = routeWaypoints.length >= 2
   const routeEnabled = showRoute && canRoute
@@ -331,7 +338,8 @@ function MapPage() {
       showServices,
       showVisited,
       stopIds: customStopIds,
-      searchedPlace
+      searchedPlace,
+      startPlace: customStart
     })
   }, [
     selectedItineraryId,
@@ -341,7 +349,8 @@ function MapPage() {
     showServices,
     showVisited,
     customStopIds,
-    searchedPlace
+    searchedPlace,
+    customStart
   ])
 
   useEffect(() => {
@@ -524,7 +533,34 @@ function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
+  useEffect(() => {
+    const trimmed = startQuery.trim()
+    if (!trimmed) return undefined
+
+    let active = true
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await searchPlaces(
+          trimmed,
+          userLocation ? { lat: userLocation.lat, lon: userLocation.lng } : {}
+        )
+        if (active) setStartResults(response.results || [])
+      } catch {
+        if (active) setStartResults([])
+      } finally {
+        if (active) setStartSearching(false)
+      }
+    }, 400)
+
+    return () => {
+      active = false
+      clearTimeout(timeout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startQuery])
+
   const visibleSearchResults = searchQuery.trim() ? searchResults : []
+  const visibleStartResults = startQuery.trim() ? startResults : []
 
   const handleDestinationMarkerClick = useCallback(
     marker => {
@@ -564,11 +600,40 @@ function MapPage() {
     mapViewRef.current?.flyToDestinations()
   }
 
+  function handleStartQueryChange(value) {
+    setStartQuery(value)
+    setStartSearching(Boolean(value.trim()))
+    if (!value.trim()) setStartResults([])
+  }
+
+  function handleSelectStartPlace(result) {
+    const lat = Number(result.lat)
+    const lng = Number(result.lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    setCustomStart({ name: result.name, lat, lng })
+    setStartQuery('')
+    setStartResults([])
+    setStartSearching(false)
+    setShowRoute(true)
+  }
+
+  function handleClearStartSearch() {
+    setStartQuery('')
+    setStartResults([])
+    setStartSearching(false)
+  }
+
+  function handleUseMyLocation() {
+    setCustomStart(null)
+    handleClearStartSearch()
+  }
+
   function handleSelectItinerary(value) {
     const nextId = value || null
     setSelectedItineraryId(nextId)
     setCustomStopIds(null)
     setStopIndex(0)
+    setCustomStart(null)
     if (nextId) setFocusDestinationId(null)
     if (nextId) setShowRoute(true)
     if (itineraryParam || destinationParam) {
@@ -590,6 +655,10 @@ function MapPage() {
     setSearchQuery('')
     setSearchResults([])
     setSearchOpen(false)
+    setCustomStart(null)
+    setStartQuery('')
+    setStartResults([])
+    setStartSearching(false)
     setRoute(null)
     setRouteIsFallback(false)
     setRouteSummary(null)
@@ -613,7 +682,8 @@ function MapPage() {
   }, [destinationMarkers, searchedPlace, visibleNearbyPlaces])
 
   const servicesAreRemote = showServices && !userServicesCenter && Boolean(extraStopServicesCenter)
-  const routeNeedsLocation = showRoute && !canRoute && pendingStops.length > 0 && !routeOrigin
+  const routeNeedsLocation =
+    showRoute && !canRoute && pendingStops.length > 0 && !routeOrigin && !customStart
 
   const visitedCount = itineraryStops.filter(stop => stop.visited).length
   const nextStop = remainingStops[0]
@@ -739,6 +809,60 @@ function MapPage() {
             {t('map.reset')}
           </button>
 
+          <div className="map-page__menu-field">
+            <span className="map-page__menu-label">{t('map.startingPoint')}</span>
+
+            <div className="map-page__start-current">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+              <span className="map-page__start-current-name">
+                {customStart ? customStart.name : t('map.myLocation')}
+              </span>
+              {customStart && (
+                <button
+                  type="button"
+                  className="map-page__start-reset"
+                  onClick={handleUseMyLocation}
+                  aria-label={t('map.useMyLocation')}
+                  title={t('map.useMyLocation')}
+                >
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <div className="map-page__start-search">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                className="map-page__start-input"
+                placeholder={t('map.startingPointPlaceholder')}
+                value={startQuery}
+                onChange={event => handleStartQueryChange(event.target.value)}
+                aria-label={t('map.startingPointPlaceholder')}
+              />
+              {startQuery && (
+                <button
+                  type="button"
+                  className="map-page__start-clear"
+                  onClick={handleClearStartSearch}
+                  aria-label={t('common.clearSearch')}
+                >
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
           {itineraries.length > 0 && (
             <label className="map-page__menu-field">
               <span className="map-page__menu-label">{t('map.itineraryOnMap')}</span>
@@ -758,6 +882,30 @@ function MapPage() {
           )}
 
           {!userLocation && locationMessage && <p className="map-page__menu-hint">{locationMessage}</p>}
+        </div>
+      )}
+
+      {menuOpen && startQuery.trim() !== '' && (
+        <div className="map-page__start-panel">
+          <span className="map-page__start-panel-title">{t('map.startingPoint')}</span>
+
+          {startSearching && <p className="map-page__start-empty">{t('map.searchingPlaces')}</p>}
+
+          {!startSearching && visibleStartResults.length === 0 && (
+            <p className="map-page__start-empty">{t('map.noStartResults')}</p>
+          )}
+
+          {!startSearching && visibleStartResults.length > 0 && (
+            <ul className="map-page__start-results">
+              {visibleStartResults.map(result => (
+                <li key={`${result.lat}-${result.lng}-${result.name}`}>
+                  <button type="button" onClick={() => handleSelectStartPlace(result)}>
+                    {result.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
