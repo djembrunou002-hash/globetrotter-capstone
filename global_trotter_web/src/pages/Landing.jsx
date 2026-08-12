@@ -7,6 +7,7 @@ import { getDestinations, getDestinationStats } from '../services/destinationSer
 import { getUserStats } from '../services/userService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { readLandingCache, writeLandingCache } from '../utils/landingCache.js'
+import { getToken } from '../services/tokenStorage.js'
 import '../styles/Landing.css'
 
 import landingImage from '../assets/Cameroon-landing.jpg'
@@ -38,6 +39,12 @@ function Landing() {
   const [destinationCount, setDestinationCount] = useState(cached?.destinationCount ?? null)
   const [featuredDestinations, setFeaturedDestinations] = useState(cached?.featuredDestinations ?? [])
   const [loadingDestinations, setLoadingDestinations] = useState(!cached)
+
+  useEffect(() => {
+    if (getToken()) {
+      navigate('/home', { replace: true })
+    }
+  }, [navigate])
 
   useEffect(() => {
     if (navigationType === 'POP' && readLandingCache()) {
