@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getMyDestinations, submitDestination, requestDestinationUpdate, updateSubmission } from '../services/myDestinationService.js'
 import { getAllDestinations, adminUpdateDestination } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
@@ -241,7 +242,7 @@ function DestinationForm({ mode }) {
       </header>
 
       <main className="destination-form-page__content destination-form-page__content--with-bottom-nav">
-        {loading && <p className="destination-form__status">{t('common.loading')}</p>}
+        {loading && <PlanetLoader label={t('common.loading')} />}
 
         {!loading && (
           <form className="destination-form" onSubmit={handleSubmit} noValidate>

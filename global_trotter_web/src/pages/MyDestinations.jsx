@@ -6,6 +6,7 @@ import {
   discardSubmission
 } from '../services/myDestinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useNotifications, useClearNotificationsOnLeave } from '../hooks/useNotifications.js'
@@ -170,7 +171,7 @@ function MyDestinations() {
           {t('manage.add')}
         </button>
 
-        {loading && <p className="my-destinations__status">{t('manage.loading')}</p>}
+        {loading && <PlanetLoader label={t('manage.loading')} />}
         {error && <p className="my-destinations__status my-destinations__status--error">{error}</p>}
 
         {!loading && !error && destinations.length === 0 && (

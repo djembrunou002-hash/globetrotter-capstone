@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFavorites, removeFavorite, rateDestination } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
@@ -91,7 +92,7 @@ function Favorites() {
       </header>
 
       <main className="favorites__content favorites__content--with-bottom-nav">
-        {loading && <p className="favorites__status">{t('favorites.loading')}</p>}
+        {loading && <PlanetLoader label={t('favorites.loading')} />}
         {error && <p className="favorites__status favorites__status--error">{error}</p>}
 
         {!loading && !error && favorites.length === 0 && (

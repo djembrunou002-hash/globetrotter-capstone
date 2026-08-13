@@ -29,6 +29,18 @@
   pointer-events: none;
 }
 
+.map-page__status--loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 6px 16px 6px 6px;
+}
+
+.map-page__status--loading .planet-loader {
+  padding: 0;
+}
+
 .map-page__status--error {
   color: #8A1424;
   border-color: #E8C6CB;

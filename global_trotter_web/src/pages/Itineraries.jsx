@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getItineraries, createItinerary, deleteItinerary, deleteItineraries } from '../services/itineraryService.js'
 import { getDestinations } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
@@ -188,7 +189,7 @@ function Itineraries() {
       )}
 
       <main className="itineraries__content">
-        {loading && <p className="itineraries__status">{t('itineraries.loading')}</p>}
+        {loading && <PlanetLoader label={t('itineraries.loading')} />}
         {error && <p className="itineraries__status itineraries__status--error">{error}</p>}
 
         {!loading && !error && itineraries.length === 0 && (

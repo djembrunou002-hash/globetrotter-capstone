@@ -8,6 +8,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
@@ -403,7 +404,7 @@ function Destinations() {
       )}
 
       <main className="destinations__content destinations__content--with-bottom-nav">
-        {loading && <p className="destinations__status">{t('destinations.loading')}</p>}
+        {loading && <PlanetLoader label={t('destinations.loading')} />}
         {error && <p className="destinations__status destinations__status--error">{error}</p>}
 
         {!loading && !error && filteredDestinations.length === 0 && (

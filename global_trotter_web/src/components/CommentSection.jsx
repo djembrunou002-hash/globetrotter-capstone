@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getComments, addComment, replyToComment, editComment, deleteComment, likeComment, unlikeComment, dislikeComment, undislikeComment, pinComment, unpinComment } from '../services/commentService.js'
 import { getUser } from '../services/tokenStorage.js'
+import PlanetLoader from './PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/CommentSection.css'
 
@@ -642,7 +643,7 @@ function CommentSection({ destinationId, ownerId, isAuthenticated, focusOnMount 
       )}
 
       {error && <p className="comment-section__status comment-section__status--error">{error}</p>}
-      {loading && <p className="comment-section__status">{t('comments.loading')}</p>}
+      {loading && <PlanetLoader label={t('comments.loading')} size="small" />}
 
       {!loading && comments.length === 0 && !error && (
         <p className="comment-section__status">{t('comments.empty')}</p>

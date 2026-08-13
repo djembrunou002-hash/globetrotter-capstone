@@ -9,6 +9,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
@@ -215,7 +216,7 @@ function ItineraryDetails() {
       </header>
 
       <main className="itinerary-details__content itinerary-details__content--with-bottom-nav">
-        {loading && <p className="itinerary-details__status">{t('itineraryDetails.loading')}</p>}
+        {loading && <PlanetLoader label={t('itineraryDetails.loading')} />}
         {error && <p className="itinerary-details__status itinerary-details__status--error">{error}</p>}
 
         {!loading && !error && !itinerary && (

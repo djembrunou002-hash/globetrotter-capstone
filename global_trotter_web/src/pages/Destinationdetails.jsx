@@ -8,6 +8,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
@@ -158,7 +159,7 @@ function DestinationDetails() {
           fromLanding ? '' : 'destination-details__content--with-bottom-nav'
         }`}
       >
-        {loading && <p className="destination-details__status">{t('destinationDetails.loading')}</p>}
+        {loading && <PlanetLoader label={t('destinationDetails.loading')} />}
         {error && <p className="destination-details__status destination-details__status--error">{error}</p>}
 
         {!loading && !error && !destination && (

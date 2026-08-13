@@ -3,6 +3,7 @@ import { Link, useNavigate, useNavigationType } from 'react-router-dom'
 import Logo from '../components/Logo.jsx'
 import ShowcaseImage from '../components/Showcaseimage.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { getDestinations, getDestinationStats } from '../services/destinationService.js'
 import { getUserStats } from '../services/userService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
@@ -202,7 +203,7 @@ function Landing() {
         </p>
 
         {loadingDestinations && (
-          <p className="landing__explore-status">{t('landing.loadingDestinations')}</p>
+          <PlanetLoader label={t('landing.loadingDestinations')} />
         )}
 
         {!loadingDestinations && featuredDestinations.length > 0 && (

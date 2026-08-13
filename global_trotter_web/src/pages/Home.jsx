@@ -8,6 +8,7 @@ import {
   rateDestination
 } from '../services/destinationService.js'
 import { getRecommendations } from '../services/recommendationService.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { getToken } from '../services/tokenStorage.js'
 import { destinationMatchesBudgetRange } from '../utils/budgetRanges.js'
 import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
@@ -285,7 +286,7 @@ function Home() {
           </div>
         ) : (
           <>
-            {loading && <p className="home__status">{t('home.loading')}</p>}
+            {loading && <PlanetLoader label={t('home.loading')} />}
             {error && <p className="home__status home__status--error">{error}</p>}
 
             {!loading && !error && filteredRecommended.length === 0 && (

@@ -10,6 +10,7 @@ import {
   adminDeleteDestination
 } from '../services/adminService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useNotifications, useClearNotificationsOnLeave } from '../hooks/useNotifications.js'
@@ -213,7 +214,7 @@ function AdminDashboard() {
       </div>
 
       <main className="admin-dashboard__content admin-dashboard__content--with-bottom-nav">
-        {loading && <p className="admin-dashboard__status">{t('common.loading')}</p>}
+        {loading && <PlanetLoader label={t('common.loading')} />}
         {error && <p className="admin-dashboard__status admin-dashboard__status--error">{error}</p>}
 
         {!loading && !error && activeTab === 'pending' && requests.length === 0 && (

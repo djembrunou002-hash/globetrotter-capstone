@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getDestinations } from '../services/destinationService.js'
 import { getItineraries } from '../services/itineraryService.js'
 import { searchPlaces, getNearbyPlaces, getRoute } from '../services/mapService.js'
+import PlanetLoader from '../components/PlanetLoader.jsx'
 import { getToken } from '../services/tokenStorage.js'
 import { useGeolocation } from '../hooks/useGeolocation.js'
 import { useVisitedStops } from '../hooks/useVisitedStops.js'
@@ -728,8 +729,15 @@ function MapPage() {
         onDestinationClick={handleDestinationMarkerClick}
       />
 
-      {statusMessage && (
-        <p className={`map-page__status${error ? ' map-page__status--error' : ''}`}>{statusMessage}</p>
+      {loading ? (
+        <div className="map-page__status map-page__status--loading">
+          <PlanetLoader size="small" />
+          <span>{statusMessage}</span>
+        </div>
+      ) : (
+        statusMessage && (
+          <p className={`map-page__status${error ? ' map-page__status--error' : ''}`}>{statusMessage}</p>
+        )
       )}
 
       <button

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { getItineraries, addDestinationToItinerary } from '../services/itineraryService.js'
+import PlanetLoader from './PlanetLoader.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/AddToItineraryButton.css'
 
@@ -123,7 +124,7 @@ function AddToItineraryButton({ destinationId, isAuthenticated, variant = 'icon'
             </div>
 
             <div className="add-to-itinerary__body">
-              {loading && <p className="add-to-itinerary__status">{t('addToItinerary.loading')}</p>}
+              {loading && <PlanetLoader label={t('addToItinerary.loading')} size="small" />}
               {error && <p className="add-to-itinerary__status add-to-itinerary__status--error">{error}</p>}
 
               {!loading && loaded && itineraries.length === 0 && !error && (
