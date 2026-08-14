@@ -284,3 +284,26 @@
     left: clamp(20px, 5vw, 48px);
   }
 }
+
+/* ---- Append to src/styles/Destinations.css ---- */
+
+.destinations__filters .scroll-row {
+  --scroll-row-bg: var(--color-sand);
+}
+
+.destinations__filter-row {
+  padding: 2px 30px;
+  scroll-padding-inline: 30px;
+}
+
+
+/* ---- Append to src/styles/Home.css ---- */
+
+.home__filters .scroll-row {
+  --scroll-row-bg: var(--color-sand);
+}
+
+.home__filter-row {
+  padding: 2px 30px;
+  scroll-padding-inline: 30px;
+}

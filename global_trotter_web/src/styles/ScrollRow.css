@@ -1,0 +1,107 @@
+.scroll-row {
+  position: relative;
+  min-width: 0;
+}
+
+.scroll-row__track {
+  scroll-behavior: smooth;
+}
+
+.scroll-row::before,
+.scroll-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 1;
+}
+
+.scroll-row::before {
+  left: 0;
+  background: linear-gradient(to right, var(--scroll-row-bg, #F7F2E4) 30%, transparent);
+}
+
+.scroll-row::after {
+  right: 0;
+  background: linear-gradient(to left, var(--scroll-row-bg, #F7F2E4) 30%, transparent);
+}
+
+.scroll-row--fade-left::before,
+.scroll-row--fade-right::after {
+  opacity: 1;
+}
+
+.scroll-row__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(20, 40, 28, 0.14);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #2f6d4f;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(20, 40, 28, 0.16);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.scroll-row__arrow:hover {
+  background: #2f6d4f;
+  color: #ffffff;
+}
+
+.scroll-row__arrow:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.scroll-row__arrow--left {
+  left: 0;
+}
+
+.scroll-row__arrow--right {
+  right: 0;
+}
+
+.scroll-row__arrow[hidden] {
+  display: none;
+}
+
+@media (hover: none) {
+  .scroll-row__arrow {
+    width: 22px;
+    height: 22px;
+    animation: scroll-row-hint 2.4s ease-in-out 3;
+  }
+
+  .scroll-row__arrow--left {
+    animation-name: scroll-row-hint-left;
+  }
+}
+
+@keyframes scroll-row-hint {
+  0%, 70%, 100% { transform: translateY(-50%) translateX(0); }
+  80% { transform: translateY(-50%) translateX(3px); }
+  90% { transform: translateY(-50%) translateX(0); }
+}
+
+@keyframes scroll-row-hint-left {
+  0%, 70%, 100% { transform: translateY(-50%) translateX(0); }
+  80% { transform: translateY(-50%) translateX(-3px); }
+  90% { transform: translateY(-50%) translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-row__track { scroll-behavior: auto; }
+  .scroll-row__arrow { animation: none; }
+  .scroll-row::before,
+  .scroll-row::after { transition: none; }
+}

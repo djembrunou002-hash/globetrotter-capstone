@@ -16,6 +16,7 @@ import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
+import ScrollRow from '../components/ScrollRow.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import '../styles/Destinations.css'
@@ -333,7 +334,7 @@ function Destinations() {
             </div>
           )}
 
-          <div className="destinations__filter-row">
+          <ScrollRow className="destinations__filter-row">
             {availableTypes.map(type => (
               <button
                 key={type}
@@ -345,9 +346,9 @@ function Destinations() {
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
-          </div>
+          </ScrollRow>
 
-          <div className="destinations__filter-row">
+          <ScrollRow className="destinations__filter-row">
             {BUDGET_LEVELS.map(level => (
               <button
                 key={level}
@@ -359,10 +360,10 @@ function Destinations() {
                 {t(`budgetLevels.${level}`)}
               </button>
             ))}
-          </div>
+          </ScrollRow>
 
           {availableTags.length > 0 && (
-            <div className="destinations__filter-row">
+            <ScrollRow className="destinations__filter-row">
               {availableTags.map(tag => (
                 <button
                   key={tag}
@@ -374,7 +375,7 @@ function Destinations() {
                   {tag}
                 </button>
               ))}
-            </div>
+            </ScrollRow>
           )}
 
           <div className="destinations__budget-range">

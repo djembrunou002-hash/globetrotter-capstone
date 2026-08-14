@@ -15,6 +15,7 @@ import { readFilterState, writeFilterState } from '../utils/filterStorage.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
+import ScrollRow from '../components/ScrollRow.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import AiAssistant from '../components/AiAssistant.jsx'
 import '../styles/Home.css'
@@ -191,7 +192,7 @@ function Home() {
 
       {availableTypes.length > 0 && (
         <div className="home__filters" role="group" aria-label={t('home.filtersLabel')}>
-          <div className="home__filter-row">
+          <ScrollRow className="home__filter-row">
             {availableTypes.map(type => (
               <button
                 key={type}
@@ -203,9 +204,9 @@ function Home() {
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
-          </div>
+          </ScrollRow>
 
-          <div className="home__filter-row">
+          <ScrollRow className="home__filter-row">
             {BUDGET_LEVELS.map(level => (
               <button
                 key={level}
@@ -217,7 +218,7 @@ function Home() {
                 {t(`budgetLevels.${level}`)}
               </button>
             ))}
-          </div>
+          </ScrollRow>
 
           <div className="home__budget-range">
             <label className="home__budget-range-field">
