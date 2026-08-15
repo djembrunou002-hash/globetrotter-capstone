@@ -41,12 +41,16 @@
   justify-content: center;
   background: rgba(11, 19, 15, 0);
   pointer-events: none;
-  transition: background 0.25s ease;
+  overflow: hidden;
+  visibility: hidden;
+  transition: background 0.25s ease, visibility 0s linear 0.28s;
 }
 
 .add-to-itinerary__backdrop--open {
   background: rgba(11, 19, 15, 0.45);
   pointer-events: auto;
+  visibility: visible;
+  transition: background 0.25s ease, visibility 0s;
 }
 
 .add-to-itinerary__sheet {
