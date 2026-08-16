@@ -1,119 +1,179 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { shareItinerary, unshareItinerary, getSharedUsers } from '../services/itineraryService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
-import '../styles/ReorderItineraryModal.css'
+import '../styles/ShareItineraryModal.css'
 
-function ReorderItineraryModal({ itinerary, destinations, onClose }) {
-  const navigate = useNavigate()
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function formatPhoneNumber(number) {
+  if (!number) return ''
+  const match = number.match(/^(\+237)(\d{9})$/)
+  if (!match) return number
+  return `${match[1]} ${match[2]}`
+}
+
+function ShareItineraryModal({ itinerary, onClose }) {
   const { t } = useTranslation()
-  const [orderedIds, setOrderedIds] = useState([])
+  const [contact, setContact] = useState('')
+  const [sharedUsers, setSharedUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [removingId, setRemovingId] = useState(null)
 
-  const orderedSet = new Set(orderedIds)
-  const hasSelection = orderedIds.length > 0
+  useEffect(() => {
+    let active = true
 
-  function handleToggle(destinationId) {
-    setOrderedIds(prev => {
-      if (prev.includes(destinationId)) {
-        return prev.filter(id => id !== destinationId)
+    async function loadSharedUsers() {
+      setLoadingUsers(true)
+      try {
+        const response = await getSharedUsers(itinerary.id)
+        if (active) setSharedUsers(response.shared_users || [])
+      } catch (err) {
+        if (active) setError(err.message)
+      } finally {
+        if (active) setLoadingUsers(false)
       }
-      return [...prev, destinationId]
-    })
+    }
+
+    loadSharedUsers()
+
+    return () => {
+      active = false
+    }
+  }, [itinerary.id])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+
+    const trimmed = contact.trim()
+    if (!trimmed) {
+      setError(t('share.contactRequired'))
+      return
+    }
+
+    let payload
+    if (trimmed.includes('@')) {
+      if (!EMAIL_REGEX.test(trimmed)) {
+        setError(t('validation.invalidEmail'))
+        return
+      }
+      payload = { email: trimmed }
+    } else {
+      const digits = trimmed.replace(/\D/g, '')
+      if (digits.length !== 9) {
+        setError(t('share.invalidContact'))
+        return
+      }
+      payload = { number: `+237${digits}` }
+    }
+
+    setSubmitting(true)
+    try {
+      const response = await shareItinerary(itinerary.id, payload)
+      setSharedUsers(prev => [...prev, response.shared_user])
+      setContact('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  function handleReset() {
-    setOrderedIds([])
-  }
-
-  function handleConfirm() {
-    navigate(`/map?itinerary=${itinerary.id}&stops=${orderedIds.join(',')}`)
-  }
-
-  function handleUseCurrentOrder() {
-    navigate(`/map?itinerary=${itinerary.id}`)
+  async function handleRemove(userId) {
+    setError('')
+    setRemovingId(userId)
+    try {
+      await unshareItinerary(itinerary.id, userId)
+      setSharedUsers(prev => prev.filter(u => u.id !== userId))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRemovingId(null)
+    }
   }
 
   return (
-    <div className="reorder-modal__backdrop" onClick={onClose}>
+    <div className="itinerary-modal__backdrop" onClick={onClose}>
       <div
-        className="reorder-modal__sheet"
+        className="itinerary-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={t('reorder.title')}
+        aria-label={t('share.aria')}
         onClick={e => e.stopPropagation()}
       >
-        <div className="reorder-modal__handle" />
+        <button
+          type="button"
+          className="itinerary-modal__close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
 
-        <div className="reorder-modal__header">
-          <p className="reorder-modal__title">{t('reorder.title')}</p>
-          <button type="button" className="reorder-modal__close" onClick={onClose} aria-label={t('common.close')}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
+        <h2 className="itinerary-modal__heading">
+          {t('share.heading', { title: itinerary.title })}
+        </h2>
+
+        <form onSubmit={handleSubmit} noValidate>
+          {error && <p className="itinerary-modal__error">{error}</p>}
+
+          <label htmlFor="share-contact">{t('share.contactLabel')}</label>
+          <input
+            id="share-contact"
+            type="text"
+            placeholder={t('share.contactPlaceholder')}
+            value={contact}
+            onChange={e => setContact(e.target.value)}
+          />
+
+          <button type="submit" className="itinerary-modal__submit" disabled={submitting}>
+            {submitting ? t('share.submitting') : t('share.submit')}
           </button>
-        </div>
+        </form>
 
-        <p className="reorder-modal__hint">
-          {t('reorder.hint')}
-        </p>
+        <div className="share-modal__list">
+          <p className="share-modal__list-heading">{t('share.listHeading')}</p>
 
-        <div className="reorder-modal__body">
-          <ul className="reorder-modal__list">
-            {destinations.map(destination => {
-              const position = orderedIds.indexOf(destination.id)
-              const isSelected = orderedSet.has(destination.id)
-              return (
-                <li key={destination.id}>
+          {loadingUsers && <p className="share-modal__list-status">{t('common.loading')}</p>}
+
+          {!loadingUsers && sharedUsers.length === 0 && (
+            <p className="share-modal__list-status">{t('share.none')}</p>
+          )}
+
+          {!loadingUsers && sharedUsers.length > 0 && (
+            <ul className="share-modal__users">
+              {sharedUsers.map(user => (
+                <li key={user.id} className="share-modal__user">
+                  <div className="share-modal__user-avatar">
+                    {(user.name || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="share-modal__user-info">
+                    <span className="share-modal__user-name">{user.name}</span>
+                    <span className="share-modal__user-contact">
+                      {user.email || formatPhoneNumber(user.number)}
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    className={`reorder-modal__item ${isSelected ? 'reorder-modal__item--selected' : ''}`}
-                    onClick={() => handleToggle(destination.id)}
+                    className="share-modal__user-remove"
+                    onClick={() => handleRemove(user.id)}
+                    disabled={removingId === user.id}
+                    aria-label={t('share.removeAria', { name: user.name })}
                   >
-                    <span
-                      className={`reorder-modal__badge ${isSelected ? 'reorder-modal__badge--selected' : ''}`}
-                    >
-                      {isSelected ? position + 1 : ''}
-                    </span>
-                    <span className="reorder-modal__item-info">
-                      <span className="reorder-modal__item-title">{destination.name}</span>
-                      {destination.area && (
-                        <span className="reorder-modal__item-meta">{destination.area}</span>
-                      )}
-                    </span>
+                    {removingId === user.id ? '...' : t('common.remove')}
                   </button>
                 </li>
-              )
-            })}
-          </ul>
-        </div>
-
-        <div className="reorder-modal__footer">
-          <button
-            type="button"
-            className="reorder-modal__secondary"
-            onClick={handleReset}
-            disabled={orderedIds.length === 0}
-          >
-            {t('reorder.reset')}
-          </button>
-          <button
-            type="button"
-            className="reorder-modal__secondary"
-            onClick={handleUseCurrentOrder}
-          >
-            {t('reorder.useCurrentOrder')}
-          </button>
-          <button
-            type="button"
-            className="reorder-modal__primary"
-            onClick={handleConfirm}
-            disabled={!hasSelection}
-          >
-            {t('reorder.viewRoute')}
-          </button>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-export default ReorderItineraryModal
+export default ShareItineraryModal

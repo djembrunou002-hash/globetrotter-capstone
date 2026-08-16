@@ -41,16 +41,12 @@
   justify-content: center;
   background: rgba(11, 19, 15, 0);
   pointer-events: none;
-  overflow: hidden;
-  visibility: hidden;
-  transition: background 0.25s ease, visibility 0s linear 0.28s;
+  transition: background 0.25s ease;
 }
 
 .add-to-itinerary__backdrop--open {
   background: rgba(11, 19, 15, 0.45);
   pointer-events: auto;
-  visibility: visible;
-  transition: background 0.25s ease, visibility 0s;
 }
 
 .add-to-itinerary__sheet {
@@ -61,13 +57,20 @@
   border-radius: 22px 22px 0 0;
   display: flex;
   flex-direction: column;
-  transform: translateY(100%);
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.28s ease;
+  transform: translateY(101%);
+  visibility: hidden;
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s linear 0.28s,
+              box-shadow 0.28s ease;
 }
 
 .add-to-itinerary__sheet--open {
   transform: translateY(0);
+  visibility: visible;
   box-shadow: 0 -16px 40px rgba(11, 61, 36, 0.22);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s,
+              box-shadow 0.28s ease;
 }
 
 .add-to-itinerary__handle {

@@ -296,6 +296,7 @@ export const translations = {
     },
     share: {
       heading: 'Share "{{title}}"',
+      aria: 'Share itinerary',
       contactLabel: 'Email or phone number',
       contactPlaceholder: 'name@email.com or 677123456',
       submit: 'Share',
@@ -879,6 +880,7 @@ export const translations = {
     },
     share: {
       heading: 'Partager "{{title}}"',
+      aria: "Partager l'itinéraire",
       contactLabel: 'E-mail ou numéro de téléphone',
       contactPlaceholder: 'nom@email.com ou 677123456',
       submit: 'Partager',

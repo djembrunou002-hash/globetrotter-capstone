@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import LanguageProvider from './context/LanguageProvider.jsx'
 import ItineraryDraftProvider from './context/ItineraryDraftProvider.jsx'
 import NotificationsProvider from './context/NotificationsProvider.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Landing from './pages/Landing.jsx'
 import Register from './pages/Register.jsx'
 import Login from './pages/Login.jsx'
@@ -23,6 +24,39 @@ import MyDestinationDetails from './pages/MyDestinationDetails.jsx'
 import DestinationForm from './pages/DestinationForm.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
 
+function AppRoutes() {
+  const location = useLocation()
+
+  return (
+    <ErrorBoundary resetKey={location.pathname}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/select-style" element={<SelectStyle />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/destinations" element={<Destinations />} />
+        <Route path="/destinations/:id" element={<DestinationDetails />} />
+        <Route path="/itineraries" element={<Itineraries />} />
+        <Route path="/itineraries/:id" element={<ItineraryDetails />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/my-destinations" element={<MyDestinations />} />
+        <Route path="/my-destinations/new" element={<DestinationForm mode="create" />} />
+        <Route path="/my-destinations/:id/edit" element={<DestinationForm mode="edit" />} />
+        <Route path="/my-destinations/:id" element={<MyDestinationDetails />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/destinations/:id/edit" element={<DestinationForm mode="admin-edit" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ErrorBoundary>
+  )
+}
+
 function App() {
   return (
     <LanguageProvider>
@@ -30,30 +64,7 @@ function App() {
         <ScrollToTop />
         <NotificationsProvider>
           <ItineraryDraftProvider>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/verify-otp" element={<VerifyOtp />} />
-              <Route path="/select-style" element={<SelectStyle />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/destinations" element={<Destinations />} />
-              <Route path="/destinations/:id" element={<DestinationDetails />} />
-              <Route path="/itineraries" element={<Itineraries />} />
-              <Route path="/itineraries/:id" element={<ItineraryDetails />} />
-              <Route path="/map" element={<MapPage />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/my-destinations" element={<MyDestinations />} />
-              <Route path="/my-destinations/new" element={<DestinationForm mode="create" />} />
-              <Route path="/my-destinations/:id/edit" element={<DestinationForm mode="edit" />} />
-              <Route path="/my-destinations/:id" element={<MyDestinationDetails />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/destinations/:id/edit" element={<DestinationForm mode="admin-edit" />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppRoutes />
           </ItineraryDraftProvider>
         </NotificationsProvider>
       </BrowserRouter>

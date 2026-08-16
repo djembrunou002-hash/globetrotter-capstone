@@ -171,3 +171,12 @@
     margin-inline: auto;
   }
 }
+
+.home__filters .scroll-row {
+  --scroll-row-bg: var(--color-sand);
+}
+
+.home__filter-row {
+  padding: 2px 30px;
+  scroll-padding-inline: 30px;
+}
