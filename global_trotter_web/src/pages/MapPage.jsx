@@ -19,9 +19,9 @@ const REROUTE_THRESHOLD_METERS = 50
 const NEARBY_REFRESH_THRESHOLD_METERS = 400
 const NEARBY_RADIUS_METERS = 1500
 const NEARBY_MERGE_DISTANCE_METERS = 500
-const TRAVEL_MODES = ['drive', 'walk', 'bicycle']
+const TRAVEL_MODES = ['drive', 'motorcycle', 'walk', 'bicycle']
 const DEFAULT_TRAVEL_MODE = 'drive'
-const FALLBACK_SPEED_MPS = { drive: 6.9, walk: 1.35, bicycle: 4.2 }
+const FALLBACK_SPEED_MPS = { drive: 6.9, motorcycle: 7.5, walk: 1.35, bicycle: 4.2 }
 const MAX_ROUTE_WAYPOINTS = 10
 const MAP_STATE_STORAGE_KEY = 'globaltrotter:map-last-view'
 
@@ -361,7 +361,7 @@ function MapPage() {
 
     async function loadRoute() {
       try {
-        const geojson = await getRoute(routeWaypoints, travelMode, travelMode === 'drive' ? 'balanced' : 'short')
+        const geojson = await getRoute(routeWaypoints, travelMode, travelMode === 'drive' || travelMode === 'motorcycle' ? 'balanced' : 'short')
         if (!active) return
         setRoute(geojson)
         setRouteIsFallback(false)
@@ -1055,6 +1055,27 @@ function MapPage() {
                 <path d="M5.5 17l4-8h5" />
                 <path d="M9.5 9l4.5 8" />
                 <path d="M14.5 9l1.5-3h2" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={travelMode === 'motorcycle' ? 'is-active' : ''}
+              disabled={routeLoading}
+              aria-pressed={travelMode === 'motorcycle'}
+              aria-label={t('map.byMotorbike')}
+              title={t('map.byMotorbike')}
+              onClick={event => {
+                event.stopPropagation()
+                setTravelMode('motorcycle')
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="5" cy="17" r="3" />
+                <circle cx="19" cy="17" r="3" />
+                <path d="M5 17h4l4-6h3" />
+                <path d="M13 11l3 6" />
+                <path d="M15 8h3l1 2" />
+                <path d="M9 8h3" />
               </svg>
             </button>
             <button
