@@ -142,6 +142,7 @@
 
 .destination-card__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -153,6 +154,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: none;
   border: 1px solid #DED6C2;
   border-radius: 999px;
@@ -172,6 +178,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
   background: none;
   border: 1px solid #DED6C2;
   border-radius: 999px;

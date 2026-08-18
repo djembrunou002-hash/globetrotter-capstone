@@ -159,6 +159,7 @@
 
 .reorder-modal__footer {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 16px 20px 24px;
   flex-shrink: 0;

@@ -369,6 +369,7 @@
 
 .request-modal__footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 18px;

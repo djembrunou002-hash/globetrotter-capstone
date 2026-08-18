@@ -99,6 +99,7 @@
 
 .pending-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: auto;
   padding-top: 12px;
@@ -107,7 +108,8 @@
 .pending-card__approve,
 .pending-card__reject,
 .pending-card__delete {
-  flex: 1;
+  flex: 1 1 100px;
+  min-width: 0;
   padding: 10px;
   border-radius: 999px;
   font-family: var(--font-body);

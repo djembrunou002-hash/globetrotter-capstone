@@ -132,6 +132,7 @@
 
 .manage-card__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: auto;
   padding-top: 12px;
@@ -139,7 +140,8 @@
 
 .manage-card__edit,
 .manage-card__delete {
-  flex: 1;
+  flex: 1 1 120px;
+  min-width: 0;
   padding: 10px;
   border-radius: 999px;
   font-family: var(--font-body);
