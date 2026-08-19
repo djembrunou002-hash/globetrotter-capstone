@@ -229,6 +229,9 @@
 .destinations__filter-pill {
   flex-shrink: 0;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid #E7DFC9;

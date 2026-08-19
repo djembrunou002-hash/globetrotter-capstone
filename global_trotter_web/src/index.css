@@ -70,3 +70,9 @@ img {
   position: static;
   background: var(--color-sand);
 }
+
+.filter-pill__icon {
+  font-size: 0.95em;
+  line-height: 1;
+  flex-shrink: 0;
+}

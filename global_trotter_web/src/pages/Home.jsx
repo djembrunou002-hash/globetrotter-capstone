@@ -16,6 +16,7 @@ import { useTranslation } from '../hooks/useTranslation.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import ScrollRow from '../components/ScrollRow.jsx'
+import { getTypeIcon, getBudgetIcon } from '../utils/filterIcons.js'
 import BottomNav from '../components/Bottomnav.jsx'
 import AiAssistant from '../components/AiAssistant.jsx'
 import '../styles/Home.css'
@@ -201,6 +202,7 @@ function Home() {
                 onClick={() => toggleTypeFilter(type)}
                 aria-pressed={typeFilters.has(type)}
               >
+                <span className="filter-pill__icon" aria-hidden="true">{getTypeIcon(type)}</span>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
@@ -215,6 +217,7 @@ function Home() {
                 onClick={() => toggleBudgetFilter(level)}
                 aria-pressed={budgetFilters.has(level)}
               >
+                <span className="filter-pill__icon" aria-hidden="true">{getBudgetIcon(level)}</span>
                 {t(`budgetLevels.${level}`)}
               </button>
             ))}

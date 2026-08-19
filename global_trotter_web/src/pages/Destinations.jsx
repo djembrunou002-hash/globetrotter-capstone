@@ -17,6 +17,7 @@ import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import ScrollRow from '../components/ScrollRow.jsx'
+import { getTypeIcon, getBudgetIcon, getTagIcon } from '../utils/filterIcons.js'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import '../styles/Destinations.css'
@@ -343,6 +344,7 @@ function Destinations() {
                 onClick={() => toggleTypeFilter(type)}
                 aria-pressed={typeFilters.has(type)}
               >
+                <span className="filter-pill__icon" aria-hidden="true">{getTypeIcon(type)}</span>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
@@ -357,6 +359,7 @@ function Destinations() {
                 onClick={() => toggleBudgetFilter(level)}
                 aria-pressed={budgetFilters.has(level)}
               >
+                <span className="filter-pill__icon" aria-hidden="true">{getBudgetIcon(level)}</span>
                 {t(`budgetLevels.${level}`)}
               </button>
             ))}
@@ -372,6 +375,7 @@ function Destinations() {
                   onClick={() => toggleTagFilter(tag)}
                   aria-pressed={tagFilters.has(tag)}
                 >
+                  <span className="filter-pill__icon" aria-hidden="true">{getTagIcon(tag)}</span>
                   {tag}
                 </button>
               ))}
