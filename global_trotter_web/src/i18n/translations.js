@@ -254,6 +254,7 @@ export const translations = {
       select: 'Select {{title}}',
       deselect: 'Deselect {{title}}',
       options: 'Itinerary options',
+      edit: 'Edit itinerary',
       share: 'Share itinerary',
       delete: 'Delete itinerary',
       sharedBy: 'Shared by {{name}}'
@@ -271,6 +272,9 @@ export const translations = {
       endDate: 'End date',
       submit: 'Create itinerary',
       submitting: 'Creating itinerary...',
+      editHeading: 'Edit itinerary',
+      save: 'Save changes',
+      saving: 'Saving...',
       titleRequired: 'Title is required',
       destinationRequired: 'Choose at least one destination',
       datesRequired: 'Start and end dates are required'
@@ -839,6 +843,7 @@ export const translations = {
       select: 'Sélectionner {{title}}',
       deselect: 'Désélectionner {{title}}',
       options: "Options de l'itinéraire",
+      edit: "Modifier l'itinéraire",
       share: "Partager l'itinéraire",
       delete: "Supprimer l'itinéraire",
       sharedBy: 'Partagé par {{name}}'
@@ -856,6 +861,9 @@ export const translations = {
       endDate: 'Date de fin',
       submit: "Créer l'itinéraire",
       submitting: "Création de l'itinéraire...",
+      editHeading: "Modifier l'itinéraire",
+      save: 'Enregistrer les modifications',
+      saving: 'Enregistrement...',
       titleRequired: 'Le titre est requis',
       destinationRequired: 'Choisissez au moins une destination',
       datesRequired: 'Les dates de début et de fin sont requises'

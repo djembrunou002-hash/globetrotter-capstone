@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getItineraries, createItinerary, deleteItinerary, deleteItineraries } from '../services/itineraryService.js'
+import { getItineraries, createItinerary, updateItinerary, deleteItinerary, deleteItineraries } from '../services/itineraryService.js'
 import { getDestinations } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import PlanetLoader from '../components/PlanetLoader.jsx'
@@ -16,7 +16,7 @@ import '../styles/Itineraries.css'
 
 function Itineraries() {
   const navigate = useNavigate()
-  const { formOpen, openForm, closeForm } = useItineraryDraft()
+  const { formOpen, openForm, openFormForEdit, closeForm, editingId } = useItineraryDraft()
   const { t } = useTranslation()
 
   const [itineraries, setItineraries] = useState([])
@@ -70,14 +70,26 @@ function Itineraries() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      const response = await createItinerary(payload)
-      setItineraries(prev => [{ ...response.itinerary, is_owner: true }, ...prev])
+      if (editingId) {
+        const response = await updateItinerary(editingId, payload)
+        setItineraries(prev =>
+          prev.map(i => (i.id === editingId ? { ...i, ...response.itinerary } : i))
+        )
+      } else {
+        const response = await createItinerary(payload)
+        setItineraries(prev => [{ ...response.itinerary, is_owner: true }, ...prev])
+      }
       closeForm()
     } catch (err) {
       setSubmitError(err.message)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleRequestEdit(itinerary) {
+    setSubmitError('')
+    openFormForEdit(itinerary)
   }
 
   function handleStartDeleteMode() {
@@ -213,6 +225,7 @@ function Itineraries() {
                 onToggleSelect={toggleSelectForDeletion}
                 onRequestDelete={handleRequestSingleDelete}
                 onRequestShare={handleRequestShare}
+                onRequestEdit={handleRequestEdit}
               />
             ))}
           </div>

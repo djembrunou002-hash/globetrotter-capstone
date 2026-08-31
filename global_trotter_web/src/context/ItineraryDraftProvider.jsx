@@ -5,6 +5,7 @@ function ItineraryDraftProvider({ children }) {
   const [formOpen, setFormOpen] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
   const [draft, setDraft] = useState(EMPTY_DRAFT)
+  const [editingId, setEditingId] = useState(null)
 
   function updateDraft(fields) {
     setDraft(prev => ({ ...prev, ...fields }))
@@ -37,13 +38,27 @@ function ItineraryDraftProvider({ children }) {
   }
 
   function openForm() {
+    setEditingId(null)
     setDraft(EMPTY_DRAFT)
+    setFormOpen(true)
+  }
+
+  function openFormForEdit(itinerary) {
+    setEditingId(itinerary.id)
+    setDraft({
+      title: itinerary.title || '',
+      tags: (itinerary.tags || []).join(', '),
+      startDate: itinerary.start_date || '',
+      endDate: itinerary.end_date || '',
+      selectedDestinationIds: [...(itinerary.destinations || [])]
+    })
     setFormOpen(true)
   }
 
   function closeForm() {
     setFormOpen(false)
     setSelectionMode(false)
+    setEditingId(null)
     setDraft(EMPTY_DRAFT)
   }
 
@@ -51,12 +66,15 @@ function ItineraryDraftProvider({ children }) {
     formOpen,
     selectionMode,
     draft,
+    editingId,
+    isEditing: editingId !== null,
     updateDraft,
     toggleDestination,
     startSelection,
     confirmSelection,
     cancelSelection,
     openForm,
+    openFormForEdit,
     closeForm
   }
 

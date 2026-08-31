@@ -9,7 +9,8 @@ function ItineraryCard({
   selected = false,
   onToggleSelect,
   onRequestDelete,
-  onRequestShare
+  onRequestShare,
+  onRequestEdit
 }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -37,6 +38,11 @@ function ItineraryCard({
   function handleRequestShare() {
     setMenuOpen(false)
     onRequestShare(itinerary)
+  }
+
+  function handleRequestEdit() {
+    setMenuOpen(false)
+    onRequestEdit(itinerary)
   }
 
   return (
@@ -111,6 +117,9 @@ function ItineraryCard({
                   }}
                 />
                 <div className="itinerary-card__menu" onClick={e => e.stopPropagation()}>
+                  <button type="button" className="itinerary-card__menu-item" onClick={handleRequestEdit}>
+                    {t('itineraryCard.edit')}
+                  </button>
                   <button type="button" className="itinerary-card__menu-item" onClick={handleRequestShare}>
                     {t('itineraryCard.share')}
                   </button>

@@ -28,6 +28,13 @@ export function reorderItinerary(itineraryId, orderedDestinationIds) {
   })
 }
 
+export function updateItinerary(itineraryId, payload) {
+  return apiRequest(`/itineraries/${itineraryId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
 export function deleteItinerary(itineraryId) {
   return apiRequest(`/itineraries/${itineraryId}`, {
     method: 'DELETE'

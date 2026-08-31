@@ -5,7 +5,7 @@ import { useTranslation } from '../hooks/useTranslation.js'
 
 function AddItineraryModal({ destinations, onClose, onSubmit, submitting, submitError }) {
   const navigate = useNavigate()
-  const { draft, updateDraft, startSelection } = useItineraryDraft()
+  const { draft, updateDraft, startSelection, isEditing } = useItineraryDraft()
   const { t } = useTranslation()
   const [validationError, setValidationError] = useState('')
 
@@ -48,14 +48,14 @@ function AddItineraryModal({ destinations, onClose, onSubmit, submitting, submit
 
   return (
     <div className="itinerary-modal__backdrop">
-      <div className="itinerary-modal" role="dialog" aria-modal="true" aria-label={t('addItinerary.heading')}>
+      <div className="itinerary-modal" role="dialog" aria-modal="true" aria-label={isEditing ? t('addItinerary.editHeading') : t('addItinerary.heading')}>
         <button type="button" className="itinerary-modal__close" onClick={onClose} aria-label={t('common.close')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
 
-        <h2 className="itinerary-modal__heading">{t('addItinerary.heading')}</h2>
+        <h2 className="itinerary-modal__heading">{isEditing ? t('addItinerary.editHeading') : t('addItinerary.heading')}</h2>
 
         <form onSubmit={handleSubmit} noValidate>
           {(validationError || submitError) && (
@@ -122,7 +122,9 @@ function AddItineraryModal({ destinations, onClose, onSubmit, submitting, submit
           </div>
 
           <button type="submit" className="itinerary-modal__submit" disabled={submitting}>
-            {submitting ? t('addItinerary.submitting') : t('addItinerary.submit')}
+            {submitting
+              ? t(isEditing ? 'addItinerary.saving' : 'addItinerary.submitting')
+              : t(isEditing ? 'addItinerary.save' : 'addItinerary.submit')}
           </button>
         </form>
       </div>
