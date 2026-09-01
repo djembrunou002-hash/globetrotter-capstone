@@ -76,6 +76,30 @@ services:
       - user-service
     restart: unless-stopped
 
+  chat-service:
+    build: ./chat-service
+    container_name: gt-chat-service
+    environment:
+      PORT: 5004
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
+      USER_SERVICE_URL: http://user-service:5001
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-50}
+    volumes:
+      - ./chat-service/data:/app/data
+    ports:
+      - "${CHAT_BIND:-0.0.0.0:5004}:5004"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5004/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - user-service
+    restart: unless-stopped
+
   api-gateway:
     build: ./api-gateway
     container_name: gt-api-gateway

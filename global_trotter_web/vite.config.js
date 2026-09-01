@@ -24,6 +24,12 @@ export default defineConfig(({ command }) => ({
   plugins: [react(), copyMaplibreWorker()],
   optimizeDeps: command === 'serve' ? { exclude: ['maplibre-gl'] } : {},
   server: {
-    host: true
+    host: true,
+    proxy: {
+      '/socket.io': {
+        target: 'http://localhost:5004',
+        ws: true
+      }
+    }
   },
 }))

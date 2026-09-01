@@ -553,11 +553,34 @@ export const translations = {
       destinations: 'Destinations',
       home: 'Home',
       itineraries: 'Itineraries',
+      chat: 'Chat',
       profile: 'Profile',
       finishSelectionFirst: 'Confirm or cancel your destination selection first'
     },
     notifications: {
       new: 'New updates'
+    },
+    chat: {
+      title: 'General chat',
+      gateTitle: 'Join the conversation',
+      gateText: 'Messages here are visible to every traveller on GlobalTrotter. You only see the chat once you join.',
+      join: 'Join general chat',
+      leave: 'Leave',
+      connecting: 'Connecting...',
+      connectionFailed: 'Could not reach the chat. Check your connection and try again.',
+      reconnecting: 'Connection lost, reconnecting...',
+      notSignedIn: 'Sign in to join the chat',
+      empty: 'No messages yet. Say hello.',
+      placeholder: 'Write a message',
+      send: 'Send',
+      reply: 'Reply',
+      replyingTo: 'Replying to {{name}}',
+      editing: 'Editing your message',
+      edited: 'edited',
+      deletedMessage: 'Message deleted',
+      messageOptions: 'Message options',
+      deleteTitle: 'Delete this message?',
+      deleteMessage: 'It will be removed for everyone in the chat.'
     },
     profile: {
       title: 'Profile',
@@ -1142,11 +1165,34 @@ export const translations = {
       destinations: 'Destinations',
       home: 'Accueil',
       itineraries: 'Itinéraires',
+      chat: 'Discussion',
       profile: 'Profil',
       finishSelectionFirst: "Confirmez ou annulez d'abord votre sélection de destinations"
     },
     notifications: {
       new: 'Nouveautés'
+    },
+    chat: {
+      title: 'Discussion générale',
+      gateTitle: 'Rejoindre la conversation',
+      gateText: 'Les messages ici sont visibles par tous les voyageurs de GlobalTrotter. Vous ne voyez la discussion qu’après l’avoir rejointe.',
+      join: 'Rejoindre la discussion',
+      leave: 'Quitter',
+      connecting: 'Connexion...',
+      connectionFailed: 'Impossible de joindre la discussion. Vérifiez votre connexion et réessayez.',
+      reconnecting: 'Connexion perdue, reconnexion...',
+      notSignedIn: 'Connectez-vous pour rejoindre la discussion',
+      empty: 'Aucun message pour le moment. Dites bonjour.',
+      placeholder: 'Écrire un message',
+      send: 'Envoyer',
+      reply: 'Répondre',
+      replyingTo: 'Réponse à {{name}}',
+      editing: 'Modification de votre message',
+      edited: 'modifié',
+      deletedMessage: 'Message supprimé',
+      messageOptions: 'Options du message',
+      deleteTitle: 'Supprimer ce message ?',
+      deleteMessage: 'Il sera retiré pour tout le monde dans la discussion.'
     },
     profile: {
       title: 'Profil',

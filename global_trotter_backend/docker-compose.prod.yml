@@ -14,6 +14,9 @@ services:
   destination-service:
     logging: *default-logging
 
+  chat-service:
+    logging: *default-logging
+
   api-gateway:
     command: ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "8", "--timeout", "60", "--access-logfile", "-", "app:app"]
     logging: *default-logging

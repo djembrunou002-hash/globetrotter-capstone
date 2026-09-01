@@ -44,6 +44,15 @@ function BottomNav() {
       )
     },
     {
+      to: '/chat',
+      label: t('nav.chat'),
+      icon: (
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.6A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" />
+        </svg>
+      )
+    },
+    {
       to: '/itineraries',
       label: t('nav.itineraries'),
       icon: (
