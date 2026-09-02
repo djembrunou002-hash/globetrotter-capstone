@@ -8,6 +8,29 @@ import { connectChat, disconnectChat } from '../services/chatService.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import '../styles/Chat.css'
 
+const JOIN_KEY = 'globaltrotter_chat_joined'
+
+function joinKeyFor(user) {
+  return user && user.id ? `${JOIN_KEY}_${user.id}` : JOIN_KEY
+}
+
+function hasJoinedBefore(user) {
+  try {
+    return localStorage.getItem(joinKeyFor(user)) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function rememberJoin(user, value) {
+  try {
+    if (value) localStorage.setItem(joinKeyFor(user), 'true')
+    else localStorage.removeItem(joinKeyFor(user))
+  } catch {
+    return
+  }
+}
+
 function formatTime(iso) {
   if (!iso) return ''
   const date = new Date(iso)
@@ -17,10 +40,11 @@ function formatTime(iso) {
 function Chat() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const currentUser = getUser()
+  const [currentUser] = useState(getUser)
+  const [autoJoin] = useState(() => hasJoinedBefore(currentUser))
 
   const [joined, setJoined] = useState(false)
-  const [connecting, setConnecting] = useState(false)
+  const [connecting, setConnecting] = useState(autoJoin)
   const [status, setStatus] = useState('')
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
@@ -42,36 +66,19 @@ function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, joined])
 
-  const teardown = useCallback(() => {
-    const socket = socketRef.current
-    if (socket) {
-      socket.off()
-      socket.emit('chat:leave')
-    }
-    disconnectChat()
-    socketRef.current = null
-  }, [])
-
-  useEffect(() => teardown, [teardown])
-
-  function handleJoin() {
-    setConnecting(true)
-    setStatus('')
-
+  const subscribe = useCallback(() => {
     const socket = connectChat()
-    if (!socket) {
-      setConnecting(false)
-      setStatus(t('chat.notSignedIn'))
-      return
-    }
+    if (!socket) return null
 
     socketRef.current = socket
 
     socket.on('connect', () => socket.emit('chat:join'))
+
     socket.on('connect_error', () => {
       setConnecting(false)
       setStatus(t('chat.connectionFailed'))
     })
+
     socket.on('disconnect', () => setStatus(t('chat.reconnecting')))
 
     socket.on('chat:history', payload => {
@@ -79,6 +86,7 @@ function Chat() {
       setConnecting(false)
       setJoined(true)
       setStatus('')
+      rememberJoin(currentUser, true)
     })
 
     socket.on('chat:message', payload => {
@@ -96,11 +104,53 @@ function Chat() {
     socket.on('chat:error', payload => setStatus(payload.error))
 
     if (socket.connected) socket.emit('chat:join')
+
+    return socket
+  }, [t, currentUser])
+
+  const teardown = useCallback(() => {
+    const socket = socketRef.current
+    if (socket) {
+      socket.off()
+      socket.emit('chat:leave')
+    }
+    disconnectChat()
+    socketRef.current = null
+  }, [])
+
+  useEffect(() => {
+    if (!autoJoin) return teardown
+
+    const socket = subscribe()
+    if (!socket) {
+      const id = setTimeout(() => {
+        setConnecting(false)
+        setStatus(t('chat.notSignedIn'))
+      }, 0)
+      return () => {
+        clearTimeout(id)
+        teardown()
+      }
+    }
+
+    return teardown
+  }, [autoJoin, subscribe, teardown, t])
+
+  function handleJoin() {
+    setConnecting(true)
+    setStatus('')
+
+    if (!subscribe()) {
+      setConnecting(false)
+      setStatus(t('chat.notSignedIn'))
+    }
   }
 
   function handleLeave() {
     teardown()
+    rememberJoin(currentUser, false)
     setJoined(false)
+    setConnecting(false)
     setMessages([])
     setDraft('')
     setReplyTo(null)
