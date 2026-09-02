@@ -580,7 +580,15 @@ export const translations = {
       deletedMessage: 'Message deleted',
       messageOptions: 'Message options',
       deleteTitle: 'Delete this message?',
-      deleteMessage: 'It will be removed for everyone in the chat.'
+      deleteMessage: 'It will be removed for everyone in the chat.',
+      recordVoice: 'Record a voice note',
+      recordingHint: 'Recording, max 60s',
+      voiceNote: 'Voice note',
+      play: 'Play',
+      pause: 'Pause',
+      micDenied: 'Microphone access was refused.',
+      micUnavailable: 'No microphone available on this device.',
+      recordingUnsupported: 'Voice notes are not supported by this browser.'
     },
     profile: {
       title: 'Profile',
@@ -1192,7 +1200,15 @@ export const translations = {
       deletedMessage: 'Message supprimé',
       messageOptions: 'Options du message',
       deleteTitle: 'Supprimer ce message ?',
-      deleteMessage: 'Il sera retiré pour tout le monde dans la discussion.'
+      deleteMessage: 'Il sera retiré pour tout le monde dans la discussion.',
+      recordVoice: 'Enregistrer un message vocal',
+      recordingHint: 'Enregistrement, 60 s max',
+      voiceNote: 'Message vocal',
+      play: 'Lire',
+      pause: 'Pause',
+      micDenied: 'L’accès au micro a été refusé.',
+      micUnavailable: 'Aucun micro disponible sur cet appareil.',
+      recordingUnsupported: 'Les messages vocaux ne sont pas pris en charge par ce navigateur.'
     },
     profile: {
       title: 'Profil',

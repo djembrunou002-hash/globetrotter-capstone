@@ -346,3 +346,132 @@
     bottom: 0;
   }
 }
+
+.chat__voice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 170px;
+}
+
+.chat__voice-play {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  cursor: pointer;
+}
+
+.chat__row--mine .chat__voice-play {
+  background: var(--color-forest);
+}
+
+.chat__voice-bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  overflow: hidden;
+}
+
+.chat__voice-bars i {
+  flex: 1;
+  min-width: 2px;
+  max-width: 3px;
+  border-radius: 999px;
+  background: #C7D6CB;
+}
+
+.chat__voice-time {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat__mic {
+  background: #fff !important;
+  color: var(--color-forest) !important;
+  border: 1px solid #E7DFC9 !important;
+}
+
+.chat__recording {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+}
+
+.chat__recording-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-ember);
+  animation: chat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.chat__recording-time {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.chat__recording-hint {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat__recording-cancel {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chat__recording-send {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-forest);
+  color: #fff;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat__recording-dot { animation: none; }
+}

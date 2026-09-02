@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5004
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5004", "--worker-class", "eventlet", "--workers", "1", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5004", "--worker-class", "eventlet", "--workers", "1", "--timeout", "120", "--access-logfile", "-", "app:app"]

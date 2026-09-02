@@ -19,3 +19,7 @@ class Config:
     HISTORY_LIMIT = int(os.environ.get("CHAT_HISTORY_LIMIT", "50"))
     MAX_MESSAGE_LENGTH = int(os.environ.get("CHAT_MAX_MESSAGE_LENGTH", "1000"))
     EDIT_WINDOW_MINUTES = int(os.environ.get("CHAT_EDIT_WINDOW_MINUTES", "15"))
+
+    VOICE_DIR = os.environ.get("CHAT_VOICE_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "voice"))
+    VOICE_MAX_SECONDS = int(os.environ.get("CHAT_VOICE_MAX_SECONDS", "60"))
+    VOICE_MAX_BYTES = int(os.environ.get("CHAT_VOICE_MAX_BYTES", str(3 * 1024 * 1024)))

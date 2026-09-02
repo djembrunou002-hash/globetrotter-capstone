@@ -9,6 +9,26 @@ import { getToken, getUser } from '../services/tokenStorage.js'
 import '../styles/Chat.css'
 
 const JOIN_KEY = 'globaltrotter_chat_joined'
+const MAX_VOICE_SECONDS = 60
+
+const MIME_CANDIDATES = [
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/mp4'
+]
+
+function pickMimeType() {
+  if (typeof MediaRecorder === 'undefined') return null
+  return MIME_CANDIDATES.find(type => MediaRecorder.isTypeSupported(type)) || ''
+}
+
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.round(seconds || 0))
+  const m = Math.floor(total / 60)
+  const sec = total % 60
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
 
 function joinKeyFor(user) {
   return user && user.id ? `${JOIN_KEY}_${user.id}` : JOIN_KEY
@@ -52,10 +72,19 @@ function Chat() {
   const [editing, setEditing] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [menuFor, setMenuFor] = useState(null)
+  const [recording, setRecording] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [playingId, setPlayingId] = useState(null)
 
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const recorderRef = useRef(null)
+  const chunksRef = useRef([])
+  const timerRef = useRef(null)
+  const cancelledRef = useRef(false)
+  const audioRefs = useRef({})
+  const startedAtRef = useRef(0)
 
   useEffect(() => {
     if (!getToken()) navigate('/login', { replace: true })
@@ -101,7 +130,10 @@ function Chat() {
       setMessages(prev => prev.filter(m => m.id !== payload.id))
     })
 
-    socket.on('chat:error', payload => setStatus(payload.error))
+    socket.on('chat:error', payload => {
+      console.error('CHAT ERROR:', payload.error)
+      setStatus(payload.error)
+    })
 
     if (socket.connected) socket.emit('chat:join')
 
@@ -109,6 +141,15 @@ function Chat() {
   }, [t, currentUser])
 
   const teardown = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    const recorder = recorderRef.current
+    if (recorder && recorder.state !== 'inactive') {
+      cancelledRef.current = true
+      recorder.stop()
+    }
     const socket = socketRef.current
     if (socket) {
       socket.off()
@@ -171,6 +212,103 @@ function Chat() {
     }
 
     setDraft('')
+  }
+
+  function stopTimer() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  async function startRecording() {
+    if (recording) return
+
+    const mimeType = pickMimeType()
+    if (mimeType === null) {
+      setStatus(t('chat.recordingUnsupported'))
+      return
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus(t('chat.micUnavailable'))
+      return
+    }
+
+    let stream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    } catch {
+      setStatus(t('chat.micDenied'))
+      return
+    }
+
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+    recorderRef.current = recorder
+    chunksRef.current = []
+    cancelledRef.current = false
+
+    recorder.ondataavailable = event => {
+      if (event.data && event.data.size > 0) chunksRef.current.push(event.data)
+    }
+
+    recorder.onstop = async () => {
+      stream.getTracks().forEach(track => track.stop())
+      stopTimer()
+
+      const seconds = (Date.now() - startedAtRef.current) / 1000
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType })
+      chunksRef.current = []
+
+      setRecording(false)
+      setElapsed(0)
+
+      if (cancelledRef.current || seconds < 1 || !socketRef.current) return
+
+      const buffer = await blob.arrayBuffer()
+      console.log('voice:', recorder.mimeType, buffer.byteLength, 'bytes,', seconds.toFixed(1), 's')
+      socketRef.current.emit('chat:voice', {
+        blob: buffer,
+        mime: recorder.mimeType,
+        duration: seconds,
+        reply_to: replyTo ? replyTo.id : null
+      })
+      setReplyTo(null)
+    }
+
+    startedAtRef.current = Date.now()
+    recorder.start()
+    setRecording(true)
+    setElapsed(0)
+    setStatus('')
+
+    timerRef.current = setInterval(() => {
+      const seconds = (Date.now() - startedAtRef.current) / 1000
+      setElapsed(seconds)
+      if (seconds >= MAX_VOICE_SECONDS) stopRecording()
+    }, 200)
+  }
+
+  function stopRecording() {
+    const recorder = recorderRef.current
+    if (recorder && recorder.state !== 'inactive') recorder.stop()
+  }
+
+  function cancelRecording() {
+    cancelledRef.current = true
+    stopRecording()
+  }
+
+  function togglePlay(messageId) {
+    const audio = audioRefs.current[messageId]
+    if (!audio) return
+
+    Object.entries(audioRefs.current).forEach(([id, el]) => {
+      if (id !== messageId && el) el.pause()
+    })
+
+    if (audio.paused) audio.play()
+    else audio.pause()
   }
 
   function startReply(message) {
@@ -258,12 +396,57 @@ function Chat() {
                   <div className="chat__quote">
                     <span className="chat__quote-author">{message.reply_preview.author_name}</span>
                     <span className="chat__quote-text">
-                      {message.reply_preview.deleted ? t('chat.deletedMessage') : message.reply_preview.text}
+                      {message.reply_preview.deleted
+                        ? t('chat.deletedMessage')
+                        : message.reply_preview.kind === 'voice'
+                          ? t('chat.voiceNote')
+                          : message.reply_preview.text}
                     </span>
                   </div>
                 )}
 
-                <p className="chat__text">{message.text}</p>
+                {message.kind === 'voice' && message.audio ? (
+                  <div className="chat__voice">
+                    <button
+                      type="button"
+                      className="chat__voice-play"
+                      onClick={() => togglePlay(message.id)}
+                      aria-label={playingId === message.id ? t('chat.pause') : t('chat.play')}
+                    >
+                      {playingId === message.id ? (
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                          <rect x="6" y="5" width="4" height="14" rx="1" />
+                          <rect x="14" y="5" width="4" height="14" rx="1" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                          <path d="M8 5l11 7-11 7z" />
+                        </svg>
+                      )}
+                    </button>
+
+                    <span className="chat__voice-bars" aria-hidden="true">
+                      {[9, 15, 7, 18, 11, 20, 8, 14, 10, 16, 6, 12].map((height, index) => (
+                        <i key={index} style={{ height: `${height}px` }} />
+                      ))}
+                    </span>
+
+                    <span className="chat__voice-time">{formatDuration(message.audio.duration)}</span>
+
+                    <audio
+                      ref={el => {
+                        audioRefs.current[message.id] = el
+                      }}
+                      src={message.audio.url}
+                      preload="none"
+                      onPlay={() => setPlayingId(message.id)}
+                      onPause={() => setPlayingId(id => (id === message.id ? null : id))}
+                      onEnded={() => setPlayingId(id => (id === message.id ? null : id))}
+                    />
+                  </div>
+                ) : (
+                  <p className="chat__text">{message.text}</p>
+                )}
 
                 <div className="chat__meta">
                   <span>{formatTime(message.created_at)}</span>
@@ -290,7 +473,7 @@ function Chat() {
                       <button type="button" onClick={() => startReply(message)}>
                         {t('chat.reply')}
                       </button>
-                      {mine && (
+                      {mine && message.kind !== 'voice' && (
                         <button type="button" onClick={() => startEdit(message)}>
                           {t('common.edit')}
                         </button>
@@ -332,23 +515,62 @@ function Chat() {
           </div>
         )}
 
-        <div className="chat__composer-row">
-          <input
-            ref={inputRef}
-            type="text"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            placeholder={t('chat.placeholder')}
-            maxLength={1000}
-            aria-label={t('chat.placeholder')}
-          />
-          <button type="submit" disabled={!draft.trim()} aria-label={t('chat.send')}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 2 11 13" />
-              <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-            </svg>
-          </button>
-        </div>
+        {recording ? (
+          <div className="chat__recording">
+            <span className="chat__recording-dot" aria-hidden="true" />
+            <span className="chat__recording-time">{formatDuration(elapsed)}</span>
+            <span className="chat__recording-hint">{t('chat.recordingHint')}</span>
+            <button type="button" className="chat__recording-cancel" onClick={cancelRecording}>
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="chat__recording-send"
+              onClick={stopRecording}
+              aria-label={t('chat.send')}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 2 11 13" />
+                <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div className="chat__composer-row">
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              placeholder={t('chat.placeholder')}
+              maxLength={1000}
+              aria-label={t('chat.placeholder')}
+            />
+
+            {draft.trim() || editing ? (
+              <button type="submit" aria-label={t('chat.send')}>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2 11 13" />
+                  <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="chat__mic"
+                onClick={startRecording}
+                aria-label={t('chat.recordVoice')}
+                title={t('chat.recordVoice')}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="2" width="6" height="11" rx="3" />
+                  <path d="M5 10a7 7 0 0 0 14 0" />
+                  <path d="M12 17v4" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
       </form>
 
       {pendingDelete && (

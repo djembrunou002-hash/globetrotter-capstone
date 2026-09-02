@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from config import Config
 from services.clients import fetch_users
 from services.storage import load_json, save_json
+from services import voice as voice_store
 
 FILE = "messages.json"
 FALLBACK_NAME = "Traveler"
@@ -38,7 +39,9 @@ def decorate(messages):
             "id": message["id"],
             "user_id": message["user_id"],
             "author_name": author.get("name") or FALLBACK_NAME,
+            "kind": message.get("kind", "text"),
             "text": message["text"],
+            "audio": message.get("audio"),
             "created_at": message["created_at"],
             "edited_at": message.get("edited_at"),
             "reply_to": message.get("reply_to"),
@@ -51,6 +54,7 @@ def decorate(messages):
             item["reply_preview"] = {
                 "id": parent["id"],
                 "author_name": parent_author.get("name") or FALLBACK_NAME,
+                "kind": parent.get("kind", "text"),
                 "text": "" if parent.get("deleted") else parent["text"],
                 "deleted": bool(parent.get("deleted")),
             }
@@ -83,7 +87,37 @@ def create(user_id, text, reply_to=None):
     message = {
         "id": f"msg_{uuid.uuid4().hex[:12]}",
         "user_id": user_id,
+        "kind": "text",
         "text": text,
+        "audio": None,
+        "reply_to": reply_to,
+        "created_at": _now(),
+        "edited_at": None,
+        "deleted": False,
+    }
+
+    data["messages"].append(message)
+    save_json(FILE, data)
+
+    return decorate([message])[0]
+
+
+def create_voice(user_id, blob, mime, duration, reply_to=None):
+    audio = voice_store.save(blob, mime, duration)
+
+    data = _load()
+
+    if reply_to:
+        parent = next((m for m in data["messages"] if m["id"] == reply_to), None)
+        if not parent or parent.get("deleted"):
+            reply_to = None
+
+    message = {
+        "id": f"msg_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id,
+        "kind": "voice",
+        "text": "",
+        "audio": audio,
         "reply_to": reply_to,
         "created_at": _now(),
         "edited_at": None,
@@ -110,6 +144,8 @@ def edit(user_id, message_id, text):
         raise LookupError("message not found")
     if message["user_id"] != user_id:
         raise PermissionError("you can only edit your own messages")
+    if message.get("kind") == "voice":
+        raise PermissionError("voice notes cannot be edited")
 
     message["text"] = text
     message["edited_at"] = _now()
@@ -127,8 +163,12 @@ def remove(user_id, message_id):
     if message["user_id"] != user_id:
         raise PermissionError("you can only delete your own messages")
 
+    if message.get("audio"):
+        voice_store.remove(message["audio"])
+
     message["deleted"] = True
     message["text"] = ""
+    message["audio"] = None
     message["edited_at"] = _now()
     save_json(FILE, data)
 
