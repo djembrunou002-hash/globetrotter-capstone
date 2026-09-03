@@ -588,7 +588,12 @@ export const translations = {
       pause: 'Pause',
       micDenied: 'Microphone access was refused.',
       micUnavailable: 'No microphone available on this device.',
-      recordingUnsupported: 'Voice notes are not supported by this browser.'
+      recordingUnsupported: 'Voice notes are not supported by this browser.',
+      attach: 'Attach a photo, video or file',
+      uploading: 'Sending',
+      imageNote: 'Photo',
+      videoNote: 'Video',
+      fileNote: 'File'
     },
     profile: {
       title: 'Profile',
@@ -1208,7 +1213,12 @@ export const translations = {
       pause: 'Pause',
       micDenied: 'L’accès au micro a été refusé.',
       micUnavailable: 'Aucun micro disponible sur cet appareil.',
-      recordingUnsupported: 'Les messages vocaux ne sont pas pris en charge par ce navigateur.'
+      recordingUnsupported: 'Les messages vocaux ne sont pas pris en charge par ce navigateur.',
+      attach: 'Joindre une photo, une vidéo ou un fichier',
+      uploading: 'Envoi',
+      imageNote: 'Photo',
+      videoNote: 'Vidéo',
+      fileNote: 'Fichier'
     },
     profile: {
       title: 'Profil',

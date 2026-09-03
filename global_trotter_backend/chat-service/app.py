@@ -4,7 +4,7 @@ eventlet.monkey_patch()
 
 import os
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, request as flask_request, send_from_directory
 from flask_jwt_extended import JWTManager, decode_token
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
@@ -13,6 +13,11 @@ from services import messages as message_store
 from services.service_client import ServiceUnavailable
 
 ROOM = "general"
+
+INLINE_MIME = {
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+    "video/mp4", "video/webm", "video/quicktime",
+}
 
 AUDIO_TYPES = {
     ".weba": "audio/webm",
@@ -54,6 +59,42 @@ def create_app():
                 break
         return response
 
+    @app.route("/media/<path:filename>", methods=["GET"])
+    def media_file(filename):
+        os.makedirs(Config.MEDIA_DIR, exist_ok=True)
+        response = send_from_directory(Config.MEDIA_DIR, filename, max_age=31536000)
+        mime = (response.headers.get("Content-Type") or "").split(";")[0].strip()
+        if mime not in INLINE_MIME:
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+            response.headers["Content-Type"] = "application/octet-stream"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @app.route("/chat/upload", methods=["POST"])
+    def upload():
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        upload_file = flask_request.files.get("file")
+        if not upload_file:
+            return jsonify({"error": "no file received"}), 400
+
+        try:
+            message = message_store.create_media(
+                user_id,
+                upload_file.stream,
+                upload_file.mimetype,
+                upload_file.filename,
+                flask_request.form.get("caption"),
+                flask_request.form.get("reply_to") or None,
+            )
+        except ValueError as err:
+            return jsonify({"error": str(err)}), 400
+
+        socketio.emit("chat:message", {"message": message}, to=ROOM)
+        return jsonify({"message": message}), 201
+
     @app.route("/health", methods=["GET"])
     def health():
         return jsonify({"service": Config.SERVICE_NAME, "status": "ok"}), 200
@@ -73,6 +114,15 @@ def _identity(token):
             return decode_token(token)["sub"]
     except Exception:
         return None
+
+
+def _identity_from_header():
+    from flask import request as req
+
+    header = req.headers.get("Authorization", "")
+    if not header.lower().startswith("bearer "):
+        return None
+    return _identity(header.split(" ", 1)[1].strip())
 
 
 def _current_user():

@@ -27,7 +27,8 @@ export default defineConfig(({ command }) => ({
     host: true,
     proxy: {
       '/socket.io': { target: 'http://localhost:5004', ws: true },
-      '/voice': { target: 'http://localhost:5004' }
+      '/voice':     { target: 'http://localhost:5004' },
+      '/media':     { target: 'http://localhost:5004' }
     }
   }
 }))

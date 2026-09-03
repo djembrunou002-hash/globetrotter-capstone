@@ -475,3 +475,123 @@
 @media (prefers-reduced-motion: reduce) {
   .chat__recording-dot { animation: none; }
 }
+
+.chat__media {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chat__media img,
+.chat__media video {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  max-height: 340px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #EFE7D4;
+}
+
+.chat__file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(11, 61, 36, 0.06);
+  color: inherit;
+}
+
+.chat__file-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-forest);
+}
+
+.chat__file-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chat__file-name {
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat__file-size {
+  font-size: 0.72rem;
+  color: var(--color-muted);
+}
+
+.chat__attach {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-forest);
+  cursor: pointer;
+}
+
+.chat__attach:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.chat__upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+}
+
+.chat__upload-label {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.chat__upload-track {
+  flex: 1;
+  min-width: 0;
+  height: 5px;
+  border-radius: 999px;
+  background: #EFE7D4;
+  overflow: hidden;
+}
+
+.chat__upload-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-forest);
+  transition: width 0.2s ease;
+}
+
+.chat__upload-pct {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}

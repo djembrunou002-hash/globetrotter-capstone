@@ -88,9 +88,11 @@ services:
       CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-50}
       CHAT_VOICE_DIR: /app/voice
       CHAT_VOICE_MAX_SECONDS: ${CHAT_VOICE_MAX_SECONDS:-60}
+      CHAT_MEDIA_DIR: /app/media
     volumes:
       - ./chat-service/data:/app/data
       - ${VOICE_HOST_DIR:-./chat-service/voice}:/app/voice
+      - ${MEDIA_HOST_DIR:-./chat-service/media}:/app/media
     ports:
       - "${CHAT_BIND:-0.0.0.0:5004}:5004"
     healthcheck:
@@ -114,10 +116,12 @@ services:
       USER_SERVICE_URL: http://user-service:5001
       ITINERARY_SERVICE_URL: http://itinerary-service:5002
       DESTINATION_SERVICE_URL: http://destination-service:5003
+      CHAT_SERVICE_URL: http://chat-service:5004
     ports:
       - "${GATEWAY_BIND:-0.0.0.0:5000}:5000"
     depends_on:
       - user-service
       - itinerary-service
       - destination-service
+      - chat-service
     restart: unless-stopped

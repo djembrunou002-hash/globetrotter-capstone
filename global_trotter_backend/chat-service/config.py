@@ -23,3 +23,8 @@ class Config:
     VOICE_DIR = os.environ.get("CHAT_VOICE_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "voice"))
     VOICE_MAX_SECONDS = int(os.environ.get("CHAT_VOICE_MAX_SECONDS", "60"))
     VOICE_MAX_BYTES = int(os.environ.get("CHAT_VOICE_MAX_BYTES", str(3 * 1024 * 1024)))
+
+    MEDIA_DIR = os.environ.get("CHAT_MEDIA_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "media"))
+    MEDIA_MAX_IMAGE_BYTES = int(os.environ.get("CHAT_MAX_IMAGE_BYTES", str(5 * 1024 * 1024)))
+    MEDIA_MAX_VIDEO_BYTES = int(os.environ.get("CHAT_MAX_VIDEO_BYTES", str(25 * 1024 * 1024)))
+    MEDIA_MAX_FILE_BYTES = int(os.environ.get("CHAT_MAX_FILE_BYTES", str(10 * 1024 * 1024)))

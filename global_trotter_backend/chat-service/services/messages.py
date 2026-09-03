@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from config import Config
 from services.clients import fetch_users
 from services.storage import load_json, save_json
+from services import media as media_store
 from services import voice as voice_store
 
 FILE = "messages.json"
@@ -42,6 +43,7 @@ def decorate(messages):
             "kind": message.get("kind", "text"),
             "text": message["text"],
             "audio": message.get("audio"),
+            "media": message.get("media"),
             "created_at": message["created_at"],
             "edited_at": message.get("edited_at"),
             "reply_to": message.get("reply_to"),
@@ -118,6 +120,38 @@ def create_voice(user_id, blob, mime, duration, reply_to=None):
         "kind": "voice",
         "text": "",
         "audio": audio,
+        "media": None,
+        "reply_to": reply_to,
+        "created_at": _now(),
+        "edited_at": None,
+        "deleted": False,
+    }
+
+    data["messages"].append(message)
+    save_json(FILE, data)
+
+    return decorate([message])[0]
+
+
+def create_media(user_id, stream, mime, original_name, caption=None, reply_to=None):
+    media = media_store.save(stream, mime, original_name)
+
+    caption = (caption or "").strip()[: Config.MAX_MESSAGE_LENGTH]
+
+    data = _load()
+
+    if reply_to:
+        parent = next((m for m in data["messages"] if m["id"] == reply_to), None)
+        if not parent or parent.get("deleted"):
+            reply_to = None
+
+    message = {
+        "id": f"msg_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id,
+        "kind": media["kind"],
+        "text": caption,
+        "audio": None,
+        "media": media,
         "reply_to": reply_to,
         "created_at": _now(),
         "edited_at": None,
@@ -144,8 +178,8 @@ def edit(user_id, message_id, text):
         raise LookupError("message not found")
     if message["user_id"] != user_id:
         raise PermissionError("you can only edit your own messages")
-    if message.get("kind") == "voice":
-        raise PermissionError("voice notes cannot be edited")
+    if message.get("kind") not in (None, "text"):
+        raise PermissionError("only text messages can be edited")
 
     message["text"] = text
     message["edited_at"] = _now()
@@ -166,9 +200,13 @@ def remove(user_id, message_id):
     if message.get("audio"):
         voice_store.remove(message["audio"])
 
+    if message.get("media"):
+        media_store.remove(message["media"])
+
     message["deleted"] = True
     message["text"] = ""
     message["audio"] = None
+    message["media"] = None
     message["edited_at"] = _now()
     save_json(FILE, data)
 

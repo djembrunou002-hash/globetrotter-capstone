@@ -3,11 +3,13 @@ from config import Config
 USER = "user-service"
 ITINERARY = "itinerary-service"
 DESTINATION = "destination-service"
+CHAT = "chat-service"
 
 SERVICE_URLS = {
     USER: Config.USER_SERVICE_URL,
     ITINERARY: Config.ITINERARY_SERVICE_URL,
     DESTINATION: Config.DESTINATION_SERVICE_URL,
+    CHAT: Config.CHAT_SERVICE_URL,
 }
 
 ROUTE_TABLE = [
@@ -30,6 +32,7 @@ ROUTE_TABLE = [
     ("places", DESTINATION),
     ("ai", DESTINATION),
     ("images", DESTINATION),
+    ("chat", CHAT),
 ]
 
 PREFIX_TO_SERVICE = dict(ROUTE_TABLE)

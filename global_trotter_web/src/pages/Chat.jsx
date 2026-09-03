@@ -5,6 +5,7 @@ import PlanetLoader from '../components/PlanetLoader.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { connectChat, disconnectChat } from '../services/chatService.js'
+import { ACCEPTED_TYPES, compressImage, uploadAttachment } from '../services/chatUpload.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import '../styles/Chat.css'
 
@@ -21,6 +22,13 @@ const MIME_CANDIDATES = [
 function pickMimeType() {
   if (typeof MediaRecorder === 'undefined') return null
   return MIME_CANDIDATES.find(type => MediaRecorder.isTypeSupported(type)) || ''
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function formatDuration(seconds) {
@@ -75,6 +83,8 @@ function Chat() {
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [playingId, setPlayingId] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
@@ -85,6 +95,7 @@ function Chat() {
   const cancelledRef = useRef(false)
   const audioRefs = useRef({})
   const startedAtRef = useRef(0)
+  const fileRef = useRef(null)
 
   useEffect(() => {
     if (!getToken()) navigate('/login', { replace: true })
@@ -299,6 +310,32 @@ function Chat() {
     stopRecording()
   }
 
+  async function handleFileChosen(event) {
+    const file = event.target.files && event.target.files[0]
+    event.target.value = ''
+    if (!file) return
+
+    setStatus('')
+    setUploading(true)
+    setProgress(0)
+
+    try {
+      const prepared = await compressImage(file)
+      await uploadAttachment(prepared, {
+        caption: draft.trim(),
+        replyTo: replyTo ? replyTo.id : null,
+        onProgress: setProgress
+      })
+      setDraft('')
+      setReplyTo(null)
+    } catch (err) {
+      setStatus(err.message)
+    } finally {
+      setUploading(false)
+      setProgress(0)
+    }
+  }
+
   function togglePlay(messageId) {
     const audio = audioRefs.current[messageId]
     if (!audio) return
@@ -400,7 +437,7 @@ function Chat() {
                         ? t('chat.deletedMessage')
                         : message.reply_preview.kind === 'voice'
                           ? t('chat.voiceNote')
-                          : message.reply_preview.text}
+                          : message.reply_preview.text || t(`chat.${message.reply_preview.kind}Note`)}
                     </span>
                   </div>
                 )}
@@ -443,6 +480,35 @@ function Chat() {
                       onPause={() => setPlayingId(id => (id === message.id ? null : id))}
                       onEnded={() => setPlayingId(id => (id === message.id ? null : id))}
                     />
+                  </div>
+                ) : message.media ? (
+                  <div className="chat__media">
+                    {message.kind === 'image' && (
+                      <a href={message.media.url} target="_blank" rel="noreferrer">
+                        <img src={message.media.url} alt={message.media.name} loading="lazy" />
+                      </a>
+                    )}
+
+                    {message.kind === 'video' && (
+                      <video src={message.media.url} controls preload="metadata" />
+                    )}
+
+                    {message.kind === 'file' && (
+                      <a className="chat__file" href={message.media.url} download>
+                        <span className="chat__file-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                          </svg>
+                        </span>
+                        <span className="chat__file-info">
+                          <span className="chat__file-name">{message.media.name}</span>
+                          <span className="chat__file-size">{formatBytes(message.media.size)}</span>
+                        </span>
+                      </a>
+                    )}
+
+                    {message.text && <p className="chat__text">{message.text}</p>}
                   </div>
                 ) : (
                   <p className="chat__text">{message.text}</p>
@@ -515,6 +581,16 @@ function Chat() {
           </div>
         )}
 
+        {uploading && (
+          <div className="chat__upload">
+            <span className="chat__upload-label">{t('chat.uploading')}</span>
+            <span className="chat__upload-track">
+              <span className="chat__upload-fill" style={{ width: `${progress}%` }} />
+            </span>
+            <span className="chat__upload-pct">{progress}%</span>
+          </div>
+        )}
+
         {recording ? (
           <div className="chat__recording">
             <span className="chat__recording-dot" aria-hidden="true" />
@@ -546,6 +622,27 @@ function Chat() {
               maxLength={1000}
               aria-label={t('chat.placeholder')}
             />
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              onChange={handleFileChosen}
+              style={{ display: 'none' }}
+            />
+
+            <button
+              type="button"
+              className="chat__attach"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              aria-label={t('chat.attach')}
+              title={t('chat.attach')}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.4 11.1 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.1a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.1a1.8 1.8 0 0 1-2.6-2.6l8.5-8.4" />
+              </svg>
+            </button>
 
             {draft.trim() || editing ? (
               <button type="submit" aria-label={t('chat.send')}>
