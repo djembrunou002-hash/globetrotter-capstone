@@ -539,3 +539,53 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - The 76 tag icons are a judgement call in places (`🍢` for soya, `🦍` for primates, `🫒` for mediterranean) and render as the platform's own emoji set, so they look different on Android and desktop
 - `ReorderItineraryModal` and `AiAssistant` use the same always-mounted, translate-off-screen pattern as the add-to-itinerary sheet. Neither reproduced the bug — a `translateY(100%)` search returns only the one file — but both are conditionally rendered rather than structurally immune, so the same `visibility` pairing would be worth applying if either is ever left mounted
 - The error boundary catches render errors only. Errors in event handlers, `setTimeout` callbacks or unhandled promise rejections do not reach it
+
+## [01-09-2026]
+
+### Added
+- **Real-time chat.** A fifth service, `chat-service`, running Flask-SocketIO on an eventlet worker at port 5004, with a `/chat` tab in the bottom nav. Everyone shares one `general` room: send, reply, edit and delete your own messages, and see everyone else's arrive live
+  - **Why a separate service rather than a route behind the gateway.** `api-gateway` forwards with `requests` — a request in, a response out. A WebSocket has no end: after the handshake there is no request and no response, just frames on a connection held open for as long as the page is in front of the user. Proxying that would mean converting the gateway to an async worker and holding one open connection per chat user on the single process that already serves login, destinations and itineraries — putting the newest feature in the path of everything that already works. Nginx routes `/socket.io/` straight to chat-service instead, and the gateway is untouched
+  - The three jobs the gateway does are still covered: Socket.IO runs its own CORS check against `ALLOWED_ORIGINS`, the JWT is verified in `on_connect` with the same shared `JWT_SECRET_KEY`, and chat-service exposes no `/internal/*` routes to block. It owns `messages.json` outright and resolves author names through `POST /internal/users/batch`, falling back to "Traveler" exactly as `comments.py` does
+  - **Auth rejects at the handshake.** Flask-SocketIO cannot read an `Authorization` header on connect, so the token travels in the connect payload; `on_connect` returns `False` on a bad or missing one, meaning an unauthenticated socket never establishes and there is no window in which events could be emitted
+  - **A join gate, not a decoration.** No socket connects until the user presses "Join general chat", and `chat:history` only fires in response to `chat:join`. Somebody who never joins holds no connection and receives nothing
+  - History is the last 50 messages on join. Deletes are soft — the record stays with `deleted: true` and empty text so replies pointing at it can still show "Message deleted" rather than losing their context
+  - Nginx gains a `/socket.io/` location with the `Upgrade` and `Connection` headers and a 3600s read timeout; without them the handshake is stripped and the connection fails with a 400
+
+### Fixed
+- Socket.IO requests arrived at `//socket.io/` with a doubled slash and never matched a route, surfacing as `Bad file descriptor` server-side and `ECONNABORTED` in the Vite proxy. `flask-socketio` expects `path` **without** a leading slash and adds one itself, while `socket.io-client` expects it **with** one — an asymmetry between the two APIs
+
+## [02-09-2026]
+
+### Added
+- **The join choice now persists**, keyed per user in `localStorage`. Returning to the chat tab rejoins automatically and only "Leave" clears it, so the opt-in is a one-time decision rather than a toll on every visit. `connecting` initialises from that flag so a returning user sees the loader immediately instead of the join button flashing first
+- **Voice notes**, sent over the socket as an `ArrayBuffer` on `chat:voice` — no base64, so no 33% size penalty. The send button becomes a microphone when the input is empty; recording shows a live timer and stops itself at 60 seconds, and anything under one second is discarded as a mis-tap. Voice notes cannot be edited, and replying to one shows "Voice note" rather than empty text. Files are written outside the repository at `/var/www/globaltrotter-voice`, and deleted when their message is
+
+### Fixed
+- The auto-join effect called `setState` synchronously in its body, which React flags as a cause of cascading renders. Split so the effect only subscribes to the socket, with every state change moved into a socket callback — the "subscribe to an external system" shape the React docs describe. `currentUser` is held in `useState` because `getUser()` parses JSON and returns a fresh object each call, which would otherwise give the effect a new identity every render and loop forever
+- Voice notes saved correctly but would not play: Flask guesses the content type from the extension and maps `.webm` to **video**/webm, which an `<audio>` element refuses. Fixed at both ends — new files are written as `.weba` and `.oga`, the audio-specific variants that `mimetypes` maps to `audio/*`, and the serving route overrides the header for the `.webm` files already on disk. Nginx needed the same treatment in production, where its own `mime.types` makes the identical guess; a `types` block is safe in that location specifically because nothing but audio is routed through it, unlike the site-wide one that broke the whole site on 02-08
+- `/voice` needed its own Vite dev proxy entry. Without it the dev server answered with `index.html`, and the browser reported "no supported source was found" — a content-type failure that reads like a missing file
+- `--access-logfile -` added to the chat-service gunicorn command. Its absence made the container logs look empty during debugging and sent two rounds of diagnosis in the wrong direction
+
+## [03-09-2026]
+
+### Added
+- **Photos, videos and files.** These deliberately do *not* use the socket: a 20 MB video held in a socket frame blocks the eventlet greenlet, spikes memory and gives no upload progress. They go over HTTP as multipart to `POST /api/chat/upload` — which the gateway forwards correctly, since `data=request.get_data()` passes the raw body and `_forward_headers()` preserves the boundary. The handler saves the file, creates the message, then `socketio.emit`s it to the room, so it appears live for everyone including the uploader. Chat now uses both paths: HTTP through the gateway for uploads, the direct socket for messaging
+  - **Images are compressed in the browser** before upload — 1600 px longest edge, JPEG quality 82, the same settings that took the destination catalogue from 340 MB to 12 MB on 02-08. A 4 MB phone photo arrives at roughly 300 KB. GIFs are skipped, since re-encoding destroys the animation
+  - Caps: 5 MB images, 25 MB video, 10 MB files. Nginx `client_max_body_size` raised to 30 MB to leave room for multipart overhead on a maximum-size video
+  - **Three measures against a public room being used as a delivery mechanism.** An extension whitelist that excludes SVG and HTML — an SVG served inline is stored XSS against every user in the chat. Non-media served with `Content-Disposition: attachment` and `application/octet-stream`, so a crafted file cannot render in the page. `X-Content-Type-Options: nosniff` on every media response, in both Flask and Nginx. Filenames are random and never derived from user input
+  - Upload progress is shown from `XMLHttpRequest`'s `upload.onprogress`, which `fetch` cannot report
+- `("chat", CHAT)` in the gateway route table with `CHAT_SERVICE_URL`, so uploads resolve to `http://chat-service:5004/chat/upload`
+- Nginx `/media/` alias serving from `/var/www/globaltrotter-media`, outside the repository
+
+### Fixed
+- StrictMode's double-mount was disconnecting the socket mid-handshake on the first pass. `disconnectChat()` now defers the disconnect until the connection completes rather than aborting it, so the handshake finishes and then closes cleanly. Dev-only, since StrictMode does not double-invoke in a production build
+- `/media` needed its own Vite dev proxy entry, the same gap as `/voice` the day before
+
+### Known limitations
+- **`--workers 1` is now load-bearing rather than merely limiting.** Broadcasting works because every connected client shares one process's memory; a second worker would deliver each message to only the half of the room connected to that worker. Redis as a Socket.IO message broker becomes a hard requirement before the Phase 3 replica count, not an optimisation
+- `messages.json` grows without bound and is written far more often than any other data file in the project, so it will reach the JSON-file ceiling before the rest
+- The upload path holds the whole file in memory twice — once in the gateway from `request.get_data()`, once in chat-service — so a 25 MB video costs 50 MB across two processes
+- Uploaded media and voice notes are deleted only when their message is. There is no sweep for files orphaned by a failed write
+- No moderation. Any signed-in user can post anything to a room everyone sees, and admin removal was deferred rather than built
+- `getUserMedia` requires a secure context, so voice recording works on `localhost` and in production but not over a LAN IP in development — the same constraint that affects the map's geolocation
+- The waveform on a voice bubble is decorative. A real one needs Web Audio analysis of the decoded file
