@@ -22,6 +22,7 @@ ROUTE_TABLE = [
     ("reset-password", USER),
     ("auth", USER),
     ("users", USER),
+    ("friends", USER),
     ("itineraries", ITINERARY),
     ("destinations", DESTINATION),
     ("favorites", DESTINATION),

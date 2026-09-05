@@ -20,6 +20,7 @@ import MapPage from './pages/MapPage.jsx'
 import Chat from './pages/Chat.jsx'
 import Profile from './pages/Profile.jsx'
 import Favorites from './pages/Favorites.jsx'
+import Friends from './pages/Friends.jsx'
 import MyDestinations from './pages/MyDestinations.jsx'
 import MyDestinationDetails from './pages/MyDestinationDetails.jsx'
 import DestinationForm from './pages/DestinationForm.jsx'
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/favorites" element={<Favorites />} />
+        <Route path="/friends" element={<Friends />} />
         <Route path="/my-destinations" element={<MyDestinations />} />
         <Route path="/my-destinations/new" element={<DestinationForm mode="create" />} />
         <Route path="/my-destinations/:id/edit" element={<DestinationForm mode="edit" />} />

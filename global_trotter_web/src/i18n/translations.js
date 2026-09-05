@@ -305,6 +305,8 @@ export const translations = {
       contactPlaceholder: 'name@email.com or 677123456',
       submit: 'Share',
       submitting: 'Sharing...',
+      friendsHeading: 'Your friends',
+      alreadyShared: 'Shared',
       listHeading: 'Shared with',
       none: 'Not shared with anyone yet.',
       removeAria: 'Remove {{name}}',
@@ -560,6 +562,21 @@ export const translations = {
     notifications: {
       new: 'New updates'
     },
+    friends: {
+      title: 'Friends',
+      subtitle: 'Add travellers by email or phone so you can share itineraries with them in one tap.',
+      addLabel: 'Email or phone number',
+      addPlaceholder: 'friend@example.com',
+      add: 'Add',
+      adding: 'Adding...',
+      loading: 'Loading your friends',
+      empty: 'No friends yet. Add someone by their email or phone number.',
+      contactRequired: 'Enter an email or phone number',
+      invalidContact: 'Enter a valid 9-digit phone number',
+      removeAria: 'Remove {{name}}',
+      removeTitle: 'Remove this friend?',
+      removeMessage: '{{name}} will no longer appear in your friends list. Itineraries you already shared stay shared.'
+    },
     chat: {
       title: 'General chat',
       gateTitle: 'Join the conversation',
@@ -604,6 +621,7 @@ export const translations = {
       memberSince: 'Member since',
       language: 'Language',
       favoriteDestinations: 'Favorite destinations',
+      friends: 'Friends',
       adminDashboard: 'Admin dashboard',
       manageDestinations: 'Manage your destinations',
       logout: 'Log out'
@@ -930,6 +948,8 @@ export const translations = {
       contactPlaceholder: 'nom@email.com ou 677123456',
       submit: 'Partager',
       submitting: 'Partage...',
+      friendsHeading: 'Vos amis',
+      alreadyShared: 'Partagé',
       listHeading: 'Partagé avec',
       none: "Pas encore partagé avec quelqu'un.",
       removeAria: 'Retirer {{name}}',
@@ -1185,6 +1205,21 @@ export const translations = {
     notifications: {
       new: 'Nouveautés'
     },
+    friends: {
+      title: 'Amis',
+      subtitle: 'Ajoutez des voyageurs par e-mail ou téléphone pour partager vos itinéraires en un seul geste.',
+      addLabel: 'E-mail ou numéro de téléphone',
+      addPlaceholder: 'ami@exemple.com',
+      add: 'Ajouter',
+      adding: 'Ajout...',
+      loading: 'Chargement de vos amis',
+      empty: 'Aucun ami pour le moment. Ajoutez quelqu’un par e-mail ou téléphone.',
+      contactRequired: 'Saisissez un e-mail ou un numéro',
+      invalidContact: 'Saisissez un numéro de 9 chiffres valide',
+      removeAria: 'Retirer {{name}}',
+      removeTitle: 'Retirer cet ami ?',
+      removeMessage: '{{name}} n’apparaîtra plus dans votre liste d’amis. Les itinéraires déjà partagés le restent.'
+    },
     chat: {
       title: 'Discussion générale',
       gateTitle: 'Rejoindre la conversation',
@@ -1229,6 +1264,7 @@ export const translations = {
       memberSince: 'Membre depuis',
       language: 'Langue',
       favoriteDestinations: 'Destinations favorites',
+      friends: 'Amis',
       adminDashboard: 'Tableau de bord admin',
       manageDestinations: 'Gérer vos destinations',
       logout: 'Se déconnecter'

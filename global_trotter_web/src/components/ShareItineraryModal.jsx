@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { shareItinerary, unshareItinerary, getSharedUsers } from '../services/itineraryService.js'
+import { getFriends } from '../services/friendService.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import '../styles/ShareItineraryModal.css'
 
@@ -16,6 +17,7 @@ function ShareItineraryModal({ itinerary, onClose }) {
   const { t } = useTranslation()
   const [contact, setContact] = useState('')
   const [sharedUsers, setSharedUsers] = useState([])
+  const [friends, setFriends] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -38,10 +40,27 @@ function ShareItineraryModal({ itinerary, onClose }) {
 
     loadSharedUsers()
 
+    getFriends()
+      .then(response => {
+        if (active) setFriends(response.friends || [])
+      })
+      .catch(() => {
+        if (active) setFriends([])
+      })
+
     return () => {
       active = false
     }
   }, [itinerary.id])
+
+  async function share(payload) {
+    share(payload)
+  }
+
+  function shareWithFriend(friend) {
+    setError('')
+    share(friend.email ? { email: friend.email } : { number: friend.number })
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -134,6 +153,35 @@ function ShareItineraryModal({ itinerary, onClose }) {
             {submitting ? t('share.submitting') : t('share.submit')}
           </button>
         </form>
+
+        {friends.length > 0 && (
+          <div className="share-modal__friends">
+            <p className="share-modal__list-heading">{t('share.friendsHeading')}</p>
+            <ul className="share-modal__friend-list">
+              {friends.map(friend => {
+                const already = sharedUsers.some(u => u.id === friend.id)
+                return (
+                  <li key={friend.id}>
+                    <button
+                      type="button"
+                      className="share-modal__friend"
+                      onClick={() => shareWithFriend(friend)}
+                      disabled={already || submitting}
+                    >
+                      <span className="share-modal__friend-avatar" aria-hidden="true">
+                        {(friend.name || '?').charAt(0).toUpperCase()}
+                      </span>
+                      <span className="share-modal__friend-name">{friend.name}</span>
+                      {already && (
+                        <span className="share-modal__friend-tag">{t('share.alreadyShared')}</span>
+                      )}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
 
         <div className="share-modal__list">
           <p className="share-modal__list-heading">{t('share.listHeading')}</p>

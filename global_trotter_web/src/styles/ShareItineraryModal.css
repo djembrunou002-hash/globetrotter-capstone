@@ -92,3 +92,70 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.share-modal__friends {
+  margin-top: 18px;
+}
+
+.share-modal__friend-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.share-modal__friend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #EFE7D4;
+  background: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.share-modal__friend:hover:not(:disabled) {
+  border-color: var(--color-forest);
+}
+
+.share-modal__friend:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.share-modal__friend-avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.share-modal__friend-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-modal__friend-tag {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}

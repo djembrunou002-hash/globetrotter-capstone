@@ -13,6 +13,7 @@ EMPTY_SCHEMAS = {
     "users.json": {"users": []},
     "otp_pending.json": {"pending": []},
     "otp_reset.json": {"resets": []},
+    "friends.json": {"links": []},
     "itineraries.json": {"itineraries": []},
     "destinations.json": {"destinations": []},
     "comments.json": {"comments": []},
