@@ -54,7 +54,16 @@ function ShareItineraryModal({ itinerary, onClose }) {
   }, [itinerary.id])
 
   async function share(payload) {
-    share(payload)
+    setSubmitting(true)
+    try {
+      const response = await shareItinerary(itinerary.id, payload)
+      setSharedUsers(prev => [...prev, response.shared_user])
+      setContact('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function shareWithFriend(friend) {
@@ -88,16 +97,7 @@ function ShareItineraryModal({ itinerary, onClose }) {
       payload = { number: `+237${digits}` }
     }
 
-    setSubmitting(true)
-    try {
-      const response = await shareItinerary(itinerary.id, payload)
-      setSharedUsers(prev => [...prev, response.shared_user])
-      setContact('')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+    share(payload)
   }
 
   async function handleRemove(userId) {

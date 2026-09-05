@@ -6,7 +6,14 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
-import { getFriends, addFriend, removeFriend } from '../services/friendService.js'
+import {
+  getFriends,
+  getFriendRequests,
+  sendFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
+  removeFriend
+} from '../services/friendService.js'
 import { getToken } from '../services/tokenStorage.js'
 import '../styles/Friends.css'
 
@@ -24,11 +31,16 @@ function Friends() {
   const headerPassed = useHeaderPassed(headerRef)
 
   const [friends, setFriends] = useState([])
+  const [incoming, setIncoming] = useState([])
+  const [outgoing, setOutgoing] = useState([])
   const [loading, setLoading] = useState(true)
   const [contact, setContact] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [busyId, setBusyId] = useState(null)
   const [pendingRemove, setPendingRemove] = useState(null)
+  const [tab, setTab] = useState('friends')
 
   useEffect(() => {
     if (!getToken()) {
@@ -38,9 +50,12 @@ function Friends() {
 
     let active = true
 
-    getFriends()
-      .then(response => {
-        if (active) setFriends(response.friends || [])
+    Promise.all([getFriends(), getFriendRequests()])
+      .then(([friendsResponse, requestsResponse]) => {
+        if (!active) return
+        setFriends(friendsResponse.friends || [])
+        setIncoming(requestsResponse.incoming || [])
+        setOutgoing(requestsResponse.outgoing || [])
       })
       .catch(err => {
         if (active) setError(err.message)
@@ -54,9 +69,14 @@ function Friends() {
     }
   }, [navigate])
 
+  function handleBack() {
+    navigate('/profile')
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    setNotice('')
 
     const trimmed = contact.trim()
     if (!trimmed) {
@@ -82,8 +102,18 @@ function Friends() {
 
     setSubmitting(true)
     try {
-      const response = await addFriend(payload)
-      setFriends(prev => [...prev, response.friend])
+      const response = await sendFriendRequest(payload)
+
+      if (response.friend) {
+        setFriends(prev => [...prev, response.friend])
+        setIncoming(prev => prev.filter(r => r.user.id !== response.friend.id))
+        setNotice(t('friends.acceptedNotice', { name: response.friend.name }))
+      } else if (response.request) {
+        setOutgoing(prev => [...prev, response.request])
+        setNotice(t('friends.requestSent', { name: response.request.user.name }))
+        setTab('requests')
+      }
+
       setContact('')
     } catch (err) {
       setError(err.message)
@@ -92,8 +122,31 @@ function Friends() {
     }
   }
 
-  function handleBack() {
-    navigate('/profile')
+  async function handleAccept(entry) {
+    setError('')
+    setBusyId(entry.id)
+    try {
+      const response = await acceptFriendRequest(entry.id)
+      setFriends(prev => [...prev, response.friend])
+      setIncoming(prev => prev.filter(r => r.id !== entry.id))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleDecline(entry) {
+    setError('')
+    setBusyId(entry.id)
+    try {
+      await declineFriendRequest(entry.id)
+      setIncoming(prev => prev.filter(r => r.id !== entry.id))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusyId(null)
+    }
   }
 
   async function confirmRemove() {
@@ -142,47 +195,145 @@ function Friends() {
               autoComplete="off"
             />
             <button type="submit" disabled={submitting}>
-              {submitting ? t('friends.adding') : t('friends.add')}
+              {submitting ? t('friends.sending') : t('friends.sendRequest')}
             </button>
           </div>
         </form>
 
         {error && <p className="friends__error">{error}</p>}
+        {notice && <p className="friends__notice">{notice}</p>}
+
+        <div className="friends__tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'friends'}
+            className={`friends__tab ${tab === 'friends' ? 'is-active' : ''}`}
+            onClick={() => setTab('friends')}
+          >
+            {t('friends.tabFriends')}
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'requests'}
+            className={`friends__tab ${tab === 'requests' ? 'is-active' : ''}`}
+            onClick={() => setTab('requests')}
+          >
+            {t('friends.tabRequests')}
+            {incoming.length > 0 && <span className="friends__dot" aria-hidden="true" />}
+          </button>
+        </div>
 
         {loading && <PlanetLoader label={t('friends.loading')} size="small" />}
 
-        {!loading && friends.length === 0 && (
-          <p className="friends__empty">{t('friends.empty')}</p>
+        {!loading && tab === 'requests' && incoming.length > 0 && (
+          <section className="friends__section">
+            <h2 className="friends__section-title">
+              {t('friends.incomingHeading')}
+              <span className="friends__count">{incoming.length}</span>
+            </h2>
+
+            <ul className="friends__grid">
+              {incoming.map(entry => (
+                <li key={entry.id} className="friend-card friend-card--request">
+                  <span className="friend-card__avatar" aria-hidden="true">
+                    {initials(entry.user.name)}
+                  </span>
+
+                  <span className="friend-card__info">
+                    <span className="friend-card__name">{entry.user.name}</span>
+                    <span className="friend-card__contact">
+                      {entry.user.email || entry.user.number}
+                    </span>
+                  </span>
+
+                  <span className="friend-card__actions">
+                    <button
+                      type="button"
+                      className="friend-card__accept"
+                      onClick={() => handleAccept(entry)}
+                      disabled={busyId === entry.id}
+                    >
+                      {t('friends.accept')}
+                    </button>
+                    <button
+                      type="button"
+                      className="friend-card__action"
+                      onClick={() => handleDecline(entry)}
+                      disabled={busyId === entry.id}
+                    >
+                      {t('friends.decline')}
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
-        {!loading && friends.length > 0 && (
-          <ul className="friends__list">
-            {friends.map(friend => (
-              <li key={friend.id} className="friend-card">
-                <span className="friend-card__avatar" aria-hidden="true">
-                  {initials(friend.name)}
-                </span>
+        {!loading && tab === 'friends' && (
+          <section className="friends__section">
+            <h2 className="friends__section-title">
+              {t('friends.listHeading')}
+              {friends.length > 0 && <span className="friends__count">{friends.length}</span>}
+            </h2>
 
-                <span className="friend-card__info">
-                  <span className="friend-card__name">{friend.name}</span>
-                  <span className="friend-card__contact">
-                    {friend.email || friend.number}
+            {friends.length === 0 ? (
+              <p className="friends__empty">{t('friends.empty')}</p>
+            ) : (
+              <ul className="friends__grid">
+                {friends.map(friend => (
+                  <li key={friend.id} className="friend-card">
+                    <span className="friend-card__avatar" aria-hidden="true">
+                      {initials(friend.name)}
+                    </span>
+
+                    <span className="friend-card__info">
+                      <span className="friend-card__name">{friend.name}</span>
+                      <span className="friend-card__contact">
+                        {friend.email || friend.number}
+                      </span>
+                    </span>
+
+                    <span className="friend-card__actions">
+                      <button
+                        type="button"
+                        className="friend-card__action friend-card__action--danger"
+                        onClick={() => setPendingRemove(friend)}
+                      >
+                        {t('common.remove')}
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {!loading && tab === 'requests' && incoming.length === 0 && outgoing.length === 0 && (
+          <p className="friends__empty">{t('friends.noRequests')}</p>
+        )}
+
+        {!loading && tab === 'requests' && outgoing.length > 0 && (
+          <section className="friends__section">
+            <h2 className="friends__section-title">{t('friends.outgoingHeading')}</h2>
+            <ul className="friends__grid">
+              {outgoing.map(entry => (
+                <li key={entry.id} className="friend-card friend-card--muted">
+                  <span className="friend-card__avatar" aria-hidden="true">
+                    {initials(entry.user.name)}
                   </span>
-                </span>
-
-                <button
-                  type="button"
-                  className="friend-card__remove"
-                  onClick={() => setPendingRemove(friend)}
-                  aria-label={t('friends.removeAria', { name: friend.name })}
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <span className="friend-card__info">
+                    <span className="friend-card__name">{entry.user.name}</span>
+                    <span className="friend-card__contact">{t('friends.awaiting')}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
 
