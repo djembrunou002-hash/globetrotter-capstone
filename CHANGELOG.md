@@ -589,3 +589,26 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - No moderation. Any signed-in user can post anything to a room everyone sees, and admin removal was deferred rather than built
 - `getUserMedia` requires a secure context, so voice recording works on `localhost` and in production but not over a LAN IP in development — the same constraint that affects the map's geolocation
 - The waveform on a voice bubble is decorative. A real one needs Web Audio analysis of the decoded file
+
+## [05-09-2026/06-09-2026]
+
+### Added
+- **Friends.** A mutual connection between two travellers, reached from a new row on the Profile page. Lives entirely in user-service, which already owns users — so unlike every other cross-cutting feature in this project, resolving names costs no service-to-service call at all
+  - `friends.json` holds one record per relationship: `{id, from_user_id, to_user_id, status, created_at, responded_at}`, where status is `pending`, `accepted` or `declined`. Auto-creates from `EMPTY_SCHEMAS`, so nothing needs seeding
+  - `GET /friends` returns accepted links from either direction, resolving whichever side is not you. `GET /friends/requests` splits pending links into incoming and outgoing. `POST /friends` creates a request by email or phone, `POST /friends/requests/<id>/accept` and `/decline` answer one, and `DELETE /friends/<id>` ends an accepted friendship regardless of who originally asked
+  - Accept and decline check `to_user_id == you` and return 403 otherwise, so only the recipient can answer a request
+  - Requesting somebody who has already requested you accepts immediately in both directions rather than creating a second pending record
+  - `("friends", USER)` added to the gateway route table
+- **The Friends page has two tabs.** *Friends* lists accepted connections; *Requests* shows incoming ones with Accept and Decline, and below them anything you have sent, greyed with "Request pending". Sending a request switches to the Requests tab automatically, so the result is visible rather than assumed. A small red dot marks the Requests tab when something needs answering — a dot rather than a count, since the number is already beside the section heading
+  - Cards are a responsive grid rather than a single stacked column, so a desktop shows several per row. The page has no `max-width` and uses the same `padding: 24px clamp(20px, 5vw, 48px)` as the destination detail page, so its content reaches as far out as the rest of the app
+- **Friends appear in the itinerary share modal**, above the existing contact field. Tapping one shares immediately; somebody already shared with is shown greyed with a "Shared" tag rather than hidden, so the current state is visible at a glance. The free-text email and phone field is untouched — sharing with a non-friend works exactly as before. If `GET /friends` fails the list is simply empty and the contact field still works, because a broken friends list should not break sharing
+
+### Fixed
+- Clicking a friend in the share modal did nothing. A patch had replaced the wrong occurrence of an identical block, leaving `share()` calling itself — infinite recursion rather than a network call, which is why the failure was silent. `handleSubmit` now delegates to the same function, so the friend list and the contact field cannot drift apart
+- The Friends page header did not match the rest of the app: the title sat below the back button rather than beside it. Now uses the same values as `Favorites.css` — centred alignment, a 36px round button, a 1.4rem title and a bottom border
+
+### Known limitations
+- Friend requests are visible only inside the app. There is no email or push notification, so somebody who does not open their Requests tab will not know one is waiting. The notification-dot system used elsewhere in the profile is not yet wired to friend requests
+- Removing a friend does not revoke itineraries already shared with them; that stays a separate action in the share modal, and the confirmation dialog says so
+- Declined requests are kept rather than deleted, so the same person cannot be re-requested after a decline without clearing the record by hand
+- `friends.json` grows with every request ever made, including declined ones, and nothing prunes it

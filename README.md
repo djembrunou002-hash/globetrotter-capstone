@@ -35,9 +35,9 @@ Five containers on a private Docker network. Two publish a port, and in producti
          user-service     itinerary-service   destination-service  chat-service
              :5001             :5002                :5003             :5004
           users.json      itineraries.json    destinations.json   messages.json
-       otp_pending.json                         comments.json        voice/
-        otp_reset.json                   destination_requests.json   media/
-                                                  uploads/
+         friends.json                            comments.json        voice/
+       otp_pending.json                  destination_requests.json    media/
+        otp_reset.json                            uploads/
 ```
 
 Each service owns its data outright and reaches the others only over REST. Cross-service calls go through `/internal/*` endpoints guarded by a shared `X-Internal-Key` header, which the gateway refuses to proxy.
@@ -70,8 +70,8 @@ File uploads are the exception — those *are* ordinary HTTP, so they go through
 │   │   └── app.py  config.py  routing.py
 │   │
 │   ├── user-service/                 # :5001 — auth, OTP, Google, preferences
-│   │   ├── data/                     # users.json, otp_pending.json, otp_reset.json
-│   │   ├── routes/                   # auth.py, users.py, internal.py
+│   │   ├── data/                     # users.json, friends.json, otp_pending.json, otp_reset.json
+│   │   ├── routes/                   # auth.py, users.py, friends.py, internal.py
 │   │   ├── services/                 # brevo_service.py, otp_service.py, google_auth_service.py
 │   │   └── tests/
 │   │
@@ -337,6 +337,12 @@ All paths are public through the gateway. In production they are reached under `
 | POST | `/verify-reset-code` | No | user | Confirm a reset code |
 | POST | `/reset-password` | No | user | Set a new password |
 | PUT | `/users/preferences` | Yes | user | Update travel-style preferences |
+| GET | `/friends` | Yes | user | List accepted friends |
+| POST | `/friends` | Yes | user | Send a friend request by email or phone |
+| GET | `/friends/requests` | Yes | user | Incoming and outgoing pending requests |
+| POST | `/friends/requests/<id>/accept` | Yes | user | Accept a request |
+| POST | `/friends/requests/<id>/decline` | Yes | user | Decline a request |
+| DELETE | `/friends/<id>` | Yes | user | End a friendship |
 | GET | `/destinations` | No | destination | Search the catalogue |
 | POST | `/destinations/<id>/rating` | Yes | destination | Rate a destination |
 | POST/DELETE | `/destinations/<id>/favorite` | Yes | destination | Add or remove a favourite |
@@ -410,7 +416,7 @@ React 19, Vite 8, React Router 7, MapLibre GL 6, socket.io-client. Maps render w
 
 ## Pages
 
-Landing · Register · Login · Verify OTP · Select style · Home · Destinations · Destination detail · Itineraries · Itinerary detail · Map · Chat · Favorites · My Destinations · My Destination detail · Destination form · Profile · Admin dashboard
+Landing · Register · Login · Verify OTP · Select style · Home · Destinations · Destination detail · Itineraries · Itinerary detail · Map · Chat · Friends · Favorites · My Destinations · My Destination detail · Destination form · Profile · Admin dashboard
 
 ## Chat
 
@@ -419,6 +425,12 @@ Opt-in: nothing connects until the user presses "Join general chat", and that ch
 Voice notes travel over the socket as an `ArrayBuffer` — small, hard-capped at 60 seconds. Attachments do not: a 20 MB video held in a socket frame blocks the eventlet greenlet and gives no upload progress, so they go over HTTP with `XMLHttpRequest` for its progress events. Images are compressed in the browser first — 1600 px longest edge, JPEG quality 82 — which takes a 4 MB phone photo to roughly 300 KB.
 
 Uploads are restricted to a MIME whitelist that excludes SVG and HTML, since an SVG served inline in a room everyone sees is stored XSS. Non-media is served as a download with `nosniff`.
+
+## Friends
+
+A mutual connection, requested by email or phone and answered in the app — there is no email or push notification, so a request waits in the recipient's Requests tab until they open it. The page has two tabs: accepted friends, and pending requests in both directions.
+
+Friendship lives entirely in user-service, which already owns users, so resolving names needs no cross-service call. Accepted friends appear in the itinerary share modal above the contact field; the free-text field still works for anyone who is not a friend.
 
 ## Build notes
 
@@ -441,3 +453,5 @@ MapLibre v6 constructs its worker URL at runtime from `import.meta.url`, which R
 - Deleting a user does not cascade to their itineraries, comments or messages; those degrade to placeholder names
 - Route geometry is fetched from Geoapify uncached on every request
 - Uploaded media is deleted only when its message is; nothing sweeps files orphaned by a failed write
+- Friend requests are visible only inside the app, and are not wired to the notification-dot system, so a waiting request is easy to miss
+- Declined friend requests are kept rather than deleted, so the same person cannot be re-requested without clearing the record by hand
