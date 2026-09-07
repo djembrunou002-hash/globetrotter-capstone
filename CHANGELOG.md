@@ -665,3 +665,30 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Unread counts are derived client-side as `incoming_count` minus the locally stored seen count, clamped at zero, so a deleted message cannot produce a negative badge and your own messages never raise one.
 - Pinning is a personal, client-side preference and is not shared with the other participant.
 - Deleting a chat clears it for both participants. With a single shared message store there is no per-user copy to remove; the confirmation dialog states this explicitly.
+
+
+
+### Added
+- Voice notes now show playback progress: 28 waveform bars fill as the clip plays, the counter runs up, and clicking or arrowing along the bars seeks. Bar heights are derived from a hash of the message id so a clip always draws the same waveform.
+- Incoming messages in groups and the general chat show a round avatar, and the bubble grows a tail at its top corner pointing at it, drawn as two stacked CSS triangles so the border outline is preserved.
+- Consecutive messages from the same author within five minutes are grouped: no avatar, name or tail, with the avatar column kept as a spacer so bubbles stay aligned.
+- Long-press selection on phones. Holding a conversation card or a message turns the header into an action bar — pin and delete for cards, reply, edit and delete for messages.
+- Attachment composer: picking files opens a full-screen preview with a thumbnail strip, a per-item caption field, an add-more button (up to 10 files) and sequential upload with per-file progress.
+- Emoji and sticker picker with six categories, a recents tab persisted in `localStorage`, and stickers that send immediately. A message whose entire text is one to three emoji renders at 2.6rem with no bubble.
+- Voice recording can be paused, played back while paused, resumed and then sent. Pausing calls `requestData()` to flush the captured chunks into a preview blob played through the same waveform component.
+- `VoiceMessage`, `MessageBubble`, `AttachmentComposer`, `EmojiPicker` and `VoiceRecorder` components with their stylesheets, plus `src/utils/chatFormat.js` for the shared formatting helpers.
+
+### Changed
+- The desktop message menu moved out of the bubble into the gutter opposite it, so opening it no longer covers the message it belongs to. The trigger fades in on row hover.
+- The message three-dot button is hidden below 1024px, replaced by long-press; the conversation card three-dot button is likewise desktop-only.
+- Attachments are no longer uploaded the moment a file is picked; the file input is now `multiple` and hands its selection to the composer.
+- Recording state left `Chat.jsx` entirely and lives in `VoiceRecorder`, which mounts on tapping the mic and unmounts when done.
+- `Chat.jsx` dropped its local formatting helpers, the `audioRefs` map, `playingId` and `togglePlay` in favour of the extracted components.
+- `Chat.css` no longer holds message, voice, media, file, recording or upload rules; those moved to the component stylesheets alongside the markup they style.
+
+### Notes
+- Elapsed recording time accrues across pauses, so the duration sent to the server matches what was actually captured.
+- `finishRef` decides whether the recorder's asynchronous `onstop` sends or discards; a paused recorder is resumed before stopping because Chrome does not reliably flush the final chunk from a paused state.
+- Object URLs in the attachment composer are revoked per item on removal and via a ref mirror on unmount, so files added after mount are not missed by the cleanup.
+- `MediaRecorder.pause()` is unavailable on iOS Safari below 15.4; on those devices the pause button does nothing rather than erroring.
+- Stickers are large emoji rather than image assets, so they need no new message kind, no asset hosting and no backend change.

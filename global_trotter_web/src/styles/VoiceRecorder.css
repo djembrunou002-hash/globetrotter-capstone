@@ -1,0 +1,89 @@
+.recorder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #E7DFC9;
+}
+
+.recorder.is-paused {
+  border-color: #D9CFB6;
+}
+
+.recorder__dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-ember);
+  animation: recorder-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes recorder-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.recorder__time {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.recorder__hint {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recorder__controls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recorder__button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #E7DFC9;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.recorder__button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.recorder__button--danger {
+  color: var(--color-ember);
+  border-color: #F0D4D4;
+}
+
+.recorder__button--send {
+  border-color: var(--color-forest);
+  background: var(--color-forest);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recorder__dot {
+    animation: none;
+  }
+}

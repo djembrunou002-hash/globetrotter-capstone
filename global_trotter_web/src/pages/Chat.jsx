@@ -7,6 +7,10 @@ import NewChatModal from '../components/NewChatModal.jsx'
 import NewGroupModal from '../components/NewGroupModal.jsx'
 import GroupPanel from '../components/GroupPanel.jsx'
 import NotificationDot from '../components/NotificationDot.jsx'
+import MessageBubble from '../components/MessageBubble.jsx'
+import AttachmentComposer from '../components/AttachmentComposer.jsx'
+import EmojiPicker from '../components/EmojiPicker.jsx'
+import VoiceRecorder from '../components/VoiceRecorder.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
@@ -32,61 +36,14 @@ import {
 import { getFriends } from '../services/friendService.js'
 import { ACCEPTED_TYPES, compressImage, uploadAttachment } from '../services/chatUpload.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
+import { formatStamp, initials } from '../utils/chatFormat.js'
 import '../styles/Chat.css'
 
 const JOIN_KEY = 'globaltrotter_chat_joined'
-const MAX_VOICE_SECONDS = 60
 
-const MIME_CANDIDATES = [
-  'audio/webm;codecs=opus',
-  'audio/webm',
-  'audio/ogg;codecs=opus',
-  'audio/mp4'
-]
 
-function pickMimeType() {
-  if (typeof MediaRecorder === 'undefined') return null
-  return MIME_CANDIDATES.find(type => MediaRecorder.isTypeSupported(type)) || ''
-}
 
-function formatBytes(bytes) {
-  if (!bytes) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
-function formatDuration(seconds) {
-  const total = Math.max(0, Math.round(seconds || 0))
-  const m = Math.floor(total / 60)
-  const sec = total % 60
-  return `${m}:${String(sec).padStart(2, '0')}`
-}
-
-function formatTime(iso) {
-  if (!iso) return ''
-  const date = new Date(iso)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-function formatStamp(iso, locale) {
-  if (!iso) return ''
-
-  const date = new Date(iso)
-  const now = new Date()
-  const sameDay =
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear()
-
-  if (sameDay) return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
-}
-
-function initials(name) {
-  const parts = (name || '?').trim().split(/\s+/).slice(0, 2)
-  return parts.map(part => part.charAt(0).toUpperCase()).join('')
-}
 
 function joinKeyFor(user) {
   return user && user.id ? `${JOIN_KEY}_${user.id}` : JOIN_KEY
@@ -172,11 +129,15 @@ function Chat() {
   const [editing, setEditing] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [menuFor, setMenuFor] = useState(null)
-  const [recording, setRecording] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
-  const [playingId, setPlayingId] = useState(null)
+  const [selectedMessage, setSelectedMessage] = useState(null)
+  const [selectedCard, setSelectedCard] = useState(null)
+  const [recorderOpen, setRecorderOpen] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const [pendingFiles, setPendingFiles] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [sentCount, setSentCount] = useState(0)
+  const [uploadError, setUploadError] = useState('')
 
   const activeRoomRef = useRef(null)
   const applyMessageRef = useRef(applyMessage)
@@ -187,12 +148,8 @@ function Chat() {
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
-  const recorderRef = useRef(null)
-  const chunksRef = useRef([])
-  const timerRef = useRef(null)
-  const cancelledRef = useRef(false)
-  const audioRefs = useRef({})
-  const startedAtRef = useRef(0)
+  const cardTimerRef = useRef(null)
+  const cardFiredRef = useRef(false)
   const fileRef = useRef(null)
   const threadHeaderRef = useRef(null)
 
@@ -319,17 +276,6 @@ function Chat() {
     })
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-        timerRef.current = null
-      }
-
-      const recorder = recorderRef.current
-      if (recorder && recorder.state !== 'inactive') {
-        cancelledRef.current = true
-        recorder.stop()
-      }
-
       socket.off()
       disconnectChat()
       socketRef.current = null
@@ -423,6 +369,37 @@ function Chat() {
     return body
   }
 
+  function startCardPress(entry) {
+    cardFiredRef.current = false
+    cardTimerRef.current = setTimeout(() => {
+      cardFiredRef.current = true
+      setSelectedCard(entry)
+    }, 420)
+  }
+
+  function cancelCardPress() {
+    if (cardTimerRef.current) {
+      clearTimeout(cardTimerRef.current)
+      cardTimerRef.current = null
+    }
+  }
+
+  function releaseCardPress(entry) {
+    cancelCardPress()
+
+    if (cardFiredRef.current) {
+      cardFiredRef.current = false
+      return
+    }
+
+    if (selectedCard) {
+      setSelectedCard(current => (current && current.room === entry.room ? null : entry))
+      return
+    }
+
+    openRoom(entry)
+  }
+
   function resetComposer() {
     setDraft('')
     setReplyTo(null)
@@ -433,6 +410,8 @@ function Chat() {
 
   function openRoom(entry) {
     setCardMenu(null)
+    setSelectedCard(null)
+    setSelectedMessage(null)
     resetComposer()
     setThread({ room: null, messages: [] })
     setActiveRoom(entry.room)
@@ -444,6 +423,7 @@ function Chat() {
     if (activeRoom === GENERAL_ROOM) socketRef.current?.emit('chat:leave', { room: GENERAL_ROOM })
     if (activeRoom) markRead(activeRoom)
     resetComposer()
+    setSelectedMessage(null)
     setThread({ room: null, messages: [] })
     setActiveRoom(null)
     setPanelGroup(null)
@@ -579,132 +559,82 @@ function Chat() {
     setDraft('')
   }
 
-  function stopTimer() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
+
+
+  function handleFilesChosen(event) {
+    const picked = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (picked.length === 0) return
+
+    setUploadError('')
+    setPendingFiles(picked)
   }
 
-  async function startRecording() {
-    if (recording) return
-
-    const mimeType = pickMimeType()
-    if (mimeType === null) {
-      setStatus(t('chat.recordingUnsupported'))
-      return
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setStatus(t('chat.micUnavailable'))
-      return
-    }
-
-    let stream
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch {
-      setStatus(t('chat.micDenied'))
-      return
-    }
+  async function handleSendAttachments(entries) {
+    setUploading(true)
+    setUploadError('')
+    setSentCount(0)
+    setProgress(0)
 
     const room = activeRoom
     const parent = replyTo ? replyTo.id : null
 
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
-    recorderRef.current = recorder
-    chunksRef.current = []
-    cancelledRef.current = false
-
-    recorder.ondataavailable = event => {
-      if (event.data && event.data.size > 0) chunksRef.current.push(event.data)
-    }
-
-    recorder.onstop = async () => {
-      stream.getTracks().forEach(track => track.stop())
-      stopTimer()
-
-      const seconds = (Date.now() - startedAtRef.current) / 1000
-      const blob = new Blob(chunksRef.current, { type: recorder.mimeType })
-      chunksRef.current = []
-
-      setRecording(false)
-      setElapsed(0)
-
-      if (cancelledRef.current || seconds < 1 || !socketRef.current) return
-
-      const buffer = await blob.arrayBuffer()
-      socketRef.current.emit('chat:voice', {
-        room,
-        blob: buffer,
-        mime: recorder.mimeType,
-        duration: seconds,
-        reply_to: parent
-      })
-      setReplyTo(null)
-    }
-
-    startedAtRef.current = Date.now()
-    recorder.start()
-    setRecording(true)
-    setElapsed(0)
-    setStatus('')
-
-    timerRef.current = setInterval(() => {
-      const seconds = (Date.now() - startedAtRef.current) / 1000
-      setElapsed(seconds)
-      if (seconds >= MAX_VOICE_SECONDS) stopRecording()
-    }, 200)
-  }
-
-  function stopRecording() {
-    const recorder = recorderRef.current
-    if (recorder && recorder.state !== 'inactive') recorder.stop()
-  }
-
-  function cancelRecording() {
-    cancelledRef.current = true
-    stopRecording()
-  }
-
-  async function handleFileChosen(event) {
-    const file = event.target.files && event.target.files[0]
-    event.target.value = ''
-    if (!file) return
-
-    setStatus('')
-    setUploading(true)
-    setProgress(0)
-
     try {
-      const prepared = await compressImage(file)
-      await uploadAttachment(prepared, {
-        room: activeRoom,
-        caption: draft.trim(),
-        replyTo: replyTo ? replyTo.id : null,
-        onProgress: setProgress
-      })
-      setDraft('')
+      for (let index = 0; index < entries.length; index += 1) {
+        const entry = entries[index]
+        setSentCount(index)
+        setProgress(0)
+
+        const prepared = await compressImage(entry.file)
+        await uploadAttachment(prepared, {
+          room,
+          caption: entry.caption,
+          replyTo: index === 0 ? parent : null,
+          onProgress: setProgress
+        })
+      }
+
+      setPendingFiles(null)
       setReplyTo(null)
     } catch (err) {
-      setStatus(err.message)
+      setUploadError(err.message)
     } finally {
       setUploading(false)
       setProgress(0)
+      setSentCount(0)
     }
   }
 
-  function togglePlay(messageId) {
-    const audio = audioRefs.current[messageId]
-    if (!audio) return
+  function handleVoiceReady({ blob, mime, duration }) {
+    setRecorderOpen(false)
 
-    Object.entries(audioRefs.current).forEach(([id, el]) => {
-      if (id !== messageId && el) el.pause()
+    const room = activeRoom
+    const parent = replyTo ? replyTo.id : null
+
+    blob.arrayBuffer().then(buffer => {
+      socketRef.current?.emit('chat:voice', {
+        room,
+        blob: buffer,
+        mime,
+        duration,
+        reply_to: parent
+      })
+      setReplyTo(null)
     })
-
-    if (audio.paused) audio.play()
-    else audio.pause()
   }
+
+  function handleSticker(emoji) {
+    setEmojiOpen(false)
+    if (!socketRef.current) return
+
+    socketRef.current.emit('chat:send', {
+      room: activeRoom,
+      text: emoji,
+      reply_to: replyTo ? replyTo.id : null
+    })
+    setReplyTo(null)
+  }
+
 
   function startReply(message) {
     setMenuFor(null)
@@ -752,7 +682,57 @@ function Chat() {
       <div className="chat__panes">
         <aside className="chat__sidebar">
           <header className="page-header chat__header">
-            <h1 className="chat__title">{t('chat.pageTitle')}</h1>
+            {selectedCard ? (
+              <div className="chat__selection">
+                <button
+                  type="button"
+                  className="chat__selection-action"
+                  onClick={() => setSelectedCard(null)}
+                  aria-label={t('common.cancel')}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+
+                <span className="chat__selection-title">{titleOf(selectedCard, t)}</span>
+
+                <button
+                  type="button"
+                  className="chat__selection-action"
+                  onClick={() => {
+                    togglePin(selectedCard.room)
+                    setSelectedCard(null)
+                  }}
+                  aria-label={pinned.includes(selectedCard.room) ? t('chat.unpin') : t('chat.pin')}
+                  title={pinned.includes(selectedCard.room) ? t('chat.unpin') : t('chat.pin')}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                    <path d="M14 2l8 8-3 1-1 4-4-2-5 5-1-1 5-5-2-4 4-1z" />
+                  </svg>
+                </button>
+
+                {(selectedCard.kind === 'direct' ||
+                  (selectedCard.kind === 'group' && selectedCard.group && selectedCard.group.is_admin)) && (
+                  <button
+                    type="button"
+                    className="chat__selection-action chat__selection-action--danger"
+                    onClick={() => {
+                      setPendingClear(selectedCard)
+                      setSelectedCard(null)
+                    }}
+                    aria-label={t('chat.deleteChat')}
+                    title={t('chat.deleteChat')}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <h1 className="chat__title">{t('chat.pageTitle')}</h1>
+            )}
           </header>
 
           <div className="chat__filters" role="tablist">
@@ -792,7 +772,17 @@ function Chat() {
                     <button
                       type="button"
                       className="chat-card__open"
-                      onClick={() => openRoom(entry)}
+                      onClick={() => {
+                        if (cardTimerRef.current || selectedCard) return
+                        openRoom(entry)
+                      }}
+                      onPointerDown={() => startCardPress(entry)}
+                      onPointerUp={() => releaseCardPress(entry)}
+                      onPointerLeave={cancelCardPress}
+                      onPointerCancel={cancelCardPress}
+                      onContextMenu={event => {
+                        if (window.matchMedia('(pointer: coarse)').matches) event.preventDefault()
+                      }}
                     >
                       <span
                         className={`chat-card__avatar ${entry.kind !== 'direct' ? 'chat-card__avatar--general' : ''}`}
@@ -903,6 +893,78 @@ function Chat() {
           ) : (
             <>
               <header ref={threadHeaderRef} className="page-header chat__header chat__header--thread">
+                {selectedMessage ? (
+                  <div className="chat__selection">
+                    <button
+                      type="button"
+                      className="chat__selection-action"
+                      onClick={() => setSelectedMessage(null)}
+                      aria-label={t('common.cancel')}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
+                    </button>
+
+                    <span className="chat__selection-title">{t('chat.oneSelected')}</span>
+
+                    {canPost && (
+                      <button
+                        type="button"
+                        className="chat__selection-action"
+                        onClick={() => {
+                          startReply(selectedMessage)
+                          setSelectedMessage(null)
+                        }}
+                        aria-label={t('chat.reply')}
+                        title={t('chat.reply')}
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 17l-6-6 6-6" />
+                          <path d="M3 11h9a8 8 0 0 1 8 8v2" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {currentUser &&
+                      selectedMessage.user_id === currentUser.id &&
+                      selectedMessage.kind === 'text' && (
+                        <button
+                          type="button"
+                          className="chat__selection-action"
+                          onClick={() => {
+                            startEdit(selectedMessage)
+                            setSelectedMessage(null)
+                          }}
+                          aria-label={t('common.edit')}
+                          title={t('common.edit')}
+                        >
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                          </svg>
+                        </button>
+                      )}
+
+                    {currentUser && selectedMessage.user_id === currentUser.id && (
+                      <button
+                        type="button"
+                        className="chat__selection-action chat__selection-action--danger"
+                        onClick={() => {
+                          setPendingDelete(selectedMessage)
+                          setSelectedMessage(null)
+                        }}
+                        aria-label={t('common.delete')}
+                        title={t('common.delete')}
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
                 <button
                   type="button"
                   className="chat__back"
@@ -966,6 +1028,8 @@ function Chat() {
                     {t('chat.leave')}
                   </button>
                 )}
+                  </>
+                )}
               </header>
 
               {status && <p className="chat__status">{status}</p>}
@@ -991,154 +1055,45 @@ function Chat() {
                 <div className="chat__messages">
                   {thread.messages.length === 0 && <p className="chat__empty">{t('chat.empty')}</p>}
 
-                  {thread.messages.map(message => {
+                  {thread.messages.map((message, index) => {
                     const mine = currentUser && message.user_id === currentUser.id
+                    const previous = thread.messages[index - 1]
+                    const grouped =
+                      Boolean(previous) &&
+                      previous.user_id === message.user_id &&
+                      new Date(message.created_at) - new Date(previous.created_at) < 300000
+
                     return (
-                      <div key={message.id} className={`chat__row ${mine ? 'chat__row--mine' : ''}`}>
-                        <div className="chat__bubble">
-                          {!mine && showAuthor && (
-                            <span className="chat__author">{message.author_name}</span>
-                          )}
-
-                          {message.reply_preview && (
-                            <div className="chat__quote">
-                              <span className="chat__quote-author">
-                                {message.reply_preview.author_name}
-                              </span>
-                              <span className="chat__quote-text">
-                                {message.reply_preview.deleted
-                                  ? t('chat.deletedMessage')
-                                  : message.reply_preview.kind === 'voice'
-                                    ? t('chat.voiceNote')
-                                    : message.reply_preview.text ||
-                                      t(`chat.${message.reply_preview.kind}Note`)}
-                              </span>
-                            </div>
-                          )}
-
-                          {message.kind === 'voice' && message.audio ? (
-                            <div className="chat__voice">
-                              <button
-                                type="button"
-                                className="chat__voice-play"
-                                onClick={() => togglePlay(message.id)}
-                                aria-label={playingId === message.id ? t('chat.pause') : t('chat.play')}
-                              >
-                                {playingId === message.id ? (
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                                    <rect x="6" y="5" width="4" height="14" rx="1" />
-                                    <rect x="14" y="5" width="4" height="14" rx="1" />
-                                  </svg>
-                                ) : (
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                                    <path d="M8 5l11 7-11 7z" />
-                                  </svg>
-                                )}
-                              </button>
-
-                              <span className="chat__voice-bars" aria-hidden="true">
-                                {[9, 15, 7, 18, 11, 20, 8, 14, 10, 16, 6, 12].map((height, index) => (
-                                  <i key={index} style={{ height: `${height}px` }} />
-                                ))}
-                              </span>
-
-                              <span className="chat__voice-time">
-                                {formatDuration(message.audio.duration)}
-                              </span>
-
-                              <audio
-                                ref={el => {
-                                  audioRefs.current[message.id] = el
-                                }}
-                                src={message.audio.url}
-                                preload="none"
-                                onPlay={() => setPlayingId(message.id)}
-                                onPause={() => setPlayingId(id => (id === message.id ? null : id))}
-                                onEnded={() => setPlayingId(id => (id === message.id ? null : id))}
-                              />
-                            </div>
-                          ) : message.media ? (
-                            <div className="chat__media">
-                              {message.kind === 'image' && (
-                                <a href={message.media.url} target="_blank" rel="noreferrer">
-                                  <img src={message.media.url} alt={message.media.name} loading="lazy" />
-                                </a>
-                              )}
-
-                              {message.kind === 'video' && (
-                                <video src={message.media.url} controls preload="metadata" />
-                              )}
-
-                              {message.kind === 'file' && (
-                                <a className="chat__file" href={message.media.url} download>
-                                  <span className="chat__file-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                      <path d="M14 2v6h6" />
-                                    </svg>
-                                  </span>
-                                  <span className="chat__file-info">
-                                    <span className="chat__file-name">{message.media.name}</span>
-                                    <span className="chat__file-size">{formatBytes(message.media.size)}</span>
-                                  </span>
-                                </a>
-                              )}
-
-                              {message.text && <p className="chat__text">{message.text}</p>}
-                            </div>
-                          ) : (
-                            <p className="chat__text">{message.text}</p>
-                          )}
-
-                          <div className="chat__meta">
-                            <span>{formatTime(message.created_at)}</span>
-                            {message.edited_at && <span>{t('chat.edited')}</span>}
-                          </div>
-
-                          <button
-                            type="button"
-                            className="chat__more"
-                            onClick={() => setMenuFor(menuFor === message.id ? null : message.id)}
-                            aria-label={t('chat.messageOptions')}
-                          >
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                              <circle cx="5" cy="12" r="1.6" />
-                              <circle cx="12" cy="12" r="1.6" />
-                              <circle cx="19" cy="12" r="1.6" />
-                            </svg>
-                          </button>
-
-                          {menuFor === message.id && (
-                            <>
-                              <div className="chat__menu-backdrop" onClick={() => setMenuFor(null)} />
-                              <div className="chat__menu">
-                                {canPost && (
-                                  <button type="button" onClick={() => startReply(message)}>
-                                    {t('chat.reply')}
-                                  </button>
-                                )}
-                                {mine && message.kind !== 'voice' && (
-                                  <button type="button" onClick={() => startEdit(message)}>
-                                    {t('common.edit')}
-                                  </button>
-                                )}
-                                {mine && (
-                                  <button
-                                    type="button"
-                                    className="chat__menu-item--danger"
-                                    onClick={() => {
-                                      setMenuFor(null)
-                                      setPendingDelete(message)
-                                    }}
-                                  >
-                                    {t('common.delete')}
-                                  </button>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      <MessageBubble
+                        key={message.id}
+                        message={message}
+                        mine={mine}
+                        showAuthor={showAuthor}
+                        grouped={grouped}
+                        selected={Boolean(selectedMessage) && selectedMessage.id === message.id}
+                        selectionMode={Boolean(selectedMessage)}
+                        menuOpen={menuFor === message.id}
+                        canReply={canPost}
+                        onLongPress={setSelectedMessage}
+                        onToggleSelect={target =>
+                          setSelectedMessage(current =>
+                            current && current.id === target.id ? null : target
+                          )
+                        }
+                        onToggleMenu={setMenuFor}
+                        onReply={target => {
+                          setMenuFor(null)
+                          startReply(target)
+                        }}
+                        onEdit={target => {
+                          setMenuFor(null)
+                          startEdit(target)
+                        }}
+                        onDelete={target => {
+                          setMenuFor(null)
+                          setPendingDelete(target)
+                        }}
+                      />
                     )
                   })}
 
@@ -1165,38 +1120,29 @@ function Chat() {
                     </div>
                   )}
 
-                  {uploading && (
-                    <div className="chat__upload">
-                      <span className="chat__upload-label">{t('chat.uploading')}</span>
-                      <span className="chat__upload-track">
-                        <span className="chat__upload-fill" style={{ width: `${progress}%` }} />
-                      </span>
-                      <span className="chat__upload-pct">{progress}%</span>
-                    </div>
-                  )}
-
-                  {recording ? (
-                    <div className="chat__recording">
-                      <span className="chat__recording-dot" aria-hidden="true" />
-                      <span className="chat__recording-time">{formatDuration(elapsed)}</span>
-                      <span className="chat__recording-hint">{t('chat.recordingHint')}</span>
-                      <button type="button" className="chat__recording-cancel" onClick={cancelRecording}>
-                        {t('common.cancel')}
-                      </button>
-                      <button
-                        type="button"
-                        className="chat__recording-send"
-                        onClick={stopRecording}
-                        aria-label={t('chat.send')}
-                      >
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M22 2 11 13" />
-                          <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                        </svg>
-                      </button>
-                    </div>
+                  {recorderOpen ? (
+                    <VoiceRecorder
+                      onSend={handleVoiceReady}
+                      onCancel={() => setRecorderOpen(false)}
+                      onError={setStatus}
+                    />
                   ) : (
                     <div className="chat__composer-row">
+                      <button
+                        type="button"
+                        className="chat__emoji"
+                        onClick={() => setEmojiOpen(open => !open)}
+                        aria-label={t('chat.emojiPicker')}
+                        title={t('chat.emojiPicker')}
+                        aria-expanded={emojiOpen}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
+                          <path d="M9 9.5h.01M15 9.5h.01" />
+                        </svg>
+                      </button>
+
                       <input
                         ref={inputRef}
                         type="text"
@@ -1211,7 +1157,8 @@ function Chat() {
                         ref={fileRef}
                         type="file"
                         accept={ACCEPTED_TYPES}
-                        onChange={handleFileChosen}
+                        multiple
+                        onChange={handleFilesChosen}
                         style={{ display: 'none' }}
                       />
 
@@ -1219,7 +1166,6 @@ function Chat() {
                         type="button"
                         className="chat__attach"
                         onClick={() => fileRef.current?.click()}
-                        disabled={uploading}
                         aria-label={t('chat.attach')}
                         title={t('chat.attach')}
                       >
@@ -1239,7 +1185,7 @@ function Chat() {
                         <button
                           type="button"
                           className="chat__mic"
-                          onClick={startRecording}
+                          onClick={() => setRecorderOpen(true)}
                           aria-label={t('chat.recordVoice')}
                           title={t('chat.recordVoice')}
                         >
@@ -1252,6 +1198,15 @@ function Chat() {
                       )}
                     </div>
                   )}
+
+                  {emojiOpen && (
+                    <EmojiPicker
+                      onPick={emoji => setDraft(value => `${value}${emoji}`)}
+                      onSticker={handleSticker}
+                      onClose={() => setEmojiOpen(false)}
+                    />
+                  )}
+
                 </form>
               )}
             </>
@@ -1304,6 +1259,22 @@ function Chat() {
           onRename={name => runPanelAction(() => renameGroup(panelGroup.id, name))}
           onLeave={handleLeaveGroup}
           onClose={() => setPanelGroup(null)}
+        />
+      )}
+
+      {pendingFiles && (
+        <AttachmentComposer
+          files={pendingFiles}
+          uploading={uploading}
+          progress={progress}
+          sentCount={sentCount}
+          error={uploadError}
+          onSend={handleSendAttachments}
+          onCancel={() => {
+            if (uploading) return
+            setPendingFiles(null)
+            setUploadError('')
+          }}
         />
       )}
 

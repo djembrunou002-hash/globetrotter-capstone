@@ -1,0 +1,74 @@
+.voice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 190px;
+}
+
+.voice--compact {
+  min-width: 0;
+  flex: 1;
+}
+
+.voice__play {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  cursor: pointer;
+}
+
+.voice__track {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.voice__track:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.voice__track i {
+  flex: 1;
+  min-width: 2px;
+  max-width: 3px;
+  border-radius: 999px;
+  background: #C7D6CB;
+  transition: background 0.12s linear;
+}
+
+.voice__track i.is-filled {
+  background: var(--color-forest);
+}
+
+.voice.is-playing .voice__track i.is-filled:last-of-type {
+  background: var(--color-gold);
+}
+
+.voice__time {
+  flex-shrink: 0;
+  min-width: 34px;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice__track i {
+    transition: none;
+  }
+}
