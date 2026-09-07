@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import LanguageProvider from './context/LanguageProvider.jsx'
 import ItineraryDraftProvider from './context/ItineraryDraftProvider.jsx'
 import NotificationsProvider from './context/NotificationsProvider.jsx'
+import ChatUnreadProvider from './context/ChatUnreadProvider.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Landing from './pages/Landing.jsx'
@@ -67,9 +68,11 @@ function App() {
       <BrowserRouter>
         <ScrollToTop />
         <NotificationsProvider>
-          <ItineraryDraftProvider>
-            <AppRoutes />
-          </ItineraryDraftProvider>
+          <ChatUnreadProvider>
+            <ItineraryDraftProvider>
+              <AppRoutes />
+            </ItineraryDraftProvider>
+          </ChatUnreadProvider>
         </NotificationsProvider>
       </BrowserRouter>
     </LanguageProvider>

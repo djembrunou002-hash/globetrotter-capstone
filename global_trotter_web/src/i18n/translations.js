@@ -632,7 +632,15 @@ export const translations = {
       newChatTitle: 'New chat',
       searchFriends: 'Search a friend',
       noFriends: 'No friends yet. Add one from your profile to start chatting.',
-      noFriendMatches: 'No friend matches that search.'
+      noFriendMatches: 'No friend matches that search.',
+      chatOptions: 'Chat options',
+      pin: 'Pin to top',
+      unpin: 'Unpin',
+      deleteChat: 'Delete chat',
+      clearTitle: 'Delete this chat?',
+      clearMessage: 'Every message exchanged with {{name}} will be removed for both of you. This cannot be undone.',
+      unreadBadge: 'Unread messages',
+      pickConversation: 'Pick a chat on the left to start reading.'
     },
     userSearch: {
       searching: 'Searching...',
@@ -1301,7 +1309,15 @@ export const translations = {
       newChatTitle: 'Nouvelle discussion',
       searchFriends: 'Rechercher un ami',
       noFriends: "Aucun ami pour le moment. Ajoutez-en un depuis votre profil pour discuter.",
-      noFriendMatches: 'Aucun ami ne correspond à cette recherche.'
+      noFriendMatches: 'Aucun ami ne correspond à cette recherche.',
+      chatOptions: 'Options de la discussion',
+      pin: 'Épingler en haut',
+      unpin: 'Détacher',
+      deleteChat: 'Supprimer la discussion',
+      clearTitle: 'Supprimer cette discussion ?',
+      clearMessage: 'Tous les messages échangés avec {{name}} seront supprimés pour vous deux. Cette action est irréversible.',
+      unreadBadge: 'Messages non lus',
+      pickConversation: 'Choisissez une discussion à gauche pour commencer.'
     },
     userSearch: {
       searching: 'Recherche...',

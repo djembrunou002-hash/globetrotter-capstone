@@ -97,6 +97,7 @@ def room_of(message_id):
 
 def conversations(user_id):
     latest = {}
+    incoming = {}
 
     for message in _load()["messages"]:
         if not _visible(message):
@@ -107,6 +108,8 @@ def conversations(user_id):
             continue
 
         latest[room] = message
+        if message["user_id"] != user_id:
+            incoming[room] = incoming.get(room, 0) + 1
 
     peer_ids = {room_utils.peer_id(room, user_id) for room in latest}
     author_ids = {m["user_id"] for m in latest.values()}
@@ -132,6 +135,7 @@ def conversations(user_id):
             "kind": "direct" if peer else "general",
             "peer": peer,
             "updated_at": message["created_at"],
+            "incoming_count": incoming.get(room, 0),
             "last_message": {
                 "author_name": author.get("name") or FALLBACK_NAME,
                 "kind": message.get("kind", "text"),
@@ -147,11 +151,43 @@ def conversations(user_id):
             "kind": "general",
             "peer": None,
             "updated_at": None,
+            "incoming_count": 0,
             "last_message": None,
         })
 
     items.sort(key=lambda c: c["updated_at"] or "", reverse=True)
     return items
+
+
+def clear_room(user_id, room):
+    if not room_utils.is_direct(room):
+        raise PermissionError("only direct conversations can be deleted")
+    if not room_utils.can_access(room, user_id):
+        raise PermissionError("this conversation is not yours")
+
+    data = _load()
+    removed = 0
+
+    for message in data["messages"]:
+        if _room_of(message) != room or message.get("deleted"):
+            continue
+
+        if message.get("audio"):
+            voice_store.remove(message["audio"])
+        if message.get("media"):
+            media_store.remove(message["media"])
+
+        message["deleted"] = True
+        message["text"] = ""
+        message["audio"] = None
+        message["media"] = None
+        message["edited_at"] = _now()
+        removed += 1
+
+    if removed:
+        save_json(FILE, data)
+
+    return removed
 
 
 def create(user_id, room, text, reply_to=None):

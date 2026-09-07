@@ -25,6 +25,12 @@ export function getConversations() {
   return apiRequest('/chat/conversations')
 }
 
+export function deleteConversation(room) {
+  return apiRequest(`/chat/conversations/${encodeURIComponent(room)}`, {
+    method: 'DELETE'
+  })
+}
+
 export function connectChat() {
   if (socket && socket.connected) return socket
 

@@ -4,13 +4,17 @@ import BottomNav from '../components/Bottomnav.jsx'
 import PlanetLoader from '../components/PlanetLoader.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import NewChatModal from '../components/NewChatModal.jsx'
+import NotificationDot from '../components/NotificationDot.jsx'
+import FloatingBackButton from '../components/FloatingBackButton.jsx'
+import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { useChatUnread } from '../hooks/useChatUnread.js'
 import {
   GENERAL_ROOM,
   connectChat,
+  deleteConversation,
   directRoom,
-  disconnectChat,
-  getConversations
+  disconnectChat
 } from '../services/chatService.js'
 import { getFriends } from '../services/friendService.js'
 import { ACCEPTED_TYPES, compressImage, uploadAttachment } from '../services/chatUpload.js'
@@ -18,7 +22,6 @@ import { getToken, getUser } from '../services/tokenStorage.js'
 import '../styles/Chat.css'
 
 const JOIN_KEY = 'globaltrotter_chat_joined'
-const STARTED_KEY = 'globaltrotter_chat_started'
 const MAX_VOICE_SECONDS = 60
 
 const MIME_CANDIDATES = [
@@ -72,13 +75,13 @@ function initials(name) {
   return parts.map(part => part.charAt(0).toUpperCase()).join('')
 }
 
-function scopedKey(base, user) {
-  return user && user.id ? `${base}_${user.id}` : base
+function joinKeyFor(user) {
+  return user && user.id ? `${JOIN_KEY}_${user.id}` : JOIN_KEY
 }
 
 function hasJoinedBefore(user) {
   try {
-    return localStorage.getItem(scopedKey(JOIN_KEY, user)) === 'true'
+    return localStorage.getItem(joinKeyFor(user)) === 'true'
   } catch {
     return false
   }
@@ -86,26 +89,8 @@ function hasJoinedBefore(user) {
 
 function rememberJoin(user, value) {
   try {
-    if (value) localStorage.setItem(scopedKey(JOIN_KEY, user), 'true')
-    else localStorage.removeItem(scopedKey(JOIN_KEY, user))
-  } catch {
-    return
-  }
-}
-
-function loadStarted(user) {
-  try {
-    const raw = localStorage.getItem(scopedKey(STARTED_KEY, user))
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveStarted(user, ids) {
-  try {
-    localStorage.setItem(scopedKey(STARTED_KEY, user), JSON.stringify(ids))
+    if (value) localStorage.setItem(joinKeyFor(user), 'true')
+    else localStorage.removeItem(joinKeyFor(user))
   } catch {
     return
   }
@@ -116,18 +101,30 @@ function Chat() {
   const navigate = useNavigate()
   const [currentUser] = useState(getUser)
 
-  const [conversations, setConversations] = useState([])
-  const [listLoaded, setListLoaded] = useState(false)
-  const [listError, setListError] = useState('')
-  const [refreshTick, setRefreshTick] = useState(0)
+  const {
+    conversations,
+    loaded,
+    error,
+    pinned,
+    started,
+    unreadFor,
+    markRead,
+    applyMessage,
+    dropConversation,
+    togglePin,
+    startWith,
+    forgetStarted,
+    refresh
+  } = useChatUnread()
 
   const [friends, setFriends] = useState([])
   const [friendsLoaded, setFriendsLoaded] = useState(false)
-  const [started, setStarted] = useState(() => loadStarted(getUser()))
 
   const [showNewChat, setShowNewChat] = useState(false)
   const [activeRoom, setActiveRoom] = useState(null)
   const [activePeer, setActivePeer] = useState(null)
+  const [cardMenu, setCardMenu] = useState(null)
+  const [pendingClear, setPendingClear] = useState(null)
   const [generalJoined, setGeneralJoined] = useState(() => hasJoinedBefore(getUser()))
 
   const [status, setStatus] = useState('')
@@ -144,7 +141,9 @@ function Chat() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
 
-  const roomsRef = useRef(new Set())
+  const activeRoomRef = useRef(null)
+  const applyMessageRef = useRef(applyMessage)
+  const dropConversationRef = useRef(dropConversation)
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
@@ -155,35 +154,19 @@ function Chat() {
   const audioRefs = useRef({})
   const startedAtRef = useRef(0)
   const fileRef = useRef(null)
+  const threadHeaderRef = useRef(null)
+
+  const headerPassed = useHeaderPassed(threadHeaderRef)
+
+  useEffect(() => {
+    activeRoomRef.current = activeRoom
+    applyMessageRef.current = applyMessage
+    dropConversationRef.current = dropConversation
+  })
 
   useEffect(() => {
     if (!getToken()) navigate('/login', { replace: true })
   }, [navigate])
-
-  useEffect(() => {
-    roomsRef.current = new Set(conversations.map(item => item.room))
-  }, [conversations])
-
-  useEffect(() => {
-    let active = true
-
-    getConversations()
-      .then(response => {
-        if (!active) return
-        setConversations(response.conversations || [])
-        setListError('')
-        setListLoaded(true)
-      })
-      .catch(err => {
-        if (!active) return
-        setListError(err.message)
-        setListLoaded(true)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [refreshTick])
 
   useEffect(() => {
     let active = true
@@ -226,33 +209,13 @@ function Chat() {
 
     socket.on('chat:message', payload => {
       const message = payload.message
+      const isActive = activeRoomRef.current === message.room
 
       setThread(prev =>
         prev.room === message.room ? { ...prev, messages: [...prev.messages, message] } : prev
       )
 
-      if (!roomsRef.current.has(message.room)) {
-        setRefreshTick(tick => tick + 1)
-        return
-      }
-
-      setConversations(prev =>
-        prev.map(item =>
-          item.room === message.room
-            ? {
-                ...item,
-                updated_at: message.created_at,
-                last_message: {
-                  author_name: message.author_name,
-                  kind: message.kind,
-                  text: message.text || '',
-                  created_at: message.created_at,
-                  mine: currentUser ? message.user_id === currentUser.id : false
-                }
-              }
-            : item
-        )
-      )
+      applyMessageRef.current(message, { active: isActive })
     })
 
     socket.on('chat:updated', payload => {
@@ -270,7 +233,11 @@ function Chat() {
           ? { ...prev, messages: prev.messages.filter(m => m.id !== payload.id) }
           : prev
       )
-      setRefreshTick(tick => tick + 1)
+    })
+
+    socket.on('chat:cleared', payload => {
+      setThread(prev => (prev.room === payload.room ? { ...prev, messages: [] } : prev))
+      dropConversationRef.current(payload.room)
     })
 
     socket.on('chat:error', payload => {
@@ -293,7 +260,7 @@ function Chat() {
       disconnectChat()
       socketRef.current = null
     }
-  }, [t, currentUser])
+  }, [t])
 
   useEffect(() => {
     if (!activeRoom) return
@@ -315,14 +282,6 @@ function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [thread, activeRoom])
 
-  const generalEntry = conversations.find(item => item.room === GENERAL_ROOM) || {
-    room: GENERAL_ROOM,
-    kind: 'general',
-    peer: null,
-    updated_at: null,
-    last_message: null
-  }
-
   const directEntries = conversations.filter(item => item.kind === 'direct')
 
   const pendingEntries = (currentUser ? started : [])
@@ -334,10 +293,32 @@ function Chat() {
       kind: 'direct',
       peer: friend,
       updated_at: null,
+      incoming_count: 0,
       last_message: null
     }))
 
-  const cards = [generalEntry, ...directEntries, ...pendingEntries]
+  const generalEntry = conversations.find(item => item.room === GENERAL_ROOM) || {
+    room: GENERAL_ROOM,
+    kind: 'general',
+    peer: null,
+    updated_at: null,
+    incoming_count: 0,
+    last_message: null
+  }
+
+  const all = [generalEntry, ...directEntries, ...pendingEntries]
+
+  const pinnedCards = pinned.map(room => all.find(item => item.room === room)).filter(Boolean)
+
+  const restCards = all
+    .filter(item => !pinned.includes(item.room))
+    .sort((a, b) => {
+      if (a.room === GENERAL_ROOM) return -1
+      if (b.room === GENERAL_ROOM) return 1
+      return (b.updated_at || '').localeCompare(a.updated_at || '')
+    })
+
+  const cards = [...pinnedCards, ...restCards]
 
   function previewOf(entry) {
     if (!entry.last_message) return t('chat.noMessagesYet')
@@ -364,32 +345,53 @@ function Chat() {
   }
 
   function openRoom(entry) {
+    setCardMenu(null)
     resetComposer()
     setThread({ room: null, messages: [] })
     setActivePeer(entry.peer || null)
     setActiveRoom(entry.room)
+    markRead(entry.room)
+    window.scrollTo({ top: 0 })
   }
 
   function closeRoom() {
     if (activeRoom === GENERAL_ROOM) socketRef.current?.emit('chat:leave', { room: GENERAL_ROOM })
+    if (activeRoom) markRead(activeRoom)
     resetComposer()
     setThread({ room: null, messages: [] })
     setActiveRoom(null)
     setActivePeer(null)
-    setRefreshTick(tick => tick + 1)
+    refresh(true)
   }
 
   function handleStartChat(friend) {
-    const room = directRoom(currentUser.id, friend.id)
-
-    if (!started.includes(friend.id)) {
-      const next = [...started, friend.id]
-      setStarted(next)
-      saveStarted(currentUser, next)
-    }
-
+    startWith(friend.id)
     setShowNewChat(false)
-    openRoom({ room, kind: 'direct', peer: friend })
+    openRoom({ room: directRoom(currentUser.id, friend.id), kind: 'direct', peer: friend })
+  }
+
+  function handleTogglePin(entry) {
+    setCardMenu(null)
+    togglePin(entry.room)
+  }
+
+  async function confirmClear() {
+    const target = pendingClear
+    setPendingClear(null)
+    if (!target) return
+
+    try {
+      await deleteConversation(target.room)
+      dropConversation(target.room)
+      if (target.peer) forgetStarted(target.peer.id)
+      if (activeRoomRef.current === target.room) {
+        setThread({ room: null, messages: [] })
+        setActiveRoom(null)
+        setActivePeer(null)
+      }
+    } catch (err) {
+      setStatus(err.message)
+    }
   }
 
   function handleJoinGeneral() {
@@ -582,378 +584,482 @@ function Chat() {
     setPendingDelete(null)
   }
 
-  if (!activeRoom) {
-    return (
-      <div className="chat">
-        <header className="page-header chat__header">
-          <h1 className="chat__title">{t('chat.pageTitle')}</h1>
-        </header>
-
-        {listError && <p className="chat__status">{listError}</p>}
-
-        {!listLoaded && <PlanetLoader label={t('chat.loadingConversations')} size="small" />}
-
-        {listLoaded && (
-          <ul className="chat__list">
-            {cards.map(entry => (
-              <li key={entry.room}>
-                <button type="button" className="chat-card" onClick={() => openRoom(entry)}>
-                  <span
-                    className={`chat-card__avatar ${entry.kind === 'general' ? 'chat-card__avatar--general' : ''}`}
-                    aria-hidden="true"
-                  >
-                    {entry.kind === 'general' ? (
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M3 12h18" />
-                        <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
-                      </svg>
-                    ) : (
-                      initials(entry.peer && entry.peer.name)
-                    )}
-                  </span>
-
-                  <span className="chat-card__body">
-                    <span className="chat-card__top">
-                      <span className="chat-card__name">
-                        {entry.kind === 'general' ? t('chat.title') : entry.peer.name}
-                      </span>
-                      <span className="chat-card__time">{formatStamp(entry.updated_at, locale)}</span>
-                    </span>
-                    <span className="chat-card__preview">{previewOf(entry)}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button
-          type="button"
-          className="chat__fab"
-          onClick={() => setShowNewChat(true)}
-          aria-label={t('chat.newChatTitle')}
-          title={t('chat.newChatTitle')}
-        >
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
-
-        {showNewChat && (
-          <NewChatModal
-            friends={friends}
-            loading={!friendsLoaded}
-            onSelect={handleStartChat}
-            onClose={() => setShowNewChat(false)}
-          />
-        )}
-
-        <BottomNav />
-      </div>
-    )
-  }
-
   const isGeneral = activeRoom === GENERAL_ROOM
-  const heading = isGeneral ? t('chat.title') : activePeer ? activePeer.name : t('chat.pageTitle')
+  const heading = isGeneral ? t('chat.title') : activePeer ? activePeer.name : ''
   const gated = isGeneral && !generalJoined
-  const loadingThread = !gated && thread.room !== activeRoom
+  const loadingThread = Boolean(activeRoom) && !gated && thread.room !== activeRoom
 
   return (
-    <div className="chat">
-      <header className="page-header chat__header">
-        <button
-          type="button"
-          className="chat__back"
-          onClick={closeRoom}
-          aria-label={t('common.back')}
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
+    <div className={`chat ${activeRoom ? 'chat--open' : ''}`}>
+      <div className="chat__panes">
+        <aside className="chat__sidebar">
+          <header className="page-header chat__header">
+            <h1 className="chat__title">{t('chat.pageTitle')}</h1>
+          </header>
 
-        <h1 className="chat__title">{heading}</h1>
+          {error && <p className="chat__status">{error}</p>}
 
-        {isGeneral && generalJoined && (
-          <button type="button" className="chat__leave" onClick={handleLeaveGeneral}>
-            {t('chat.leave')}
-          </button>
-        )}
-      </header>
+          {!loaded && <PlanetLoader label={t('chat.loadingConversations')} size="small" />}
 
-      {status && <p className="chat__status">{status}</p>}
+          {loaded && (
+            <ul className="chat__list">
+              {cards.map(entry => {
+                const unread = unreadFor(entry.room)
+                const isPinned = pinned.includes(entry.room)
 
-      {gated && (
-        <div className="chat__gate">
-          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.6A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" />
-          </svg>
-
-          <h2 className="chat__gate-title">{t('chat.gateTitle')}</h2>
-          <p className="chat__gate-text">{t('chat.gateText')}</p>
-
-          <button type="button" className="chat__join" onClick={handleJoinGeneral}>
-            {t('chat.join')}
-          </button>
-        </div>
-      )}
-
-      {loadingThread && <PlanetLoader label={t('chat.connecting')} size="small" />}
-
-      {!gated && !loadingThread && (
-        <div className="chat__messages">
-          {thread.messages.length === 0 && <p className="chat__empty">{t('chat.empty')}</p>}
-
-          {thread.messages.map(message => {
-            const mine = currentUser && message.user_id === currentUser.id
-            return (
-              <div key={message.id} className={`chat__row ${mine ? 'chat__row--mine' : ''}`}>
-                <div className="chat__bubble">
-                  {!mine && isGeneral && <span className="chat__author">{message.author_name}</span>}
-
-                  {message.reply_preview && (
-                    <div className="chat__quote">
-                      <span className="chat__quote-author">{message.reply_preview.author_name}</span>
-                      <span className="chat__quote-text">
-                        {message.reply_preview.deleted
-                          ? t('chat.deletedMessage')
-                          : message.reply_preview.kind === 'voice'
-                            ? t('chat.voiceNote')
-                            : message.reply_preview.text || t(`chat.${message.reply_preview.kind}Note`)}
-                      </span>
-                    </div>
-                  )}
-
-                  {message.kind === 'voice' && message.audio ? (
-                    <div className="chat__voice">
-                      <button
-                        type="button"
-                        className="chat__voice-play"
-                        onClick={() => togglePlay(message.id)}
-                        aria-label={playingId === message.id ? t('chat.pause') : t('chat.play')}
+                return (
+                  <li
+                    key={entry.room}
+                    className={`chat-card ${entry.room === activeRoom ? 'is-active' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="chat-card__open"
+                      onClick={() => openRoom(entry)}
+                    >
+                      <span
+                        className={`chat-card__avatar ${entry.kind === 'general' ? 'chat-card__avatar--general' : ''}`}
+                        aria-hidden="true"
                       >
-                        {playingId === message.id ? (
-                          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                            <rect x="6" y="5" width="4" height="14" rx="1" />
-                            <rect x="14" y="5" width="4" height="14" rx="1" />
+                        {entry.kind === 'general' ? (
+                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M3 12h18" />
+                            <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
                           </svg>
                         ) : (
-                          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                            <path d="M8 5l11 7-11 7z" />
-                          </svg>
+                          initials(entry.peer && entry.peer.name)
                         )}
-                      </button>
-
-                      <span className="chat__voice-bars" aria-hidden="true">
-                        {[9, 15, 7, 18, 11, 20, 8, 14, 10, 16, 6, 12].map((height, index) => (
-                          <i key={index} style={{ height: `${height}px` }} />
-                        ))}
                       </span>
 
-                      <span className="chat__voice-time">{formatDuration(message.audio.duration)}</span>
-
-                      <audio
-                        ref={el => {
-                          audioRefs.current[message.id] = el
-                        }}
-                        src={message.audio.url}
-                        preload="none"
-                        onPlay={() => setPlayingId(message.id)}
-                        onPause={() => setPlayingId(id => (id === message.id ? null : id))}
-                        onEnded={() => setPlayingId(id => (id === message.id ? null : id))}
-                      />
-                    </div>
-                  ) : message.media ? (
-                    <div className="chat__media">
-                      {message.kind === 'image' && (
-                        <a href={message.media.url} target="_blank" rel="noreferrer">
-                          <img src={message.media.url} alt={message.media.name} loading="lazy" />
-                        </a>
-                      )}
-
-                      {message.kind === 'video' && (
-                        <video src={message.media.url} controls preload="metadata" />
-                      )}
-
-                      {message.kind === 'file' && (
-                        <a className="chat__file" href={message.media.url} download>
-                          <span className="chat__file-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                              <path d="M14 2v6h6" />
-                            </svg>
+                      <span className="chat-card__body">
+                        <span className="chat-card__top">
+                          <span className="chat-card__name">
+                            {entry.kind === 'general' ? t('chat.title') : entry.peer.name}
+                            {isPinned && (
+                              <svg className="chat-card__pin" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+                                <path d="M14 2l8 8-3 1-1 4-4-2-5 5-1-1 5-5-2-4 4-1z" />
+                              </svg>
+                            )}
                           </span>
-                          <span className="chat__file-info">
-                            <span className="chat__file-name">{message.media.name}</span>
-                            <span className="chat__file-size">{formatBytes(message.media.size)}</span>
-                          </span>
-                        </a>
-                      )}
+                          <span className="chat-card__time">{formatStamp(entry.updated_at, locale)}</span>
+                        </span>
 
-                      {message.text && <p className="chat__text">{message.text}</p>}
-                    </div>
-                  ) : (
-                    <p className="chat__text">{message.text}</p>
-                  )}
+                        <span className="chat-card__bottom">
+                          <span className="chat-card__preview">{previewOf(entry)}</span>
+                          {unread > 0 && (
+                            <NotificationDot
+                              className="notif-dot--chat"
+                              count={unread}
+                              label={t('chat.unreadBadge')}
+                            />
+                          )}
+                        </span>
+                      </span>
+                    </button>
 
-                  <div className="chat__meta">
-                    <span>{formatTime(message.created_at)}</span>
-                    {message.edited_at && <span>{t('chat.edited')}</span>}
-                  </div>
+                    <button
+                      type="button"
+                      className="chat-card__more"
+                      onClick={() => setCardMenu(cardMenu === entry.room ? null : entry.room)}
+                      aria-label={t('chat.chatOptions')}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                        <circle cx="12" cy="5" r="1.7" />
+                        <circle cx="12" cy="12" r="1.7" />
+                        <circle cx="12" cy="19" r="1.7" />
+                      </svg>
+                    </button>
 
-                  <button
-                    type="button"
-                    className="chat__more"
-                    onClick={() => setMenuFor(menuFor === message.id ? null : message.id)}
-                    aria-label={t('chat.messageOptions')}
-                  >
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                      <circle cx="5" cy="12" r="1.6" />
-                      <circle cx="12" cy="12" r="1.6" />
-                      <circle cx="19" cy="12" r="1.6" />
-                    </svg>
-                  </button>
-
-                  {menuFor === message.id && (
-                    <>
-                      <div className="chat__menu-backdrop" onClick={() => setMenuFor(null)} />
-                      <div className="chat__menu">
-                        <button type="button" onClick={() => startReply(message)}>
-                          {t('chat.reply')}
-                        </button>
-                        {mine && message.kind !== 'voice' && (
-                          <button type="button" onClick={() => startEdit(message)}>
-                            {t('common.edit')}
+                    {cardMenu === entry.room && (
+                      <>
+                        <div className="chat__menu-backdrop" onClick={() => setCardMenu(null)} />
+                        <div className="chat-card__menu">
+                          <button type="button" onClick={() => handleTogglePin(entry)}>
+                            {isPinned ? t('chat.unpin') : t('chat.pin')}
                           </button>
-                        )}
-                        {mine && (
-                          <button
-                            type="button"
-                            className="chat__menu-item--danger"
-                            onClick={() => {
-                              setMenuFor(null)
-                              setPendingDelete(message)
-                            }}
-                          >
-                            {t('common.delete')}
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-
-          <div ref={bottomRef} />
-        </div>
-      )}
-
-      {!gated && (
-        <form className="chat__composer" onSubmit={handleSubmit}>
-          {(replyTo || editing) && (
-            <div className="chat__composer-context">
-              <span className="chat__composer-label">
-                {editing ? t('chat.editing') : t('chat.replyingTo', { name: replyTo.author_name })}
-              </span>
-              <button type="button" onClick={cancelComposerState} aria-label={t('common.cancel')}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
+                          {entry.kind === 'direct' && (
+                            <button
+                              type="button"
+                              className="chat__menu-item--danger"
+                              onClick={() => {
+                                setCardMenu(null)
+                                setPendingClear(entry)
+                              }}
+                            >
+                              {t('chat.deleteChat')}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           )}
 
-          {uploading && (
-            <div className="chat__upload">
-              <span className="chat__upload-label">{t('chat.uploading')}</span>
-              <span className="chat__upload-track">
-                <span className="chat__upload-fill" style={{ width: `${progress}%` }} />
-              </span>
-              <span className="chat__upload-pct">{progress}%</span>
-            </div>
-          )}
+          <button
+            type="button"
+            className="chat__fab"
+            onClick={() => setShowNewChat(true)}
+            aria-label={t('chat.newChatTitle')}
+            title={t('chat.newChatTitle')}
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </aside>
 
-          {recording ? (
-            <div className="chat__recording">
-              <span className="chat__recording-dot" aria-hidden="true" />
-              <span className="chat__recording-time">{formatDuration(elapsed)}</span>
-              <span className="chat__recording-hint">{t('chat.recordingHint')}</span>
-              <button type="button" className="chat__recording-cancel" onClick={cancelRecording}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                className="chat__recording-send"
-                onClick={stopRecording}
-                aria-label={t('chat.send')}
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 2 11 13" />
-                  <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              </button>
+        <section className="chat__thread">
+          {!activeRoom ? (
+            <div className="chat__placeholder">
+              <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+                <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.6A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" />
+              </svg>
+              <p>{t('chat.pickConversation')}</p>
             </div>
           ) : (
-            <div className="chat__composer-row">
-              <input
-                ref={inputRef}
-                type="text"
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                placeholder={t('chat.placeholder')}
-                maxLength={1000}
-                aria-label={t('chat.placeholder')}
-              />
-
-              <input
-                ref={fileRef}
-                type="file"
-                accept={ACCEPTED_TYPES}
-                onChange={handleFileChosen}
-                style={{ display: 'none' }}
-              />
-
-              <button
-                type="button"
-                className="chat__attach"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                aria-label={t('chat.attach')}
-                title={t('chat.attach')}
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.4 11.1 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.1a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.1a1.8 1.8 0 0 1-2.6-2.6l8.5-8.4" />
-                </svg>
-              </button>
-
-              {draft.trim() || editing ? (
-                <button type="submit" aria-label={t('chat.send')}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 2 11 13" />
-                    <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                </button>
-              ) : (
+            <>
+              <header ref={threadHeaderRef} className="page-header chat__header chat__header--thread">
                 <button
                   type="button"
-                  className="chat__mic"
-                  onClick={startRecording}
-                  aria-label={t('chat.recordVoice')}
-                  title={t('chat.recordVoice')}
+                  className="chat__back"
+                  onClick={closeRoom}
+                  aria-label={t('common.back')}
                 >
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="2" width="6" height="11" rx="3" />
-                    <path d="M5 10a7 7 0 0 0 14 0" />
-                    <path d="M12 17v4" />
+                    <path d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
+
+                <span className="chat__peer" aria-hidden="true">
+                  {isGeneral ? (
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M3 12h18" />
+                      <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z" />
+                    </svg>
+                  ) : (
+                    initials(heading)
+                  )}
+                </span>
+
+                <h1 className="chat__title">{heading}</h1>
+
+                {isGeneral && generalJoined && (
+                  <button type="button" className="chat__leave" onClick={handleLeaveGeneral}>
+                    {t('chat.leave')}
+                  </button>
+                )}
+              </header>
+
+              {status && <p className="chat__status">{status}</p>}
+
+              {gated && (
+                <div className="chat__gate">
+                  <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4-.8L3 21l1.9-4.6A8.3 8.3 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z" />
+                  </svg>
+
+                  <h2 className="chat__gate-title">{t('chat.gateTitle')}</h2>
+                  <p className="chat__gate-text">{t('chat.gateText')}</p>
+
+                  <button type="button" className="chat__join" onClick={handleJoinGeneral}>
+                    {t('chat.join')}
+                  </button>
+                </div>
               )}
-            </div>
+
+              {loadingThread && <PlanetLoader label={t('chat.connecting')} size="small" />}
+
+              {!gated && !loadingThread && (
+                <div className="chat__messages">
+                  {thread.messages.length === 0 && <p className="chat__empty">{t('chat.empty')}</p>}
+
+                  {thread.messages.map(message => {
+                    const mine = currentUser && message.user_id === currentUser.id
+                    return (
+                      <div key={message.id} className={`chat__row ${mine ? 'chat__row--mine' : ''}`}>
+                        <div className="chat__bubble">
+                          {!mine && isGeneral && (
+                            <span className="chat__author">{message.author_name}</span>
+                          )}
+
+                          {message.reply_preview && (
+                            <div className="chat__quote">
+                              <span className="chat__quote-author">
+                                {message.reply_preview.author_name}
+                              </span>
+                              <span className="chat__quote-text">
+                                {message.reply_preview.deleted
+                                  ? t('chat.deletedMessage')
+                                  : message.reply_preview.kind === 'voice'
+                                    ? t('chat.voiceNote')
+                                    : message.reply_preview.text ||
+                                      t(`chat.${message.reply_preview.kind}Note`)}
+                              </span>
+                            </div>
+                          )}
+
+                          {message.kind === 'voice' && message.audio ? (
+                            <div className="chat__voice">
+                              <button
+                                type="button"
+                                className="chat__voice-play"
+                                onClick={() => togglePlay(message.id)}
+                                aria-label={playingId === message.id ? t('chat.pause') : t('chat.play')}
+                              >
+                                {playingId === message.id ? (
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                                    <rect x="6" y="5" width="4" height="14" rx="1" />
+                                    <rect x="14" y="5" width="4" height="14" rx="1" />
+                                  </svg>
+                                ) : (
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                                    <path d="M8 5l11 7-11 7z" />
+                                  </svg>
+                                )}
+                              </button>
+
+                              <span className="chat__voice-bars" aria-hidden="true">
+                                {[9, 15, 7, 18, 11, 20, 8, 14, 10, 16, 6, 12].map((height, index) => (
+                                  <i key={index} style={{ height: `${height}px` }} />
+                                ))}
+                              </span>
+
+                              <span className="chat__voice-time">
+                                {formatDuration(message.audio.duration)}
+                              </span>
+
+                              <audio
+                                ref={el => {
+                                  audioRefs.current[message.id] = el
+                                }}
+                                src={message.audio.url}
+                                preload="none"
+                                onPlay={() => setPlayingId(message.id)}
+                                onPause={() => setPlayingId(id => (id === message.id ? null : id))}
+                                onEnded={() => setPlayingId(id => (id === message.id ? null : id))}
+                              />
+                            </div>
+                          ) : message.media ? (
+                            <div className="chat__media">
+                              {message.kind === 'image' && (
+                                <a href={message.media.url} target="_blank" rel="noreferrer">
+                                  <img src={message.media.url} alt={message.media.name} loading="lazy" />
+                                </a>
+                              )}
+
+                              {message.kind === 'video' && (
+                                <video src={message.media.url} controls preload="metadata" />
+                              )}
+
+                              {message.kind === 'file' && (
+                                <a className="chat__file" href={message.media.url} download>
+                                  <span className="chat__file-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                      <path d="M14 2v6h6" />
+                                    </svg>
+                                  </span>
+                                  <span className="chat__file-info">
+                                    <span className="chat__file-name">{message.media.name}</span>
+                                    <span className="chat__file-size">{formatBytes(message.media.size)}</span>
+                                  </span>
+                                </a>
+                              )}
+
+                              {message.text && <p className="chat__text">{message.text}</p>}
+                            </div>
+                          ) : (
+                            <p className="chat__text">{message.text}</p>
+                          )}
+
+                          <div className="chat__meta">
+                            <span>{formatTime(message.created_at)}</span>
+                            {message.edited_at && <span>{t('chat.edited')}</span>}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="chat__more"
+                            onClick={() => setMenuFor(menuFor === message.id ? null : message.id)}
+                            aria-label={t('chat.messageOptions')}
+                          >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                              <circle cx="5" cy="12" r="1.6" />
+                              <circle cx="12" cy="12" r="1.6" />
+                              <circle cx="19" cy="12" r="1.6" />
+                            </svg>
+                          </button>
+
+                          {menuFor === message.id && (
+                            <>
+                              <div className="chat__menu-backdrop" onClick={() => setMenuFor(null)} />
+                              <div className="chat__menu">
+                                <button type="button" onClick={() => startReply(message)}>
+                                  {t('chat.reply')}
+                                </button>
+                                {mine && message.kind !== 'voice' && (
+                                  <button type="button" onClick={() => startEdit(message)}>
+                                    {t('common.edit')}
+                                  </button>
+                                )}
+                                {mine && (
+                                  <button
+                                    type="button"
+                                    className="chat__menu-item--danger"
+                                    onClick={() => {
+                                      setMenuFor(null)
+                                      setPendingDelete(message)
+                                    }}
+                                  >
+                                    {t('common.delete')}
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div ref={bottomRef} />
+                </div>
+              )}
+
+              {!gated && (
+                <form className="chat__composer" onSubmit={handleSubmit}>
+                  {(replyTo || editing) && (
+                    <div className="chat__composer-context">
+                      <span className="chat__composer-label">
+                        {editing ? t('chat.editing') : t('chat.replyingTo', { name: replyTo.author_name })}
+                      </span>
+                      <button type="button" onClick={cancelComposerState} aria-label={t('common.cancel')}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+
+                  {uploading && (
+                    <div className="chat__upload">
+                      <span className="chat__upload-label">{t('chat.uploading')}</span>
+                      <span className="chat__upload-track">
+                        <span className="chat__upload-fill" style={{ width: `${progress}%` }} />
+                      </span>
+                      <span className="chat__upload-pct">{progress}%</span>
+                    </div>
+                  )}
+
+                  {recording ? (
+                    <div className="chat__recording">
+                      <span className="chat__recording-dot" aria-hidden="true" />
+                      <span className="chat__recording-time">{formatDuration(elapsed)}</span>
+                      <span className="chat__recording-hint">{t('chat.recordingHint')}</span>
+                      <button type="button" className="chat__recording-cancel" onClick={cancelRecording}>
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        type="button"
+                        className="chat__recording-send"
+                        onClick={stopRecording}
+                        aria-label={t('chat.send')}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 2 11 13" />
+                          <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="chat__composer-row">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={draft}
+                        onChange={e => setDraft(e.target.value)}
+                        placeholder={t('chat.placeholder')}
+                        maxLength={1000}
+                        aria-label={t('chat.placeholder')}
+                      />
+
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept={ACCEPTED_TYPES}
+                        onChange={handleFileChosen}
+                        style={{ display: 'none' }}
+                      />
+
+                      <button
+                        type="button"
+                        className="chat__attach"
+                        onClick={() => fileRef.current?.click()}
+                        disabled={uploading}
+                        aria-label={t('chat.attach')}
+                        title={t('chat.attach')}
+                      >
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21.4 11.1 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.1a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.1a1.8 1.8 0 0 1-2.6-2.6l8.5-8.4" />
+                        </svg>
+                      </button>
+
+                      {draft.trim() || editing ? (
+                        <button type="submit" aria-label={t('chat.send')}>
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 2 11 13" />
+                            <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="chat__mic"
+                          onClick={startRecording}
+                          aria-label={t('chat.recordVoice')}
+                          title={t('chat.recordVoice')}
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="2" width="6" height="11" rx="3" />
+                            <path d="M5 10a7 7 0 0 0 14 0" />
+                            <path d="M12 17v4" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </form>
+              )}
+            </>
           )}
-        </form>
+        </section>
+      </div>
+
+      {showNewChat && (
+        <NewChatModal
+          friends={friends}
+          loading={!friendsLoaded}
+          onSelect={handleStartChat}
+          onClose={() => setShowNewChat(false)}
+        />
+      )}
+
+      {pendingClear && (
+        <ConfirmDialog
+          title={t('chat.clearTitle')}
+          message={t('chat.clearMessage', {
+            name: pendingClear.peer ? pendingClear.peer.name : ''
+          })}
+          confirmLabel={t('common.delete')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={confirmClear}
+          onCancel={() => setPendingClear(null)}
+        />
       )}
 
       {pendingDelete && (
@@ -966,6 +1072,12 @@ function Chat() {
           onCancel={() => setPendingDelete(null)}
         />
       )}
+
+      <FloatingBackButton
+        visible={Boolean(activeRoom) && headerPassed}
+        onClick={closeRoom}
+        label={t('common.back')}
+      />
 
       <BottomNav />
     </div>

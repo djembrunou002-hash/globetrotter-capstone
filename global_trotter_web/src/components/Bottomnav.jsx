@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { useItineraryDraft } from '../hooks/useItineraryDraft.js'
 import { useNotifications } from '../hooks/useNotifications.js'
+import { useChatUnread } from '../hooks/useChatUnread.js'
 import NotificationDot from './NotificationDot.jsx'
 import '../styles/Bottomnav.css'
 
@@ -10,6 +11,7 @@ function BottomNav() {
   const { t } = useTranslation()
   const { selectionMode } = useItineraryDraft()
   const { unseenCount } = useNotifications()
+  const { totalUnread } = useChatUnread()
 
   const items = [
     {
@@ -79,10 +81,14 @@ function BottomNav() {
       {items.map(item => {
         const isActive = location.pathname === item.to
         const showDot = item.to === '/profile' && unseenCount > 0
+        const showChatDot = item.to === '/chat' && totalUnread > 0
         const icon = (
           <span className="bottom-nav__icon">
             {item.icon}
             {showDot && <NotificationDot className="notif-dot--nav" label={t('notifications.new')} />}
+            {showChatDot && (
+              <NotificationDot className="notif-dot--nav" label={t('chat.unreadBadge')} />
+            )}
           </span>
         )
 

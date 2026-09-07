@@ -27,3 +27,19 @@
   height: 11px;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
 }
+
+.notif-dot--count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}

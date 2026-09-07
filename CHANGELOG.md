@@ -639,3 +639,29 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 ### Notes
 - Existing messages in `data/messages.json` have no `room` key and are read as `general`, so no migration is needed.
 - Started-but-empty direct chats persist in `localStorage` under `globaltrotter_chat_started_<userId>` and are resolved against the friends list, so they disappear on their own if the friendship is removed.
+
+
+
+### Added
+- Two-pane desktop chat layout. From 1024px up the conversation list and the open thread sit side by side with independent scrolling and sticky headers; below that the page keeps the single-pane switch between list and thread.
+- Per-chat unread badges and an unread pastille on the Chat tab of the bottom navigation, visible from anywhere in the app.
+- `ChatUnreadProvider` / `useChatUnread`: owns the conversation list, unread counts, pinned rooms and started-but-empty chats. Polls on navigation, tab focus and a 60s interval, mirroring `NotificationsProvider`.
+- `src/utils/chatStorage.js`: per-user localStorage for read counts, pinned rooms and started chats, with a subscribe callback so changes propagate across tabs.
+- Three-dot menu on every conversation card: pin to top, and delete chat for direct conversations.
+- `DELETE /chat/conversations/<room>`: clears every message in a direct room and removes the backing voice and media files. Refuses the general room and refuses non-participants. Broadcasts `chat:cleared` to both participants.
+- `incoming_count` on each conversation: visible messages in that room not written by the caller.
+- Floating back button in an open thread, appearing once the thread header scrolls out of view, matching the behaviour of the other pages.
+- `NotificationDot` accepts an optional `count` and renders a numeric pill; existing call sites pass nothing and are unchanged.
+- Translation keys for the card menu, delete confirmation, unread badge and empty thread placeholder in EN and FR.
+
+### Changed
+- The Chat page no longer fetches conversations itself; it consumes `useChatUnread` so the list has a single owner and cannot drift between the page and the nav badge.
+- Conversation cards are ordered pinned first (in pin order), then the general chat, then the rest by recency.
+- Conversation cards are now a list item holding separate open and menu buttons rather than a single button, so the three-dot control can nest inside the card.
+- The composer is fixed to the viewport on mobile and static inside the thread pane on desktop.
+- Chat rooms started from the friend picker moved from `globaltrotter_chat_started_<userId>` to `globaltrotter:chat:started:<userId>` for consistency with the other chat keys.
+
+### Notes
+- Unread counts are derived client-side as `incoming_count` minus the locally stored seen count, clamped at zero, so a deleted message cannot produce a negative badge and your own messages never raise one.
+- Pinning is a personal, client-side preference and is not shared with the other participant.
+- Deleting a chat clears it for both participants. With a single shared message store there is no per-user copy to remove; the confirmation dialog states this explicitly.

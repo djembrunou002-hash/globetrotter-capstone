@@ -92,6 +92,22 @@ def create_app():
 
         return jsonify({"conversations": message_store.conversations(user_id)}), 200
 
+    @app.route("/chat/conversations/<room>", methods=["DELETE"])
+    def clear_conversation(room):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        room = room_utils.normalize(room)
+
+        try:
+            removed = message_store.clear_room(user_id, room)
+        except PermissionError as err:
+            return jsonify({"error": str(err)}), 403
+
+        _broadcast("chat:cleared", {"room": room}, room)
+        return jsonify({"room": room, "removed": removed}), 200
+
     @app.route("/chat/upload", methods=["POST"])
     def upload():
         user_id = _identity_from_header()
