@@ -9,6 +9,7 @@ from flask_jwt_extended import JWTManager, decode_token
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 from config import Config
+from services import calls as call_store
 from services import groups as group_store
 from services import messages as message_store
 from services import presence as presence_store
@@ -80,6 +81,19 @@ def _rooms_for(user_id):
     rooms.update(group_store.room_ids_for_user(user_id))
     rooms.update(message_store.direct_rooms_for(user_id))
     return rooms
+
+
+def _call_targets(room):
+    members = _room_members(room)
+    if members:
+        return members
+    return presence_store.online_ids()
+
+
+def _push_call(room, call):
+    payload = {"room": room, "call": call_store.public(call)}
+    for member_id in _call_targets(room):
+        socketio.emit("call:state", payload, to=_user_room(member_id))
 
 
 def _announce_presence(user_id, online):
@@ -447,6 +461,7 @@ def on_connect(auth):
         )
 
     emit("chat:online", {"ids": presence_store.online_ids()})
+    emit("call:active", {"calls": call_store.active_for(_rooms_for(user_id))})
     return True
 
 
@@ -457,7 +472,18 @@ def on_disconnect():
     _sessions.pop(request.sid, None)
     user_id, went_offline = presence_store.disconnect(request.sid)
 
-    if user_id and went_offline:
+    if not user_id:
+        return
+
+    changed, ended = call_store.drop_user(user_id)
+
+    for call in changed:
+        _push_call(call["room"], call)
+
+    for room in ended:
+        _push_call(room, None)
+
+    if went_offline:
         _announce_presence(user_id, False)
 
 
@@ -496,7 +522,12 @@ def on_typing(payload=None):
             continue
         socketio.emit(
             "chat:typing",
-            {"room": room, "user_id": user_id, "mode": mode},
+            {
+                "room": room,
+                "user_id": user_id,
+                "name": (payload.get("name") or "")[:60],
+                "mode": mode,
+            },
             to=_user_room(member_id),
         )
 
@@ -515,6 +546,92 @@ def on_read(payload=None):
         "chat:receipt",
         {"room": room, "user_id": user_id, "state": "read", "ids": ids},
         room,
+    )
+
+
+def _display_name(user_id):
+    from services.clients import fetch_users
+
+    record = fetch_users([user_id]).get(user_id) or {}
+    return record.get("name") or "Traveler"
+
+
+@socketio.on("call:start")
+def on_call_start(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    payload = payload or {}
+    kind = payload.get("kind") if payload.get("kind") in ("audio", "video") else "audio"
+
+    call, created = call_store.start(room, user_id, _display_name(user_id), kind)
+    if not call:
+        return _fail("this call is no longer available")
+
+    _push_call(room, call)
+
+    if created:
+        for member_id in _call_targets(room):
+            if member_id == user_id:
+                continue
+            socketio.emit(
+                "call:incoming",
+                {"room": room, "call": call_store.public(call)},
+                to=_user_room(member_id),
+            )
+
+
+@socketio.on("call:join")
+def on_call_join(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    call = call_store.join(room, user_id, _display_name(user_id))
+    if not call:
+        return _fail("this call has ended")
+
+    _push_call(room, call)
+
+
+@socketio.on("call:leave")
+def on_call_leave(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    call, ended = call_store.leave(room, user_id)
+    _push_call(room, None if ended else call)
+
+
+@socketio.on("call:media")
+def on_call_media(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    call = call_store.set_media(room, user_id, payload or {})
+    if call:
+        _push_call(room, call)
+
+
+@socketio.on("call:signal")
+def on_call_signal(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    payload = payload or {}
+    target = payload.get("to")
+
+    if not target or not call_store.is_participant(room, target):
+        return
+
+    socketio.emit(
+        "call:signal",
+        {"room": room, "from": user_id, "data": payload.get("data")},
+        to=_user_room(target),
     )
 
 

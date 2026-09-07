@@ -1,0 +1,222 @@
+.call {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  background: #10261B;
+  color: #fff;
+}
+
+.call__head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px clamp(14px, 4vw, 24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.call__kind {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+}
+
+.call__timer {
+  flex: 1;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.call__count {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.call__status {
+  margin: 0;
+  padding: 10px clamp(14px, 4vw, 24px);
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.call__grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  padding: 14px clamp(14px, 4vw, 24px);
+  overflow-y: auto;
+}
+
+.call__grid--solo {
+  grid-template-columns: 1fr;
+}
+
+.call__grid--duo {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.call__grid--quad {
+  grid-template-columns: repeat(2, 1fr);
+  align-content: center;
+}
+
+.call__grid--many {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-content: start;
+}
+
+.call-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 130px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #173625;
+}
+
+.call-tile__pulse {
+  --level: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 2px rgba(212, 175, 55, calc(var(--level) * 1.4));
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(212, 175, 55, calc(var(--level) * 0.22)) 0%,
+    transparent 68%
+  );
+  transition: box-shadow 90ms linear, background 90ms linear;
+  pointer-events: none;
+}
+
+.call-tile__pulse[data-speaking='true'] {
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+.call-tile__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.call-tile__video.is-mirrored {
+  transform: scaleX(-1);
+}
+
+.call-tile__avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.call__grid--solo .call-tile__avatar,
+.call__grid--duo .call-tile__avatar {
+  width: 96px;
+  height: 96px;
+  font-size: 1.7rem;
+}
+
+.call-tile__name {
+  position: absolute;
+  left: 10px;
+  bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 60px);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.42);
+  font-size: 0.74rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.call-tile__mute {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.42);
+  color: #fff;
+  cursor: pointer;
+}
+
+.call-tile__mute.is-active {
+  background: var(--color-ember);
+}
+
+.call__controls {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px clamp(14px, 4vw, 24px) calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.call__control {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+}
+
+.call__control.is-active {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.call__control:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.call__control--end {
+  background: var(--color-ember);
+}
+
+@media (min-width: 1024px) {
+  .call {
+    position: absolute;
+  }
+
+  .call__grid--duo {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .call-tile__pulse {
+    transition: none;
+  }
+}

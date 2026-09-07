@@ -258,3 +258,9 @@
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+@media (min-width: 1024px) {
+  .attach {
+    position: absolute;
+  }
+}

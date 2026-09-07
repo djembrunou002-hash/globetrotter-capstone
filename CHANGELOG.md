@@ -718,3 +718,28 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - In a group, ticks turn gold only when every other member has read the message, matching WhatsApp. In the general chat there is no meaningful recipient set, so messages there stay on a single tick.
 - Typing entries older than seven seconds are swept every 2.5 seconds, so a sender who disconnects mid-typing cannot leave a stuck indicator.
 - `delivered_to` and `read_by` are absent on messages written before this change; reads use a fallback and writes use `setdefault`, so they backfill on first touch with no migration.
+
+
+
+### Added
+- Voice and video calls over WebRTC, in direct chats and in groups. Each participant opens a peer connection to every other participant (mesh), with Socket.IO carrying the signalling.
+- `chat-service/services/calls.py`: in-memory registry of the call running in each room, holding the kind, who started it, and each participant's mute and camera flags. Calls are deliberately not persisted, since a call has no meaning after a restart.
+- Call events: `call:start`, `call:join`, `call:leave`, `call:media` and `call:signal` inbound; `call:state`, `call:incoming` and `call:active` outbound.
+- Joining an ongoing call three ways: a banner above the messages when a call is running in the room being viewed, a toast when a call starts elsewhere, and `call:active` on connect so a call already in progress appears on page load.
+- `useCall` hook owning the local media stream, the mesh of peer connections, and per-stream audio analysis.
+- `CallPanel` component: participant tiles that adapt to headcount (one fills the pane, two split it, three or four go 2x2, more auto-fill), running duration, and controls for mute, camera, mute-everyone and hang up.
+- Speaking indicator driven by an `AnalyserNode` per stream. A `requestAnimationFrame` loop writes a `--level` CSS variable and a `data-speaking` attribute directly onto the tile elements, so the glow tracks volume without any React state at frame rate.
+- Call buttons in the thread header for direct chats and groups.
+
+### Changed
+- The attachment composer and the call panel are confined to the thread pane on desktop (`position: absolute` inside `.chat__thread`, which gained `position: relative`) and remain full screen on phones. The attachment composer was also moved inside the thread section in the JSX; it had been mounted at the page root, so no CSS alone could have contained it.
+- `useCall` and `CallPanel` no longer take a socket prop; the hook calls `getSocket()` at the point of use. This keeps refs out of render and, more importantly, always resolves the live socket rather than an instance captured at render time.
+
+### Notes
+- `call:start` on a room that already has a call joins that call rather than replacing it, so two people pressing call at the same moment end up in one session.
+- Peer negotiation uses the perfect negotiation pattern, with polite and impolite roles derived from comparing user ids. This handles simultaneous offers when two people join together, and lets the camera be switched on mid-call through ordinary renegotiation.
+- "Mute everyone" and the per-tile speaker button are local mutes; a browser cannot disable another person's microphone remotely, so the labels say the audio is silenced for you only.
+- Calls are disabled in the general chat, where every user is a member and a mesh would not hold.
+- Disconnecting drops the user from any call they were in and pushes the updated state, so a closed tab does not leave a participant others keep trying to reach.
+- Only STUN servers are configured. Two peers on the same network connect reliably; peers on different networks behind symmetric NAT will often fail until a TURN server is added to `ICE_SERVERS` in `src/hooks/useCall.js`.
+- Mesh topology is appropriate up to roughly four to six participants; beyond that the uplink cost grows quadratically and an SFU would be required.

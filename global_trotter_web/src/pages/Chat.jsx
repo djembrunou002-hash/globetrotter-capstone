@@ -12,6 +12,7 @@ import AttachmentComposer from '../components/AttachmentComposer.jsx'
 import EmojiPicker from '../components/EmojiPicker.jsx'
 import VoiceRecorder from '../components/VoiceRecorder.jsx'
 import TypingIndicator from '../components/TypingIndicator.jsx'
+import CallPanel from '../components/CallPanel.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
@@ -67,6 +68,10 @@ function rememberJoin(user, value) {
   } catch {
     return
   }
+}
+
+function isGeneralRoom(room) {
+  return room === GENERAL_ROOM
 }
 
 function titleOf(entry, t) {
@@ -128,6 +133,9 @@ function Chat() {
   const [thread, setThread] = useState({ room: null, messages: [] })
   const [presence, setPresence] = useState({})
   const [typing, setTyping] = useState({})
+  const [calls, setCalls] = useState({})
+  const [joinedCall, setJoinedCall] = useState(null)
+  const [incomingCall, setIncomingCall] = useState(null)
 
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState(null)
@@ -369,6 +377,32 @@ function Chat() {
       })
     })
 
+    socket.on('call:active', payload => {
+      const map = {}
+      ;(payload.calls || []).forEach(item => {
+        map[item.room] = item
+      })
+      setCalls(map)
+    })
+
+    socket.on('call:state', payload => {
+      setCalls(prev => {
+        const next = { ...prev }
+        if (payload.call) next[payload.room] = payload.call
+        else delete next[payload.room]
+        return next
+      })
+
+      if (!payload.call) {
+        setJoinedCall(current => (current === payload.room ? null : current))
+        setIncomingCall(current => (current && current.room === payload.room ? null : current))
+      }
+    })
+
+    socket.on('call:incoming', payload => {
+      setIncomingCall(payload.call)
+    })
+
     socket.on('chat:error', payload => {
       setStatus(payload.error)
     })
@@ -474,6 +508,10 @@ function Chat() {
   const activeEntry = all.find(item => item.room === activeRoom) || null
   const activeGroup = activeEntry && activeEntry.kind === 'group' ? activeEntry.group : null
   const canPost = !activeGroup || activeGroup.can_post
+
+  const roomCall = activeRoom ? calls[activeRoom] || null : null
+  const inCall = Boolean(joinedCall && roomCall && joinedCall === activeRoom)
+  const canCall = Boolean(activeRoom) && !isGeneralRoom(activeRoom)
 
   const recipients = (() => {
     if (!activeRoom || !currentUser) return []
@@ -620,6 +658,28 @@ function Chat() {
 
     if (typingStopRef.current) clearTimeout(typingStopRef.current)
     typingStopRef.current = setTimeout(stopTyping, 3200)
+  }
+
+  function startCall(kind) {
+    if (!activeRoom || !socketRef.current) return
+
+    socketRef.current.emit('call:start', { room: activeRoom, kind })
+    setJoinedCall(activeRoom)
+    setIncomingCall(null)
+  }
+
+  function joinCall(room) {
+    if (!socketRef.current) return
+
+    socketRef.current.emit('call:join', { room })
+    setJoinedCall(room)
+    setIncomingCall(null)
+  }
+
+  function leaveCall() {
+    const room = joinedCall
+    setJoinedCall(null)
+    if (room) socketRef.current?.emit('call:leave', { room })
   }
 
   function resetComposer() {
@@ -1243,6 +1303,35 @@ function Chat() {
                   )}
                 </span>
 
+                {canCall && (
+                  <button
+                    type="button"
+                    className="chat__call-button"
+                    onClick={() => startCall('audio')}
+                    aria-label={t('chat.audioCall')}
+                    title={t('chat.audioCall')}
+                  >
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+                    </svg>
+                  </button>
+                )}
+
+                {canCall && (
+                  <button
+                    type="button"
+                    className="chat__call-button"
+                    onClick={() => startCall('video')}
+                    aria-label={t('chat.videoCall')}
+                    title={t('chat.videoCall')}
+                  >
+                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="6" width="14" height="12" rx="2" />
+                      <path d="M16 10l6-3v10l-6-3z" />
+                    </svg>
+                  </button>
+                )}
+
                 {activeGroup && (
                   <button
                     type="button"
@@ -1286,6 +1375,18 @@ function Chat() {
 
                   <button type="button" className="chat__join" onClick={handleJoinGeneral}>
                     {t('chat.join')}
+                  </button>
+                </div>
+              )}
+
+              {roomCall && !inCall && (
+                <div className="chat__call-banner">
+                  <span className="chat__call-banner-dot" aria-hidden="true" />
+                  <span className="chat__call-banner-text">
+                    {t('chat.callOngoing', { count: roomCall.participants.length })}
+                  </span>
+                  <button type="button" onClick={() => joinCall(activeRoom)}>
+                    {t('chat.joinCall')}
                   </button>
                 </div>
               )}
@@ -1463,6 +1564,31 @@ function Chat() {
 
                 </form>
               )}
+              {pendingFiles && (
+                <AttachmentComposer
+                  files={pendingFiles}
+                  uploading={uploading}
+                  progress={progress}
+                  sentCount={sentCount}
+                  error={uploadError}
+                  onSend={handleSendAttachments}
+                  onCancel={() => {
+                    if (uploading) return
+                    setPendingFiles(null)
+                    setUploadError('')
+                  }}
+                />
+              )}
+
+              {inCall && (
+                <CallPanel
+                  room={activeRoom}
+                  call={roomCall}
+                  currentUser={currentUser}
+                  onLeave={leaveCall}
+                  onError={setStatus}
+                />
+              )}
             </>
           )}
         </section>
@@ -1516,22 +1642,6 @@ function Chat() {
         />
       )}
 
-      {pendingFiles && (
-        <AttachmentComposer
-          files={pendingFiles}
-          uploading={uploading}
-          progress={progress}
-          sentCount={sentCount}
-          error={uploadError}
-          onSend={handleSendAttachments}
-          onCancel={() => {
-            if (uploading) return
-            setPendingFiles(null)
-            setUploadError('')
-          }}
-        />
-      )}
-
       {pendingClear && (
         <ConfirmDialog
           title={t('chat.clearTitle')}
@@ -1556,6 +1666,39 @@ function Chat() {
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
         />
+      )}
+
+      {incomingCall && joinedCall !== incomingCall.room && (
+        <div className="call-toast" role="alert">
+          <span className="call-toast__ring" aria-hidden="true" />
+          <span className="call-toast__text">
+            {t('chat.incomingCall', {
+              kind:
+                incomingCall.kind === 'video' ? t('chat.videoCall') : t('chat.audioCall')
+            })}
+          </span>
+          <button
+            type="button"
+            className="call-toast__accept"
+            onClick={() => {
+              const entry = all.find(item => item.room === incomingCall.room)
+              if (entry) openRoom(entry)
+              joinCall(incomingCall.room)
+            }}
+          >
+            {t('chat.joinCall')}
+          </button>
+          <button
+            type="button"
+            className="call-toast__dismiss"
+            onClick={() => setIncomingCall(null)}
+            aria-label={t('common.cancel')}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
       )}
 
       <FloatingBackButton
