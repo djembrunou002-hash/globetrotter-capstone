@@ -9,6 +9,7 @@ from flask_jwt_extended import JWTManager, decode_token
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 from config import Config
+from services import groups as group_store
 from services import messages as message_store
 from services import rooms as room_utils
 from services.service_client import ServiceUnavailable
@@ -44,12 +45,30 @@ def _user_room(user_id):
 def _targets(room):
     if room == room_utils.GENERAL:
         return [room_utils.GENERAL]
+
+    if room_utils.is_group(room):
+        group = group_store.get(room)
+        return [_user_room(uid) for uid in (group["members"] if group else [])]
+
     return [_user_room(uid) for uid in room_utils.participants(room)]
 
 
 def _broadcast(event, payload, room):
     for target in _targets(room):
         socketio.emit(event, payload, to=target)
+
+
+def _notify_members(group_id, member_ids):
+    for member_id in set(member_ids):
+        socketio.emit("chat:groups", {"room": group_id}, to=_user_room(member_id))
+
+
+def _group_error(err):
+    if isinstance(err, LookupError):
+        return jsonify({"error": str(err)}), 404
+    if isinstance(err, PermissionError):
+        return jsonify({"error": str(err)}), 403
+    return jsonify({"error": str(err)}), 400
 
 
 def create_app():
@@ -90,7 +109,10 @@ def create_app():
         if not user_id:
             return jsonify({"error": "authentication required"}), 401
 
-        return jsonify({"conversations": message_store.conversations(user_id)}), 200
+        summaries = [
+            group_store.summary(group, user_id) for group in group_store.list_for_user(user_id)
+        ]
+        return jsonify({"conversations": message_store.conversations(user_id, summaries)}), 200
 
     @app.route("/chat/conversations/<room>", methods=["DELETE"])
     def clear_conversation(room):
@@ -100,13 +122,167 @@ def create_app():
 
         room = room_utils.normalize(room)
 
+        if room_utils.is_group(room):
+            group = group_store.get(room)
+            if not group_store.is_admin(group, user_id):
+                return jsonify({"error": "only admins can clear this group"}), 403
+
         try:
-            removed = message_store.clear_room(user_id, room)
+            removed = message_store.clear_room(user_id, room, group_store.room_ids_for_user(user_id))
         except PermissionError as err:
             return jsonify({"error": str(err)}), 403
 
         _broadcast("chat:cleared", {"room": room}, room)
         return jsonify({"room": room, "removed": removed}), 200
+
+    @app.route("/chat/groups", methods=["POST"])
+    def create_group():
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.create(user_id, body.get("name"), body.get("member_ids"))
+        except ValueError as err:
+            return jsonify({"error": str(err)}), 400
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 201
+
+    @app.route("/chat/groups/join", methods=["POST"])
+    def join_group():
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.join_by_token(user_id, body.get("token"))
+        except (LookupError, ValueError) as err:
+            return _group_error(err)
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>", methods=["GET"])
+    def get_group(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        group = group_store.get(group_id)
+        if not group:
+            return jsonify({"error": "group not found"}), 404
+        if not group_store.is_member(group, user_id):
+            return jsonify({"error": "you are not a member of this group"}), 403
+
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>", methods=["PUT"])
+    def rename_group(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.rename(user_id, group_id, body.get("name"))
+        except (LookupError, PermissionError, ValueError) as err:
+            return _group_error(err)
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>/members", methods=["POST"])
+    def add_group_member(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.add_member(user_id, group_id, body.get("user_id"))
+        except (LookupError, PermissionError, ValueError) as err:
+            return _group_error(err)
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>/members/<member_id>", methods=["DELETE"])
+    def remove_group_member(group_id, member_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        before = group_store.get(group_id)
+        audience = list(before["members"]) if before else []
+
+        try:
+            group = group_store.remove_member(user_id, group_id, member_id)
+        except (LookupError, PermissionError) as err:
+            return _group_error(err)
+
+        _notify_members(group_id, audience)
+
+        if not group:
+            return jsonify({"group": None, "removed": member_id}), 200
+
+        if member_id == user_id:
+            return jsonify({"group": None, "removed": member_id}), 200
+
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>/admins", methods=["PUT"])
+    def set_group_admin(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.set_admin(
+                user_id, group_id, body.get("user_id"), bool(body.get("admin"))
+            )
+        except (LookupError, PermissionError) as err:
+            return _group_error(err)
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>/settings", methods=["PUT"])
+    def update_group_settings(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        body = flask_request.get_json(silent=True) or {}
+
+        try:
+            group = group_store.update_settings(user_id, group_id, body)
+        except (LookupError, PermissionError) as err:
+            return _group_error(err)
+
+        _notify_members(group["id"], group["members"])
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
+
+    @app.route("/chat/groups/<group_id>/invite", methods=["POST"])
+    def rotate_group_invite(group_id):
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        try:
+            group = group_store.rotate_invite(user_id, group_id)
+        except (LookupError, PermissionError) as err:
+            return _group_error(err)
+
+        return jsonify({"group": group_store.decorate(group, user_id)}), 200
 
     @app.route("/chat/upload", methods=["POST"])
     def upload():
@@ -117,8 +293,13 @@ def create_app():
         room = room_utils.normalize(flask_request.form.get("room"))
         if not room_utils.is_valid(room):
             return jsonify({"error": "unknown conversation"}), 400
-        if not room_utils.can_access(room, user_id):
+
+        if not room_utils.can_access(room, user_id, group_store.room_ids_for_user(user_id)):
             return jsonify({"error": "this conversation is not yours"}), 403
+
+        if room_utils.is_group(room):
+            if not group_store.can_post(group_store.get(room), user_id):
+                return jsonify({"error": "only admins can post in this group"}), 403
 
         upload_file = flask_request.files.get("file")
         if not upload_file:
@@ -180,7 +361,7 @@ def _fail(reason):
     emit("chat:error", {"error": reason})
 
 
-def _authorize(payload):
+def _authorize(payload, posting=False):
     user_id = _current_user()
     if not user_id:
         _fail("not authenticated")
@@ -191,9 +372,14 @@ def _authorize(payload):
         _fail("unknown conversation")
         return None, None
 
-    if not room_utils.can_access(room, user_id):
+    if not room_utils.can_access(room, user_id, group_store.room_ids_for_user(user_id)):
         _fail("this conversation is not yours")
         return None, None
+
+    if posting and room_utils.is_group(room):
+        if not group_store.can_post(group_store.get(room), user_id):
+            _fail("only admins can post in this group")
+            return None, None
 
     return user_id, room
 
@@ -239,7 +425,7 @@ def on_leave(payload=None):
 
 @socketio.on("chat:send")
 def on_send(payload):
-    user_id, room = _authorize(payload)
+    user_id, room = _authorize(payload, posting=True)
     if not user_id:
         return
 
@@ -254,7 +440,7 @@ def on_send(payload):
 
 @socketio.on("chat:voice")
 def on_voice(payload):
-    user_id, room = _authorize(payload)
+    user_id, room = _authorize(payload, posting=True)
     if not user_id:
         return
 

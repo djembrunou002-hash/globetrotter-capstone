@@ -7,7 +7,7 @@ function initials(name) {
   return parts.map(part => part.charAt(0).toUpperCase()).join('')
 }
 
-function NewChatModal({ friends, loading = false, onSelect, onClose }) {
+function NewChatModal({ friends, loading = false, onSelect, onNewGroup, onClose }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
 
@@ -77,6 +77,19 @@ function NewChatModal({ friends, loading = false, onSelect, onClose }) {
             </button>
           )}
         </div>
+
+        {onNewGroup && (
+          <button type="button" className="new-chat__group-entry" onClick={onNewGroup}>
+            <span className="new-chat__group-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9.5" cy="7" r="3.5" />
+                <path d="M19 8v6M22 11h-6" />
+              </svg>
+            </span>
+            <span className="new-chat__group-label">{t('chat.newGroupTitle')}</span>
+          </button>
+        )}
 
         {loading && <p className="new-chat__empty">{t('common.loading')}</p>}
 

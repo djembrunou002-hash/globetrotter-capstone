@@ -1,5 +1,6 @@
 GENERAL = "general"
 DIRECT_PREFIX = "dm_"
+GROUP_PREFIX = "grp_"
 SEPARATOR = "__"
 
 
@@ -28,13 +29,19 @@ def is_direct(room):
     return len(participants(room)) == 2
 
 
+def is_group(room):
+    return bool(room) and room.startswith(GROUP_PREFIX) and len(room) > len(GROUP_PREFIX)
+
+
 def is_valid(room):
-    return room == GENERAL or is_direct(room)
+    return room == GENERAL or is_direct(room) or is_group(room)
 
 
-def can_access(room, user_id):
+def can_access(room, user_id, group_ids=()):
     if room == GENERAL:
         return True
+    if is_group(room):
+        return room in set(group_ids)
     return user_id in participants(room)
 
 

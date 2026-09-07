@@ -95,7 +95,10 @@ def room_of(message_id):
     return _room_of(message) if message else None
 
 
-def conversations(user_id):
+def conversations(user_id, groups=None):
+    groups = groups or []
+    group_by_id = {group["id"]: group for group in groups}
+
     latest = {}
     incoming = {}
 
@@ -104,7 +107,7 @@ def conversations(user_id):
             continue
 
         room = _room_of(message)
-        if not room_utils.can_access(room, user_id):
+        if not room_utils.can_access(room, user_id, group_by_id.keys()):
             continue
 
         latest[room] = message
@@ -129,11 +132,14 @@ def conversations(user_id):
                 "number": record.get("number"),
             }
 
+        group = group_by_id.get(room)
+
         author = users.get(message["user_id"]) or {}
         items.append({
             "room": room,
-            "kind": "direct" if peer else "general",
+            "kind": "group" if group else "direct" if peer else "general",
             "peer": peer,
+            "group": group,
             "updated_at": message["created_at"],
             "incoming_count": incoming.get(room, 0),
             "last_message": {
@@ -145,11 +151,25 @@ def conversations(user_id):
             },
         })
 
+    for group in groups:
+        if group["id"] in latest:
+            continue
+        items.append({
+            "room": group["id"],
+            "kind": "group",
+            "peer": None,
+            "group": group,
+            "updated_at": None,
+            "incoming_count": 0,
+            "last_message": None,
+        })
+
     if room_utils.GENERAL not in latest:
         items.append({
             "room": room_utils.GENERAL,
             "kind": "general",
             "peer": None,
+            "group": None,
             "updated_at": None,
             "incoming_count": 0,
             "last_message": None,
@@ -159,10 +179,10 @@ def conversations(user_id):
     return items
 
 
-def clear_room(user_id, room):
-    if not room_utils.is_direct(room):
-        raise PermissionError("only direct conversations can be deleted")
-    if not room_utils.can_access(room, user_id):
+def clear_room(user_id, room, group_ids=()):
+    if room == room_utils.GENERAL:
+        raise PermissionError("the general chat cannot be deleted")
+    if not room_utils.can_access(room, user_id, group_ids):
         raise PermissionError("this conversation is not yours")
 
     data = _load()
