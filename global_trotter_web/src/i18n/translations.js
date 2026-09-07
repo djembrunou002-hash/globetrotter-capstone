@@ -16,6 +16,7 @@ export const translations = {
       edit: 'Edit',
       continue: 'Continue',
       goBack: 'Go back',
+      back: 'Back',
       close: 'Close',
       delete: 'Delete',
       deleting: 'Deleting...',
@@ -584,6 +585,9 @@ export const translations = {
       acceptedNotice: 'You and {{name}} are now friends.',
       contactRequired: 'Enter an email or phone number',
       invalidContact: 'Enter a valid 9-digit phone number',
+      relationFriend: 'Friend',
+      relationIncoming: 'Wants to add you',
+      relationOutgoing: 'Request sent',
       removeTitle: 'Remove this friend?',
       removeMessage: '{{name}} will no longer appear in your friends list. Itineraries you already shared stay shared.'
     },
@@ -620,7 +624,19 @@ export const translations = {
       uploading: 'Sending',
       imageNote: 'Photo',
       videoNote: 'Video',
-      fileNote: 'File'
+      fileNote: 'File',
+      pageTitle: 'Chats',
+      loadingConversations: 'Loading your chats',
+      noMessagesYet: 'No messages yet',
+      you: 'You',
+      newChatTitle: 'New chat',
+      searchFriends: 'Search a friend',
+      noFriends: 'No friends yet. Add one from your profile to start chatting.',
+      noFriendMatches: 'No friend matches that search.'
+    },
+    userSearch: {
+      searching: 'Searching...',
+      noResults: 'No traveller found'
     },
     profile: {
       title: 'Profile',
@@ -669,6 +685,7 @@ export const translations = {
       edit: 'Modifier',
       continue: 'Continuer',
       goBack: 'Retour',
+      back: 'Retour',
       close: 'Fermer',
       delete: 'Supprimer',
       deleting: 'Suppression...',
@@ -1237,6 +1254,9 @@ export const translations = {
       acceptedNotice: 'Vous et {{name}} êtes maintenant amis.',
       contactRequired: 'Saisissez un e-mail ou un numéro',
       invalidContact: 'Saisissez un numéro de 9 chiffres valide',
+      relationFriend: 'Ami',
+      relationIncoming: 'Veut vous ajouter',
+      relationOutgoing: 'Demande envoyée',
       removeTitle: 'Retirer cet ami ?',
       removeMessage: '{{name}} n’apparaîtra plus dans votre liste d’amis. Les itinéraires déjà partagés le restent.'
     },
@@ -1273,7 +1293,19 @@ export const translations = {
       uploading: 'Envoi',
       imageNote: 'Photo',
       videoNote: 'Vidéo',
-      fileNote: 'Fichier'
+      fileNote: 'Fichier',
+      pageTitle: 'Discussions',
+      loadingConversations: 'Chargement de vos discussions',
+      noMessagesYet: 'Aucun message pour le moment',
+      you: 'Vous',
+      newChatTitle: 'Nouvelle discussion',
+      searchFriends: 'Rechercher un ami',
+      noFriends: "Aucun ami pour le moment. Ajoutez-en un depuis votre profil pour discuter.",
+      noFriendMatches: 'Aucun ami ne correspond à cette recherche.'
+    },
+    userSearch: {
+      searching: 'Recherche...',
+      noResults: 'Aucun voyageur trouvé'
     },
     profile: {
       title: 'Profil',

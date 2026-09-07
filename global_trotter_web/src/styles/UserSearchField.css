@@ -1,0 +1,113 @@
+.user-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: 999px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--color-ink);
+}
+
+.user-search input:focus {
+  outline: 2px solid var(--color-forest);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+.user-search input:disabled {
+  opacity: 0.6;
+}
+
+.user-search__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: 12px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(11, 61, 36, 0.16);
+}
+
+.user-search__hint {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.user-search__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-search__option.is-active {
+  background: var(--color-cream);
+}
+
+.user-search__avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.user-search__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.user-search__contact {
+  font-size: 0.86rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-search__name {
+  font-size: 0.74rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-search__meta {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  color: var(--color-muted);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-cream);
+}

@@ -5,6 +5,7 @@ from config import Config
 from services.clients import fetch_users
 from services.storage import load_json, save_json
 from services import media as media_store
+from services import rooms as room_utils
 from services import voice as voice_store
 
 FILE = "messages.json"
@@ -23,6 +24,21 @@ def _visible(message):
     return not message.get("deleted")
 
 
+def _room_of(message):
+    return message.get("room") or room_utils.GENERAL
+
+
+def _resolve_reply(all_messages, reply_to, room):
+    if not reply_to:
+        return None
+
+    parent = next((m for m in all_messages if m["id"] == reply_to), None)
+    if not parent or parent.get("deleted") or _room_of(parent) != room:
+        return None
+
+    return reply_to
+
+
 def decorate(messages):
     author_ids = {m["user_id"] for m in messages}
     parent_ids = {m["reply_to"] for m in messages if m.get("reply_to")}
@@ -39,6 +55,7 @@ def decorate(messages):
         item = {
             "id": message["id"],
             "user_id": message["user_id"],
+            "room": _room_of(message),
             "author_name": author.get("name") or FALLBACK_NAME,
             "kind": message.get("kind", "text"),
             "text": message["text"],
@@ -66,33 +83,96 @@ def decorate(messages):
     return decorated
 
 
-def history(limit=None):
+def history(room, limit=None):
+    room = room_utils.normalize(room)
     limit = limit or Config.HISTORY_LIMIT
-    messages = [m for m in _load()["messages"] if _visible(m)]
+    messages = [m for m in _load()["messages"] if _visible(m) and _room_of(m) == room]
     return decorate(messages[-limit:])
 
 
-def create(user_id, text, reply_to=None):
+def room_of(message_id):
+    message = next((m for m in _load()["messages"] if m["id"] == message_id), None)
+    return _room_of(message) if message else None
+
+
+def conversations(user_id):
+    latest = {}
+
+    for message in _load()["messages"]:
+        if not _visible(message):
+            continue
+
+        room = _room_of(message)
+        if not room_utils.can_access(room, user_id):
+            continue
+
+        latest[room] = message
+
+    peer_ids = {room_utils.peer_id(room, user_id) for room in latest}
+    author_ids = {m["user_id"] for m in latest.values()}
+    users = fetch_users({uid for uid in peer_ids | author_ids if uid})
+
+    items = []
+    for room, message in latest.items():
+        pid = room_utils.peer_id(room, user_id)
+        peer = None
+
+        if pid:
+            record = users.get(pid) or {}
+            peer = {
+                "id": pid,
+                "name": record.get("name") or FALLBACK_NAME,
+                "email": record.get("email"),
+                "number": record.get("number"),
+            }
+
+        author = users.get(message["user_id"]) or {}
+        items.append({
+            "room": room,
+            "kind": "direct" if peer else "general",
+            "peer": peer,
+            "updated_at": message["created_at"],
+            "last_message": {
+                "author_name": author.get("name") or FALLBACK_NAME,
+                "kind": message.get("kind", "text"),
+                "text": message.get("text") or "",
+                "created_at": message["created_at"],
+                "mine": message["user_id"] == user_id,
+            },
+        })
+
+    if room_utils.GENERAL not in latest:
+        items.append({
+            "room": room_utils.GENERAL,
+            "kind": "general",
+            "peer": None,
+            "updated_at": None,
+            "last_message": None,
+        })
+
+    items.sort(key=lambda c: c["updated_at"] or "", reverse=True)
+    return items
+
+
+def create(user_id, room, text, reply_to=None):
     text = (text or "").strip()
     if not text:
         raise ValueError("message cannot be empty")
     if len(text) > Config.MAX_MESSAGE_LENGTH:
         raise ValueError(f"message cannot exceed {Config.MAX_MESSAGE_LENGTH} characters")
 
+    room = room_utils.normalize(room)
     data = _load()
-
-    if reply_to:
-        parent = next((m for m in data["messages"] if m["id"] == reply_to), None)
-        if not parent or parent.get("deleted"):
-            reply_to = None
 
     message = {
         "id": f"msg_{uuid.uuid4().hex[:12]}",
         "user_id": user_id,
+        "room": room,
         "kind": "text",
         "text": text,
         "audio": None,
-        "reply_to": reply_to,
+        "media": None,
+        "reply_to": _resolve_reply(data["messages"], reply_to, room),
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
@@ -104,24 +184,21 @@ def create(user_id, text, reply_to=None):
     return decorate([message])[0]
 
 
-def create_voice(user_id, blob, mime, duration, reply_to=None):
+def create_voice(user_id, room, blob, mime, duration, reply_to=None):
     audio = voice_store.save(blob, mime, duration)
 
+    room = room_utils.normalize(room)
     data = _load()
-
-    if reply_to:
-        parent = next((m for m in data["messages"] if m["id"] == reply_to), None)
-        if not parent or parent.get("deleted"):
-            reply_to = None
 
     message = {
         "id": f"msg_{uuid.uuid4().hex[:12]}",
         "user_id": user_id,
+        "room": room,
         "kind": "voice",
         "text": "",
         "audio": audio,
         "media": None,
-        "reply_to": reply_to,
+        "reply_to": _resolve_reply(data["messages"], reply_to, room),
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
@@ -133,26 +210,22 @@ def create_voice(user_id, blob, mime, duration, reply_to=None):
     return decorate([message])[0]
 
 
-def create_media(user_id, stream, mime, original_name, caption=None, reply_to=None):
+def create_media(user_id, room, stream, mime, original_name, caption=None, reply_to=None):
     media = media_store.save(stream, mime, original_name)
 
     caption = (caption or "").strip()[: Config.MAX_MESSAGE_LENGTH]
-
+    room = room_utils.normalize(room)
     data = _load()
-
-    if reply_to:
-        parent = next((m for m in data["messages"] if m["id"] == reply_to), None)
-        if not parent or parent.get("deleted"):
-            reply_to = None
 
     message = {
         "id": f"msg_{uuid.uuid4().hex[:12]}",
         "user_id": user_id,
+        "room": room,
         "kind": media["kind"],
         "text": caption,
         "audio": None,
         "media": media,
-        "reply_to": reply_to,
+        "reply_to": _resolve_reply(data["messages"], reply_to, room),
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
@@ -203,6 +276,8 @@ def remove(user_id, message_id):
     if message.get("media"):
         media_store.remove(message["media"])
 
+    room = _room_of(message)
+
     message["deleted"] = True
     message["text"] = ""
     message["audio"] = None
@@ -210,4 +285,4 @@ def remove(user_id, message_id):
     message["edited_at"] = _now()
     save_json(FILE, data)
 
-    return message["id"]
+    return message["id"], room

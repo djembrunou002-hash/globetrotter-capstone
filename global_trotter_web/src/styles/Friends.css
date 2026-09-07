@@ -64,9 +64,13 @@
   gap: 8px;
 }
 
-.friends__add-row input {
+.friends__add-row .user-search {
   flex: 1 1 220px;
   max-width: 720px;
+}
+
+.friends__add-row input {
+  width: 100%;
   min-width: 0;
   padding: 12px 16px;
   border-radius: 999px;

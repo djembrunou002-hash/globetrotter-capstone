@@ -67,7 +67,7 @@ export async function compressImage(file) {
   return new File([blob], name, { type: 'image/jpeg' })
 }
 
-export function uploadAttachment(file, { caption, replyTo, onProgress } = {}) {
+export function uploadAttachment(file, { room, caption, replyTo, onProgress } = {}) {
   return new Promise((resolve, reject) => {
     const token = getToken()
     if (!token) {
@@ -77,6 +77,7 @@ export function uploadAttachment(file, { caption, replyTo, onProgress } = {}) {
 
     const form = new FormData()
     form.append('file', file, file.name)
+    form.append('room', room || 'general')
     if (caption) form.append('caption', caption)
     if (replyTo) form.append('reply_to', replyTo)
 
@@ -90,7 +91,7 @@ export function uploadAttachment(file, { caption, replyTo, onProgress } = {}) {
       }
     }
 
-        request.onload = () => {
+    request.onload = () => {
       let data
       try {
         data = JSON.parse(request.responseText)

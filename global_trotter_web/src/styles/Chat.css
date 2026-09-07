@@ -19,9 +19,29 @@
   font-size: clamp(1.4rem, 4vw, 1.9rem);
   margin: 0;
   color: var(--color-ink);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat__back {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
 }
 
 .chat__leave {
+  flex-shrink: 0;
   padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid #E7DFC9;
@@ -30,6 +50,112 @@
   font-family: inherit;
   font-size: 0.82rem;
   cursor: pointer;
+}
+
+.chat__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 6px clamp(16px, 4vw, 32px);
+  list-style: none;
+}
+
+.chat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #EFE7D4;
+  background: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-card:hover {
+  border-color: #DCD2B8;
+}
+
+.chat-card__avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.chat-card__avatar--general {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.chat-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chat-card__name {
+  font-size: 0.96rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-card__time {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
+.chat-card__preview {
+  font-size: 0.83rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat__fab {
+  position: fixed;
+  right: clamp(16px, 4vw, 32px);
+  bottom: 84px;
+  z-index: 16;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(11, 61, 36, 0.28);
+  cursor: pointer;
+}
+
+.chat__fab:active {
+  opacity: 0.85;
 }
 
 .chat__gate {
@@ -344,6 +470,10 @@
 
   .chat__composer {
     bottom: 0;
+  }
+
+  .chat__fab {
+    bottom: 28px;
   }
 }
 

@@ -612,3 +612,30 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Removing a friend does not revoke itineraries already shared with them; that stays a separate action in the share modal, and the confirmation dialog says so
 - Declined requests are kept rather than deleted, so the same person cannot be re-requested after a decline without clearing the record by hand
 - `friends.json` grows with every request ever made, including declined ones, and nothing prunes it
+
+## 07-09-2026
+
+### Added
+- Direct messages between friends. Chat rooms are now `general` plus derived `dm_<idA>__<idB>` rooms, with the two user ids sorted so both client and server compute the same room id independently.
+- `chat-service/services/rooms.py`: room id parsing, validation, participant and peer resolution.
+- `GET /chat/conversations`: returns the caller's conversation list (general plus every direct room they belong to) with the last message, peer details and timestamp. General is always included, even with no messages.
+- `GET /users/search?q=`: authenticated user directory lookup, minimum 2 characters, max 8 results, prefix matches ranked above contains matches. Each result carries a `relation` field (`friend`, `incoming`, `outgoing`, `none`) read from `friends.json`.
+- Chat page conversation list: horizontal cards showing avatar, name, last-message preview and timestamp. General is pinned first, direct chats follow by recency.
+- Floating `+` button on the chat list opening a friend picker modal with a search bar, backed by local filtering of the already-loaded friends list.
+- `UserSearchField` component: reusable email typeahead with 250 ms debounce, stale-response rejection, keyboard navigation and an optional per-result badge.
+- Friends page now uses the typeahead for the add-friend field, showing matching emails as you type and marking travellers who are already friends or already have a pending request.
+- Translation keys for the chat list, friend picker and typeahead in EN and FR, plus the previously missing `common.back`.
+
+### Changed
+- All chat socket events (`chat:join`, `chat:leave`, `chat:send`, `chat:voice`) now carry a `room`; `chat:edit` and `chat:delete` resolve the room from the stored message. Broadcasts include the room so the client can route them.
+- Live delivery for direct messages targets per-user rooms (`user_<id>`) instead of the pair room, so the first message of a brand-new conversation reaches a recipient who has never joined that room. General chat keeps its explicit join/leave opt-in.
+- `POST /chat/upload` accepts a `room` form field and rejects rooms the caller is not part of.
+- Chat page is now list-first: the general-chat join gate moved inside the general thread rather than gating the whole page.
+- Message replies are constrained to the room they belong to; a `reply_to` pointing at another room is dropped.
+
+### Fixed
+- Removed synchronous `setState` calls from effects in `UserSearchField` and `Chat`, deriving loading and panel visibility during render and driving the socket join from a `connect` subscription instead of mirrored connection state.
+
+### Notes
+- Existing messages in `data/messages.json` have no `room` key and are read as `general`, so no migration is needed.
+- Started-but-empty direct chats persist in `localStorage` under `globaltrotter_chat_started_<userId>` and are resolved against the friends list, so they disappear on their own if the friendship is removed.

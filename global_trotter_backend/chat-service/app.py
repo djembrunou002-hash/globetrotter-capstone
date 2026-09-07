@@ -10,9 +10,8 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 
 from config import Config
 from services import messages as message_store
+from services import rooms as room_utils
 from services.service_client import ServiceUnavailable
-
-ROOM = "general"
 
 INLINE_MIME = {
     "image/jpeg", "image/png", "image/webp", "image/gif",
@@ -36,6 +35,21 @@ socketio = SocketIO(
 )
 
 _sessions = {}
+
+
+def _user_room(user_id):
+    return f"user_{user_id}"
+
+
+def _targets(room):
+    if room == room_utils.GENERAL:
+        return [room_utils.GENERAL]
+    return [_user_room(uid) for uid in room_utils.participants(room)]
+
+
+def _broadcast(event, payload, room):
+    for target in _targets(room):
+        socketio.emit(event, payload, to=target)
 
 
 def create_app():
@@ -70,11 +84,25 @@ def create_app():
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
+    @app.route("/chat/conversations", methods=["GET"])
+    def list_conversations():
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        return jsonify({"conversations": message_store.conversations(user_id)}), 200
+
     @app.route("/chat/upload", methods=["POST"])
     def upload():
         user_id = _identity_from_header()
         if not user_id:
             return jsonify({"error": "authentication required"}), 401
+
+        room = room_utils.normalize(flask_request.form.get("room"))
+        if not room_utils.is_valid(room):
+            return jsonify({"error": "unknown conversation"}), 400
+        if not room_utils.can_access(room, user_id):
+            return jsonify({"error": "this conversation is not yours"}), 403
 
         upload_file = flask_request.files.get("file")
         if not upload_file:
@@ -83,6 +111,7 @@ def create_app():
         try:
             message = message_store.create_media(
                 user_id,
+                room,
                 upload_file.stream,
                 upload_file.mimetype,
                 upload_file.filename,
@@ -92,7 +121,7 @@ def create_app():
         except ValueError as err:
             return jsonify({"error": str(err)}), 400
 
-        socketio.emit("chat:message", {"message": message}, to=ROOM)
+        _broadcast("chat:message", {"message": message}, room)
         return jsonify({"message": message}), 201
 
     @app.route("/health", methods=["GET"])
@@ -135,6 +164,24 @@ def _fail(reason):
     emit("chat:error", {"error": reason})
 
 
+def _authorize(payload):
+    user_id = _current_user()
+    if not user_id:
+        _fail("not authenticated")
+        return None, None
+
+    room = room_utils.normalize((payload or {}).get("room"))
+    if not room_utils.is_valid(room):
+        _fail("unknown conversation")
+        return None, None
+
+    if not room_utils.can_access(room, user_id):
+        _fail("this conversation is not yours")
+        return None, None
+
+    return user_id, room
+
+
 @socketio.on("connect")
 def on_connect(auth):
     user_id = _identity((auth or {}).get("token"))
@@ -144,6 +191,7 @@ def on_connect(auth):
     from flask import request
 
     _sessions[request.sid] = user_id
+    join_room(_user_room(user_id))
     return True
 
 
@@ -155,63 +203,60 @@ def on_disconnect():
 
 
 @socketio.on("chat:join")
-def on_join():
-    user_id = _current_user()
+def on_join(payload=None):
+    user_id, room = _authorize(payload)
     if not user_id:
-        return _fail("not authenticated")
+        return
 
-    join_room(ROOM)
-    emit("chat:history", {"messages": message_store.history()})
+    if room == room_utils.GENERAL:
+        join_room(room_utils.GENERAL)
+
+    emit("chat:history", {"room": room, "messages": message_store.history(room)})
 
 
 @socketio.on("chat:leave")
-def on_leave():
-    leave_room(ROOM)
+def on_leave(payload=None):
+    room = room_utils.normalize((payload or {}).get("room"))
+    if room == room_utils.GENERAL:
+        leave_room(room_utils.GENERAL)
 
 
 @socketio.on("chat:send")
 def on_send(payload):
-    user_id = _current_user()
+    user_id, room = _authorize(payload)
     if not user_id:
-        return _fail("not authenticated")
+        return
 
     payload = payload or {}
     try:
-        message = message_store.create(user_id, payload.get("text"), payload.get("reply_to"))
+        message = message_store.create(user_id, room, payload.get("text"), payload.get("reply_to"))
     except ValueError as err:
         return _fail(str(err))
 
-    socketio.emit("chat:message", {"message": message}, to=ROOM)
+    _broadcast("chat:message", {"message": message}, room)
 
 
 @socketio.on("chat:voice")
 def on_voice(payload):
-    user_id = _current_user()
+    user_id, room = _authorize(payload)
     if not user_id:
-        return _fail("not authenticated")
+        return
 
     payload = payload or {}
-    blob = payload.get("blob")
-    print(
-        f"CHAT voice: type={type(blob).__name__} "
-        f"len={len(blob) if hasattr(blob, '__len__') else 'n/a'} "
-        f"mime={payload.get('mime')!r} dur={payload.get('duration')}",
-        flush=True,
-    )
 
     try:
         message = message_store.create_voice(
             user_id,
-            blob,
+            room,
+            payload.get("blob"),
             payload.get("mime"),
             payload.get("duration"),
             payload.get("reply_to"),
         )
     except ValueError as err:
-        print(f"CHAT voice rejected: {err}", flush=True)
         return _fail(str(err))
 
-    socketio.emit("chat:message", {"message": message}, to=ROOM)
+    _broadcast("chat:message", {"message": message}, room)
 
 
 @socketio.on("chat:edit")
@@ -226,7 +271,7 @@ def on_edit(payload):
     except (ValueError, LookupError, PermissionError) as err:
         return _fail(str(err))
 
-    socketio.emit("chat:updated", {"message": message}, to=ROOM)
+    _broadcast("chat:updated", {"message": message}, message["room"])
 
 
 @socketio.on("chat:delete")
@@ -236,11 +281,11 @@ def on_delete(payload):
         return _fail("not authenticated")
 
     try:
-        message_id = message_store.remove(user_id, (payload or {}).get("id"))
+        message_id, room = message_store.remove(user_id, (payload or {}).get("id"))
     except (LookupError, PermissionError) as err:
         return _fail(str(err))
 
-    socketio.emit("chat:deleted", {"id": message_id}, to=ROOM)
+    _broadcast("chat:deleted", {"id": message_id, "room": room}, room)
 
 
 if __name__ == "__main__":

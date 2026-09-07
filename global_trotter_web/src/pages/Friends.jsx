@@ -4,6 +4,7 @@ import BottomNav from '../components/Bottomnav.jsx'
 import PlanetLoader from '../components/PlanetLoader.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
+import UserSearchField from '../components/UserSearchField.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import {
@@ -14,6 +15,7 @@ import {
   declineFriendRequest,
   removeFriend
 } from '../services/friendService.js'
+import { searchUsers } from '../services/userService.js'
 import { getToken } from '../services/tokenStorage.js'
 import '../styles/Friends.css'
 
@@ -71,6 +73,25 @@ function Friends() {
 
   function handleBack() {
     navigate('/profile')
+  }
+
+  function lookup(query) {
+    return searchUsers(query)
+      .then(response => response.results || [])
+      .catch(() => [])
+  }
+
+  function relationLabel(user) {
+    if (user.relation === 'friend') return t('friends.relationFriend')
+    if (user.relation === 'incoming') return t('friends.relationIncoming')
+    if (user.relation === 'outgoing') return t('friends.relationOutgoing')
+    return null
+  }
+
+  function handlePick(user) {
+    setError('')
+    setNotice('')
+    setContact(user.email || user.number || '')
   }
 
   async function handleSubmit(e) {
@@ -186,13 +207,14 @@ function Friends() {
         <form className="friends__add" onSubmit={handleSubmit}>
           <label htmlFor="friend-contact">{t('friends.addLabel')}</label>
           <div className="friends__add-row">
-            <input
+            <UserSearchField
               id="friend-contact"
-              type="text"
               value={contact}
-              onChange={e => setContact(e.target.value)}
+              onChange={setContact}
+              onSelect={handlePick}
+              search={lookup}
               placeholder={t('friends.addPlaceholder')}
-              autoComplete="off"
+              renderMeta={relationLabel}
             />
             <button type="submit" disabled={submitting}>
               {submitting ? t('friends.sending') : t('friends.sendRequest')}
