@@ -692,3 +692,29 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Object URLs in the attachment composer are revoked per item on removal and via a ref mirror on unmount, so files added after mount are not missed by the cleanup.
 - `MediaRecorder.pause()` is unavailable on iOS Safari below 15.4; on those devices the pause button does nothing rather than erroring.
 - Stickers are large emoji rather than image assets, so they need no new message kind, no asset hosting and no backend change.
+
+
+
+### Added
+- Online presence. `chat-service/services/presence.py` tracks a set of socket ids per user, so a second tab does not double-count and closing one tab does not mark someone offline. `chat:presence` is broadcast only on the real offline-to-online and online-to-offline transitions.
+- `last_seen` persisted to `presence.json` on a user's final disconnect, so restarting the service does not make everyone look like they have never been online.
+- `GET /chat/presence?ids=a,b,c` for the initial state of people who are not currently connected, plus a `chat:online` snapshot emitted to each socket on connect.
+- Direct chat headers show "Online" or "Last seen ...", group headers show how many members are currently online out of the total.
+- Typing and recording indicators. `chat:typing` carries `text`, `voice` or `stop` and is relayed to the other members of the room. The thread shows an animated bubble with avatars and names in groups; the conversation card preview shows "Bruno is typing" in italic green.
+- Delivery and read receipts. Messages carry `delivered_to` and `read_by`; own messages render one grey tick when sent, two grey when delivered to every recipient, and two gold when read by every recipient.
+- `chat:read` marks a room read on open, on history load, and when a message arrives while the room is already open. `chat:receipt` broadcasts the resulting state to the room.
+- `member_ids` on the group summary, so the client can count online members and resolve receipt recipients without opening the group panel.
+- `TypingIndicator` component with typing-dot and recording-wave animations.
+
+### Changed
+- Selected conversation cards are now marked with a green fill and a left bar rather than only changing the header.
+- On phones the selection action bar is fixed to the top of the viewport instead of living in the scrollable header, so it stays reachable from anywhere in the list.
+- The typing throttle uses a timeout handle rather than a stored timestamp, keeping `Date.now()` out of the component body; the clock read in the typing socket handler was hoisted out of the `setTyping` updater, since updaters must be pure and React may invoke them twice.
+- Message delivery is swept on connect across every room a user belongs to, so messages sent while they were offline flip to two ticks as soon as they reconnect, without opening anything.
+
+### Notes
+- Presence lives in memory and is correct only because chat-service runs with `--workers 1`; the same constraint that Socket.IO broadcasting already depends on.
+- Presence is broadcast to every connected socket rather than scoped to shared rooms, which avoids recomputing friend and group membership on every connect and disconnect.
+- In a group, ticks turn gold only when every other member has read the message, matching WhatsApp. In the general chat there is no meaningful recipient set, so messages there stay on a single tick.
+- Typing entries older than seven seconds are swept every 2.5 seconds, so a sender who disconnects mid-typing cannot leave a stuck indicator.
+- `delivered_to` and `read_by` are absent on messages written before this change; reads use a fallback and writes use `setdefault`, so they backfill on first touch with no migration.

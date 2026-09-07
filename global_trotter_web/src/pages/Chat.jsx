@@ -11,6 +11,7 @@ import MessageBubble from '../components/MessageBubble.jsx'
 import AttachmentComposer from '../components/AttachmentComposer.jsx'
 import EmojiPicker from '../components/EmojiPicker.jsx'
 import VoiceRecorder from '../components/VoiceRecorder.jsx'
+import TypingIndicator from '../components/TypingIndicator.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
@@ -20,7 +21,9 @@ import {
   connectChat,
   deleteConversation,
   directRoom,
-  disconnectChat
+  disconnectChat,
+  getPresence,
+  peerIdOf
 } from '../services/chatService.js'
 import {
   addGroupMember,
@@ -123,6 +126,8 @@ function Chat() {
 
   const [status, setStatus] = useState('')
   const [thread, setThread] = useState({ room: null, messages: [] })
+  const [presence, setPresence] = useState({})
+  const [typing, setTyping] = useState({})
 
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState(null)
@@ -148,6 +153,9 @@ function Chat() {
   const socketRef = useRef(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const typingActiveRef = useRef(false)
+  const typingCooldownRef = useRef(null)
+  const typingStopRef = useRef(null)
   const cardTimerRef = useRef(null)
   const cardFiredRef = useRef(false)
   const fileRef = useRef(null)
@@ -184,6 +192,29 @@ function Chat() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    const ids = []
+    conversations.forEach(item => {
+      if (item.peer) ids.push(item.peer.id)
+      if (item.group && item.group.member_ids) ids.push(...item.group.member_ids)
+    })
+
+    const unique = [...new Set(ids)]
+    if (unique.length === 0) return
+
+    let active = true
+    getPresence(unique)
+      .then(response => {
+        if (!active) return
+        setPresence(prev => ({ ...(response.presence || {}), ...prev }))
+      })
+      .catch(() => {})
+
+    return () => {
+      active = false
+    }
+  }, [conversations])
 
   useEffect(() => {
     if (inviteHandledRef.current) return
@@ -225,6 +256,7 @@ function Chat() {
     socket.on('chat:history', payload => {
       setThread({ room: payload.room, messages: payload.messages || [] })
       setStatus('')
+      socket.emit('chat:read', { room: payload.room })
     })
 
     socket.on('chat:message', payload => {
@@ -236,6 +268,14 @@ function Chat() {
       )
 
       applyMessageRef.current(message, { active: isActive })
+
+      if (isActive) socketRef.current?.emit('chat:read', { room: message.room })
+
+      setTyping(prev => {
+        const room = { ...(prev[message.room] || {}) }
+        delete room[message.user_id]
+        return { ...prev, [message.room]: room }
+      })
     })
 
     socket.on('chat:updated', payload => {
@@ -271,6 +311,64 @@ function Chat() {
         .catch(() => setPanelGroup(null))
     })
 
+    socket.on('chat:online', payload => {
+      const ids = payload.ids || []
+      setPresence(prev => {
+        const next = { ...prev }
+        ids.forEach(id => {
+          next[id] = { online: true, last_seen: null }
+        })
+        return next
+      })
+    })
+
+    socket.on('chat:presence', payload => {
+      setPresence(prev => ({
+        ...prev,
+        [payload.user_id]: { online: payload.online, last_seen: payload.last_seen }
+      }))
+    })
+
+    socket.on('chat:typing', payload => {
+      const at = Date.now()
+
+      setTyping(prev => {
+        const room = { ...(prev[payload.room] || {}) }
+
+        if (payload.mode === 'stop') delete room[payload.user_id]
+        else room[payload.user_id] = { mode: payload.mode, name: payload.name, at }
+
+        return { ...prev, [payload.room]: room }
+      })
+    })
+
+    socket.on('chat:receipt', payload => {
+      const ids = new Set(payload.ids || [])
+
+      setThread(prev => {
+        if (prev.room !== payload.room) return prev
+
+        return {
+          ...prev,
+          messages: prev.messages.map(item => {
+            if (!ids.has(item.id)) return item
+
+            const delivered = new Set(item.delivered_to || [])
+            delivered.add(payload.user_id)
+
+            const read = new Set(item.read_by || [])
+            if (payload.state === 'read') read.add(payload.user_id)
+
+            return {
+              ...item,
+              delivered_to: [...delivered],
+              read_by: [...read]
+            }
+          })
+        }
+      })
+    })
+
     socket.on('chat:error', payload => {
       setStatus(payload.error)
     })
@@ -301,6 +399,30 @@ function Chat() {
     if (!activeRoom) return
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [thread, activeRoom])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const cutoff = Date.now() - 7000
+
+      setTyping(prev => {
+        let changed = false
+        const next = {}
+
+        Object.entries(prev).forEach(([room, entries]) => {
+          const kept = {}
+          Object.entries(entries).forEach(([userId, entry]) => {
+            if (entry.at >= cutoff) kept[userId] = entry
+            else changed = true
+          })
+          next[room] = kept
+        })
+
+        return changed ? next : prev
+      })
+    }, 2500)
+
+    return () => clearInterval(timer)
+  }, [])
 
   const directEntries = conversations.filter(item => item.kind === 'direct')
   const groupEntries = conversations.filter(item => item.kind === 'group')
@@ -353,6 +475,58 @@ function Chat() {
   const activeGroup = activeEntry && activeEntry.kind === 'group' ? activeEntry.group : null
   const canPost = !activeGroup || activeGroup.can_post
 
+  const recipients = (() => {
+    if (!activeRoom || !currentUser) return []
+    if (activeGroup) return (activeGroup.member_ids || []).filter(id => id !== currentUser.id)
+
+    const peer = peerIdOf(activeRoom, currentUser.id)
+    return peer ? [peer] : []
+  })()
+
+  const groupOnline = activeGroup
+    ? (activeGroup.member_ids || []).filter(id => presence[id] && presence[id].online).length
+    : 0
+
+  const activePeerId =
+    activeRoom && currentUser && !activeGroup ? peerIdOf(activeRoom, currentUser.id) : null
+  const peerPresence = activePeerId ? presence[activePeerId] : null
+
+  function presenceLabel() {
+    if (activeGroup) {
+      return t('chat.groupOnlineCount', {
+        online: groupOnline,
+        total: activeGroup.member_count
+      })
+    }
+
+    if (!peerPresence) return ''
+    if (peerPresence.online) return t('chat.online')
+    if (!peerPresence.last_seen) return t('chat.offline')
+    return t('chat.lastSeen', { when: formatStamp(peerPresence.last_seen, locale) })
+  }
+
+  function typingEntries(room) {
+    const entries = typing[room]
+    if (!entries) return []
+
+    return Object.entries(entries).map(([userId, entry]) => ({
+      user_id: userId,
+      name: entry.name,
+      mode: entry.mode
+    }))
+  }
+
+  function typingPreview(room) {
+    const entries = typingEntries(room)
+    if (entries.length === 0) return null
+
+    const voice = entries.some(entry => entry.mode === 'voice')
+    const label = voice ? t('chat.recordingIndicator') : t('chat.typingIndicator')
+
+    if (entries.length === 1 && entries[0].name) return `${entries[0].name} ${label}`
+    return label
+  }
+
   function previewOf(entry) {
     if (!entry.last_message) return t('chat.noMessagesYet')
 
@@ -400,7 +574,56 @@ function Chat() {
     openRoom(entry)
   }
 
+  function emitTyping(mode) {
+    if (!socketRef.current || !activeRoom) return
+
+    socketRef.current.emit('chat:typing', {
+      room: activeRoom,
+      mode,
+      name: currentUser ? currentUser.name : ''
+    })
+  }
+
+  function stopTyping() {
+    if (typingStopRef.current) {
+      clearTimeout(typingStopRef.current)
+      typingStopRef.current = null
+    }
+
+    if (typingCooldownRef.current) {
+      clearTimeout(typingCooldownRef.current)
+      typingCooldownRef.current = null
+    }
+
+    if (!typingActiveRef.current) return
+
+    typingActiveRef.current = false
+    emitTyping('stop')
+  }
+
+  function handleDraftChange(value) {
+    setDraft(value)
+
+    if (!value.trim()) {
+      stopTyping()
+      return
+    }
+
+    if (!typingCooldownRef.current) {
+      typingActiveRef.current = true
+      emitTyping('text')
+
+      typingCooldownRef.current = setTimeout(() => {
+        typingCooldownRef.current = null
+      }, 2500)
+    }
+
+    if (typingStopRef.current) clearTimeout(typingStopRef.current)
+    typingStopRef.current = setTimeout(stopTyping, 3200)
+  }
+
   function resetComposer() {
+    stopTyping()
     setDraft('')
     setReplyTo(null)
     setEditing(null)
@@ -416,6 +639,7 @@ function Chat() {
     setThread({ room: null, messages: [] })
     setActiveRoom(entry.room)
     markRead(entry.room)
+    socketRef.current?.emit('chat:read', { room: entry.room })
     window.scrollTo({ top: 0 })
   }
 
@@ -607,6 +831,7 @@ function Chat() {
 
   function handleVoiceReady({ blob, mime, duration }) {
     setRecorderOpen(false)
+    emitTyping('stop')
 
     const room = activeRoom
     const parent = replyTo ? replyTo.id : null
@@ -678,7 +903,11 @@ function Chat() {
   ]
 
   return (
-    <div className={`chat ${activeRoom ? 'chat--open' : ''}`}>
+    <div
+      className={`chat ${activeRoom ? 'chat--open' : ''} ${
+        selectedCard || selectedMessage ? 'chat--selecting' : ''
+      }`}
+    >
       <div className="chat__panes">
         <aside className="chat__sidebar">
           <header className="page-header chat__header">
@@ -767,7 +996,9 @@ function Chat() {
                 return (
                   <li
                     key={entry.room}
-                    className={`chat-card ${entry.room === activeRoom ? 'is-active' : ''}`}
+                    className={`chat-card ${entry.room === activeRoom ? 'is-active' : ''} ${
+                      selectedCard && selectedCard.room === entry.room ? 'is-selected' : ''
+                    }`}
                   >
                     <button
                       type="button"
@@ -815,7 +1046,13 @@ function Chat() {
                         </span>
 
                         <span className="chat-card__bottom">
-                          <span className="chat-card__preview">{previewOf(entry)}</span>
+                          <span
+                            className={`chat-card__preview ${
+                              typingPreview(entry.room) ? 'chat-card__preview--typing' : ''
+                            }`}
+                          >
+                            {typingPreview(entry.room) || previewOf(entry)}
+                          </span>
                           {unread > 0 && (
                             <NotificationDot
                               className="notif-dot--chat"
@@ -995,9 +1232,13 @@ function Chat() {
 
                 <span className="chat__heading">
                   <h1 className="chat__title">{heading}</h1>
-                  {activeGroup && (
-                    <span className="chat__subtitle">
-                      {t('chat.groupMemberCount', { count: activeGroup.member_count })}
+                  {!isGeneral && presenceLabel() && (
+                    <span
+                      className={`chat__subtitle ${
+                        peerPresence && peerPresence.online ? 'chat__subtitle--online' : ''
+                      }`}
+                    >
+                      {presenceLabel()}
                     </span>
                   )}
                 </span>
@@ -1074,6 +1315,7 @@ function Chat() {
                         selectionMode={Boolean(selectedMessage)}
                         menuOpen={menuFor === message.id}
                         canReply={canPost}
+                        recipients={recipients}
                         onLongPress={setSelectedMessage}
                         onToggleSelect={target =>
                           setSelectedMessage(current =>
@@ -1096,6 +1338,11 @@ function Chat() {
                       />
                     )
                   })}
+
+                  <TypingIndicator
+                    entries={typingEntries(activeRoom)}
+                    showAvatar={Boolean(activeGroup) || isGeneral}
+                  />
 
                   <div ref={bottomRef} />
                 </div>
@@ -1123,7 +1370,10 @@ function Chat() {
                   {recorderOpen ? (
                     <VoiceRecorder
                       onSend={handleVoiceReady}
-                      onCancel={() => setRecorderOpen(false)}
+                      onCancel={() => {
+                        setRecorderOpen(false)
+                        emitTyping('stop')
+                      }}
                       onError={setStatus}
                     />
                   ) : (
@@ -1147,7 +1397,7 @@ function Chat() {
                         ref={inputRef}
                         type="text"
                         value={draft}
-                        onChange={e => setDraft(e.target.value)}
+                        onChange={e => handleDraftChange(e.target.value)}
                         placeholder={t('chat.placeholder')}
                         maxLength={1000}
                         aria-label={t('chat.placeholder')}
@@ -1185,7 +1435,11 @@ function Chat() {
                         <button
                           type="button"
                           className="chat__mic"
-                          onClick={() => setRecorderOpen(true)}
+                          onClick={() => {
+                            setRecorderOpen(true)
+                            typingActiveRef.current = true
+                            emitTyping('voice')
+                          }}
                           aria-label={t('chat.recordVoice')}
                           title={t('chat.recordVoice')}
                         >

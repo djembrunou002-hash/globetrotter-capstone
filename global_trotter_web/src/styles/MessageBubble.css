@@ -161,6 +161,16 @@
   justify-content: flex-start;
 }
 
+.msg__ticks {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-muted);
+}
+
+.msg__ticks--read {
+  color: #C9962B;
+}
+
 .msg__media {
   display: flex;
   flex-direction: column;

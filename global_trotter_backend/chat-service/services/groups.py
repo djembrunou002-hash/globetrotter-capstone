@@ -114,6 +114,7 @@ def summary(group, viewer_id):
         "id": group["id"],
         "name": group["name"],
         "owner_id": group["owner_id"],
+        "member_ids": list(group["members"]),
         "member_count": len(group["members"]),
         "is_owner": is_owner(group, viewer_id),
         "is_admin": is_admin(group, viewer_id),

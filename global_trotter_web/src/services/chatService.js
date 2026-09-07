@@ -25,6 +25,12 @@ export function getConversations() {
   return apiRequest('/chat/conversations')
 }
 
+export function getPresence(ids) {
+  const list = (ids || []).filter(Boolean).join(',')
+  if (!list) return Promise.resolve({ presence: {} })
+  return apiRequest(`/chat/presence?ids=${encodeURIComponent(list)}`)
+}
+
 export function deleteConversation(room) {
   return apiRequest(`/chat/conversations/${encodeURIComponent(room)}`, {
     method: 'DELETE'

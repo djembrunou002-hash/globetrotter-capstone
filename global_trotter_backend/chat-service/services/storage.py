@@ -10,6 +10,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 EMPTY_SCHEMAS = {
     "messages.json": {"messages": []},
     "groups.json": {"groups": []},
+    "presence.json": {"last_seen": {}},
 }
 
 

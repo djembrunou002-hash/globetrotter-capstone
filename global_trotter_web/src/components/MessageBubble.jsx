@@ -6,6 +6,42 @@ import '../styles/MessageBubble.css'
 
 const LONG_PRESS_MS = 420
 
+function Ticks({ state }) {
+  if (state === 'sent') {
+    return (
+      <span className="msg__ticks" aria-hidden="true">
+        <svg viewBox="0 0 16 12" width="15" height="11" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 6.6 5.2 9.8 11.6 2.4" />
+        </svg>
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={`msg__ticks ${state === 'read' ? 'msg__ticks--read' : ''}`}
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 20 12" width="18" height="11" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1.6 6.6 4.8 9.8 11.2 2.4" />
+        <path d="M7.6 9.6 8.6 10.6 15.4 2.4" />
+      </svg>
+    </span>
+  )
+}
+
+function receiptState(message, recipients) {
+  if (!recipients || recipients.length === 0) return 'sent'
+
+  const read = message.read_by || []
+  if (recipients.every(id => read.includes(id))) return 'read'
+
+  const delivered = message.delivered_to || []
+  if (recipients.every(id => delivered.includes(id))) return 'delivered'
+
+  return 'sent'
+}
+
 function MessageBubble({
   message,
   mine,
@@ -14,6 +50,7 @@ function MessageBubble({
   selected = false,
   selectionMode = false,
   menuOpen = false,
+  recipients = [],
   canReply = true,
   onLongPress,
   onToggleSelect,
@@ -141,6 +178,7 @@ function MessageBubble({
         <div className="msg__meta">
           <span>{formatTime(message.created_at)}</span>
           {message.edited_at && <span>{t('chat.edited')}</span>}
+          {mine && <Ticks state={receiptState(message, recipients)} />}
         </div>
       </div>
 

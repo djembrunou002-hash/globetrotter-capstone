@@ -695,7 +695,13 @@ export const translations = {
       emoji_food: 'Food and drink',
       emoji_travel: 'Travel and places',
       emoji_objects: 'Objects and symbols',
-      oneSelected: '1 selected'
+      oneSelected: '1 selected',
+      online: 'Online',
+      offline: 'Offline',
+      lastSeen: 'Last seen {{when}}',
+      groupOnlineCount: '{{online}} of {{total}} online',
+      typingIndicator: 'is typing...',
+      recordingIndicator: 'is recording audio'
     },
     userSearch: {
       searching: 'Searching...',
@@ -1427,7 +1433,13 @@ export const translations = {
       emoji_food: 'Nourriture et boissons',
       emoji_travel: 'Voyage et lieux',
       emoji_objects: 'Objets et symboles',
-      oneSelected: '1 sélectionné'
+      oneSelected: '1 sélectionné',
+      online: 'En ligne',
+      offline: 'Hors ligne',
+      lastSeen: 'Vu à {{when}}',
+      groupOnlineCount: '{{online}} sur {{total}} en ligne',
+      typingIndicator: 'écrit...',
+      recordingIndicator: 'enregistre un audio'
     },
     userSearch: {
       searching: 'Recherche...',

@@ -11,6 +11,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from config import Config
 from services import groups as group_store
 from services import messages as message_store
+from services import presence as presence_store
 from services import rooms as room_utils
 from services.service_client import ServiceUnavailable
 
@@ -63,6 +64,35 @@ def _notify_members(group_id, member_ids):
         socketio.emit("chat:groups", {"room": group_id}, to=_user_room(member_id))
 
 
+def _room_members(room):
+    if room == room_utils.GENERAL:
+        return []
+
+    if room_utils.is_group(room):
+        group = group_store.get(room)
+        return list(group["members"]) if group else []
+
+    return room_utils.participants(room)
+
+
+def _rooms_for(user_id):
+    rooms = {room_utils.GENERAL}
+    rooms.update(group_store.room_ids_for_user(user_id))
+    rooms.update(message_store.direct_rooms_for(user_id))
+    return rooms
+
+
+def _announce_presence(user_id, online):
+    socketio.emit(
+        "chat:presence",
+        {
+            "user_id": user_id,
+            "online": online,
+            "last_seen": None if online else presence_store.last_seen(user_id),
+        },
+    )
+
+
 def _group_error(err):
     if isinstance(err, LookupError):
         return jsonify({"error": str(err)}), 404
@@ -102,6 +132,16 @@ def create_app():
             response.headers["Content-Type"] = "application/octet-stream"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
+
+    @app.route("/chat/presence", methods=["GET"])
+    def read_presence():
+        user_id = _identity_from_header()
+        if not user_id:
+            return jsonify({"error": "authentication required"}), 401
+
+        raw = flask_request.args.get("ids") or ""
+        ids = [item.strip() for item in raw.split(",") if item.strip()]
+        return jsonify({"presence": presence_store.snapshot(ids)}), 200
 
     @app.route("/chat/conversations", methods=["GET"])
     def list_conversations():
@@ -394,6 +434,19 @@ def on_connect(auth):
 
     _sessions[request.sid] = user_id
     join_room(_user_room(user_id))
+
+    if presence_store.connect(user_id, request.sid):
+        _announce_presence(user_id, True)
+
+    touched = message_store.mark_delivered(user_id, _rooms_for(user_id))
+    for room, message_ids in touched.items():
+        _broadcast(
+            "chat:receipt",
+            {"room": room, "user_id": user_id, "state": "delivered", "ids": message_ids},
+            room,
+        )
+
+    emit("chat:online", {"ids": presence_store.online_ids()})
     return True
 
 
@@ -402,6 +455,10 @@ def on_disconnect():
     from flask import request
 
     _sessions.pop(request.sid, None)
+    user_id, went_offline = presence_store.disconnect(request.sid)
+
+    if user_id and went_offline:
+        _announce_presence(user_id, False)
 
 
 @socketio.on("chat:join")
@@ -421,6 +478,44 @@ def on_leave(payload=None):
     room = room_utils.normalize((payload or {}).get("room"))
     if room == room_utils.GENERAL:
         leave_room(room_utils.GENERAL)
+
+
+@socketio.on("chat:typing")
+def on_typing(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    payload = payload or {}
+    mode = payload.get("mode")
+    if mode not in ("text", "voice", "stop"):
+        mode = "stop"
+
+    for member_id in _room_members(room) or presence_store.online_ids():
+        if member_id == user_id:
+            continue
+        socketio.emit(
+            "chat:typing",
+            {"room": room, "user_id": user_id, "mode": mode},
+            to=_user_room(member_id),
+        )
+
+
+@socketio.on("chat:read")
+def on_read(payload=None):
+    user_id, room = _authorize(payload)
+    if not user_id:
+        return
+
+    ids = message_store.mark_read(user_id, room)
+    if not ids:
+        return
+
+    _broadcast(
+        "chat:receipt",
+        {"room": room, "user_id": user_id, "state": "read", "ids": ids},
+        room,
+    )
 
 
 @socketio.on("chat:send")

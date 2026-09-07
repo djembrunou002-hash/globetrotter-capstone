@@ -64,6 +64,8 @@ def decorate(messages):
             "created_at": message["created_at"],
             "edited_at": message.get("edited_at"),
             "reply_to": message.get("reply_to"),
+            "delivered_to": list(message.get("delivered_to") or []),
+            "read_by": list(message.get("read_by") or []),
             "reply_preview": None,
         }
 
@@ -210,6 +212,69 @@ def clear_room(user_id, room, group_ids=()):
     return removed
 
 
+def direct_rooms_for(user_id):
+    rooms = set()
+
+    for message in _load()["messages"]:
+        room = _room_of(message)
+        if room_utils.is_direct(room) and user_id in room_utils.participants(room):
+            rooms.add(room)
+
+    return rooms
+
+
+def mark_delivered(user_id, rooms):
+    data = _load()
+    touched = {}
+
+    for message in data["messages"]:
+        if message.get("deleted") or message["user_id"] == user_id:
+            continue
+
+        room = _room_of(message)
+        if room not in rooms:
+            continue
+
+        delivered = message.setdefault("delivered_to", [])
+        if user_id in delivered:
+            continue
+
+        delivered.append(user_id)
+        touched.setdefault(room, []).append(message["id"])
+
+    if touched:
+        save_json(FILE, data)
+
+    return touched
+
+
+def mark_read(user_id, room):
+    data = _load()
+    ids = []
+
+    for message in data["messages"]:
+        if message.get("deleted") or message["user_id"] == user_id:
+            continue
+        if _room_of(message) != room:
+            continue
+
+        delivered = message.setdefault("delivered_to", [])
+        if user_id not in delivered:
+            delivered.append(user_id)
+
+        seen = message.setdefault("read_by", [])
+        if user_id in seen:
+            continue
+
+        seen.append(user_id)
+        ids.append(message["id"])
+
+    if ids:
+        save_json(FILE, data)
+
+    return ids
+
+
 def create(user_id, room, text, reply_to=None):
     text = (text or "").strip()
     if not text:
@@ -232,6 +297,8 @@ def create(user_id, room, text, reply_to=None):
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
+        "delivered_to": [],
+        "read_by": [],
     }
 
     data["messages"].append(message)
@@ -258,6 +325,8 @@ def create_voice(user_id, room, blob, mime, duration, reply_to=None):
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
+        "delivered_to": [],
+        "read_by": [],
     }
 
     data["messages"].append(message)
@@ -285,6 +354,8 @@ def create_media(user_id, room, stream, mime, original_name, caption=None, reply
         "created_at": _now(),
         "edited_at": None,
         "deleted": False,
+        "delivered_to": [],
+        "read_by": [],
     }
 
     data["messages"].append(message)
