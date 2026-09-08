@@ -152,6 +152,68 @@ def reorder_itinerary(itinerary_id):
     return jsonify({"itinerary": itinerary}), 200
 
 
+@itineraries_bp.route("/itineraries/<itinerary_id>", methods=["GET"])
+@jwt_required()
+def get_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next((i for i in data["itineraries"] if i["id"] == itinerary_id), None)
+
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    owner = fetch_users([itinerary["user_id"]]).get(itinerary["user_id"]) or {}
+    is_member = user_id == itinerary["user_id"] or user_id in itinerary.get("shared_with", [])
+
+    preview = {
+        "id": itinerary["id"],
+        "title": itinerary["title"],
+        "user_id": itinerary["user_id"],
+        "owner_name": owner.get("name") or "Traveler",
+        "tags": itinerary.get("tags", []),
+        "start_date": itinerary.get("start_date"),
+        "end_date": itinerary.get("end_date"),
+        "destination_count": len(itinerary.get("destinations", [])),
+        "member_count": len(itinerary.get("shared_with", [])) + 1,
+        "joined": is_member,
+    }
+
+    if not is_member:
+        return jsonify({"itinerary": preview}), 200
+
+    destinations = fetch_destinations(itinerary.get("destinations", []))
+    full = dict(itinerary)
+    full.update(preview)
+    full["destination_details"] = destinations
+
+    return jsonify({"itinerary": full}), 200
+
+
+@itineraries_bp.route("/itineraries/<itinerary_id>/join", methods=["POST"])
+@jwt_required()
+def join_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next((i for i in data["itineraries"] if i["id"] == itinerary_id), None)
+
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    if itinerary["user_id"] == user_id:
+        return jsonify({"itinerary": itinerary, "joined": True}), 200
+
+    shared_with = itinerary.setdefault("shared_with", [])
+
+    if user_id not in shared_with:
+        shared_with.append(user_id)
+        itinerary["updated_at"] = datetime.now(timezone.utc).isoformat()
+        save_json("itineraries.json", data)
+
+    return jsonify({"itinerary": itinerary, "joined": True}), 200
+
+
 @itineraries_bp.route("/itineraries/<itinerary_id>/share", methods=["POST"])
 @jwt_required()
 def share_itinerary(itinerary_id):

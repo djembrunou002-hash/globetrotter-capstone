@@ -387,3 +387,30 @@
     padding-inline: 0;
   }
 }
+
+.destination-card__share {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #E7DFC9;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-forest);
+  cursor: pointer;
+}
+
+.destination-details__share {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #E7DFC9;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-forest);
+  cursor: pointer;
+}

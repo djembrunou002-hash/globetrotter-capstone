@@ -1,0 +1,119 @@
+.share__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: rgba(11, 61, 36, 0.45);
+}
+
+.share {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+  box-shadow: 0 -12px 34px rgba(11, 61, 36, 0.22);
+}
+
+.share__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.share__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.share__close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.share__option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.share__option:hover {
+  background: var(--color-cream);
+}
+
+.share__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-sand);
+  color: var(--color-forest);
+}
+
+.share__option--whatsapp .share__icon {
+  background: #25D366;
+  color: #fff;
+}
+
+.share__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share__link {
+  display: none;
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--color-cream);
+  font-size: 0.76rem;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.share__link.is-visible {
+  display: block;
+}
+
+@media (min-width: 700px) {
+  .share__backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .share {
+    border-radius: 16px;
+    padding-bottom: 16px;
+  }
+}

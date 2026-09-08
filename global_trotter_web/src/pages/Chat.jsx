@@ -13,6 +13,8 @@ import EmojiPicker from '../components/EmojiPicker.jsx'
 import VoiceRecorder from '../components/VoiceRecorder.jsx'
 import TypingIndicator from '../components/TypingIndicator.jsx'
 import CallPanel from '../components/CallPanel.jsx'
+import AttachMenu from '../components/AttachMenu.jsx'
+import SharePicker from '../components/SharePicker.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import { useTranslation } from '../hooks/useTranslation.js'
@@ -38,9 +40,15 @@ import {
   updateGroupSettings
 } from '../services/groupService.js'
 import { getFriends } from '../services/friendService.js'
-import { ACCEPTED_TYPES, compressImage, uploadAttachment } from '../services/chatUpload.js'
+import {
+  DOCUMENT_TYPES,
+  MEDIA_TYPES,
+  compressImage,
+  uploadAttachment
+} from '../services/chatUpload.js'
 import { getToken, getUser } from '../services/tokenStorage.js'
 import { formatStamp, initials } from '../utils/chatFormat.js'
+import { destinationLink, itineraryLink } from '../utils/shareLinks.js'
 import '../styles/Chat.css'
 
 const JOIN_KEY = 'globaltrotter_chat_joined'
@@ -146,6 +154,8 @@ function Chat() {
   const [selectedCard, setSelectedCard] = useState(null)
   const [recorderOpen, setRecorderOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false)
+  const [pickerKind, setPickerKind] = useState(null)
   const [pendingFiles, setPendingFiles] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -166,7 +176,8 @@ function Chat() {
   const typingStopRef = useRef(null)
   const cardTimerRef = useRef(null)
   const cardFiredRef = useRef(false)
-  const fileRef = useRef(null)
+  const documentRef = useRef(null)
+  const mediaRef = useRef(null)
   const threadHeaderRef = useRef(null)
 
   const headerPassed = useHeaderPassed(threadHeaderRef)
@@ -908,6 +919,21 @@ function Chat() {
     })
   }
 
+  function sendShare(kind, ids) {
+    setPickerKind(null)
+    if (!socketRef.current || ids.length === 0) return
+
+    ids.forEach(id => {
+      socketRef.current.emit('chat:send', {
+        room: activeRoom,
+        text: kind === 'destination' ? destinationLink(id) : itineraryLink(id),
+        reply_to: null
+      })
+    })
+
+    setReplyTo(null)
+  }
+
   function handleSticker(emoji) {
     setEmojiOpen(false)
     if (!socketRef.current) return
@@ -1505,9 +1531,18 @@ function Chat() {
                       />
 
                       <input
-                        ref={fileRef}
+                        ref={documentRef}
                         type="file"
-                        accept={ACCEPTED_TYPES}
+                        accept={DOCUMENT_TYPES}
+                        multiple
+                        onChange={handleFilesChosen}
+                        style={{ display: 'none' }}
+                      />
+
+                      <input
+                        ref={mediaRef}
+                        type="file"
+                        accept={MEDIA_TYPES}
                         multiple
                         onChange={handleFilesChosen}
                         style={{ display: 'none' }}
@@ -1516,9 +1551,10 @@ function Chat() {
                       <button
                         type="button"
                         className="chat__attach"
-                        onClick={() => fileRef.current?.click()}
+                        onClick={() => setAttachMenuOpen(open => !open)}
                         aria-label={t('chat.attach')}
                         title={t('chat.attach')}
+                        aria-expanded={attachMenuOpen}
                       >
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21.4 11.1 12.3 20.2a5.5 5.5 0 0 1-7.8-7.8l9.2-9.1a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.1a1.8 1.8 0 0 1-2.6-2.6l8.5-8.4" />
@@ -1554,6 +1590,16 @@ function Chat() {
                     </div>
                   )}
 
+                  {attachMenuOpen && (
+                    <AttachMenu
+                      onDocument={() => documentRef.current?.click()}
+                      onMedia={() => mediaRef.current?.click()}
+                      onDestination={() => setPickerKind('destination')}
+                      onItinerary={() => setPickerKind('itinerary')}
+                      onClose={() => setAttachMenuOpen(false)}
+                    />
+                  )}
+
                   {emojiOpen && (
                     <EmojiPicker
                       onPick={emoji => setDraft(value => `${value}${emoji}`)}
@@ -1577,6 +1623,14 @@ function Chat() {
                     setPendingFiles(null)
                     setUploadError('')
                   }}
+                />
+              )}
+
+              {pickerKind && (
+                <SharePicker
+                  kind={pickerKind}
+                  onConfirm={ids => sendShare(pickerKind, ids)}
+                  onClose={() => setPickerKind(null)}
                 />
               )}
 

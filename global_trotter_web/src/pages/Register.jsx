@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerUser, loginWithGoogle } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
+import { takePendingRoute } from '../utils/pendingRoute.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
@@ -102,7 +103,9 @@ function Register() {
       const response = await loginWithGoogle(credential)
       setToken(response.token)
       setUser(response.user)
-      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
+      navigate(takePendingRoute() || (response.user.role === 'admin' ? '/admin' : '/home'), {
+        replace: true
+      })
     } catch (err) {
       setError(err.message)
     } finally {

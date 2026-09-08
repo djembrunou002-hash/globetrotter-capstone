@@ -9,12 +9,14 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import PlanetLoader from '../components/PlanetLoader.jsx'
+import { setPendingRoute } from '../utils/pendingRoute.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
 import StarRating from '../components/Starrating.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
+import ShareMenu from '../components/ShareMenu.jsx'
 import CommentSection from '../components/CommentSection.jsx'
 import AddToItineraryButton from '../components/AddToItineraryButton.jsx'
 import { getBudgetDisplay, getHoursDisplay, getContactDisplay } from '../utils/destinationDisplay.js'
@@ -44,6 +46,7 @@ function DestinationDetails() {
   const location = useLocation()
   const { t, language } = useTranslation()
   const isAuthenticated = Boolean(getToken())
+  const [sharing, setSharing] = useState(false)
   const focusComments = Boolean(location.state?.focusComments)
   const fromLanding = Boolean(location.state?.fromLanding)
   const headerRef = useRef(null)
@@ -78,9 +81,15 @@ function DestinationDetails() {
     loadData()
   }, [id, isAuthenticated])
 
+  function goToLogin() {
+    const target = `/destinations/${id}`
+    setPendingRoute(target)
+    navigate(`/login?next=${encodeURIComponent(target)}`)
+  }
+
   async function handleToggleFavorite() {
     if (!isAuthenticated) {
-      navigate('/login')
+      goToLogin()
       return
     }
 
@@ -99,7 +108,7 @@ function DestinationDetails() {
 
   async function handleRate(stars) {
     if (stars === null) {
-      navigate('/login')
+      goToLogin()
       return
     }
 
@@ -117,7 +126,7 @@ function DestinationDetails() {
 
   function handleViewLocation() {
     if (!isAuthenticated) {
-      navigate('/login')
+      goToLogin()
       return
     }
     navigate(`/map?destination=${id}`)
@@ -147,6 +156,21 @@ function DestinationDetails() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
+        <button
+          type="button"
+          className="destination-details__share"
+          onClick={() => setSharing(true)}
+          aria-label={t('share.title')}
+          title={t('share.title')}
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+        </button>
+
         {!fromLanding && (
           <span className="page-header__accessory">
             <Logo theme="dark" />
@@ -359,6 +383,14 @@ function DestinationDetails() {
           </>
         )}
       </main>
+
+      {sharing && destination && (
+        <ShareMenu
+          url={`${window.location.origin}/destinations/${id}`}
+          title={destination.name}
+          onClose={() => setSharing(false)}
+        />
+      )}
 
       <FloatingBackButton visible={headerPassed} onClick={handleBack} />
 

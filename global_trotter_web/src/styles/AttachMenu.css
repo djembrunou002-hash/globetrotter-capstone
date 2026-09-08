@@ -1,0 +1,68 @@
+.attach-menu {
+  position: absolute;
+  left: clamp(16px, 4vw, 32px);
+  bottom: calc(100% + 8px);
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #E7DFC9;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(11, 61, 36, 0.18);
+}
+
+.attach-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attach-menu__item:hover {
+  background: var(--color-cream);
+}
+
+.attach-menu__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.attach-menu__icon--blue {
+  background: #3E6FA8;
+}
+
+.attach-menu__icon--violet {
+  background: #7A5AA8;
+}
+
+.attach-menu__icon--green {
+  background: var(--color-forest);
+}
+
+.attach-menu__icon--gold {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.attach-menu__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

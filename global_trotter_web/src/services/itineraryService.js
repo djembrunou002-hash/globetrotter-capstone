@@ -64,3 +64,11 @@ export function unshareItinerary(itineraryId, sharedUserId) {
 export function getSharedUsers(itineraryId) {
   return apiRequest(`/itineraries/${itineraryId}/shared-users`)
 }
+
+export function getItinerary(itineraryId) {
+  return apiRequest(`/itineraries/${itineraryId}`)
+}
+
+export function joinItinerary(itineraryId) {
+  return apiRequest(`/itineraries/${itineraryId}/join`, { method: 'POST' })
+}

@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react'
 import VoiceMessage from './VoiceMessage.jsx'
+import SharedCard from './SharedCard.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { formatBytes, formatTime, initials, isStickerText } from '../utils/chatFormat.js'
+import { parseShareLink } from '../utils/shareLinks.js'
 import '../styles/MessageBubble.css'
 
 const LONG_PRESS_MS = 420
+
 
 function Ticks({ state }) {
   if (state === 'sent') {
@@ -66,6 +69,7 @@ function MessageBubble({
 
   const withAvatar = showAuthor && !mine
   const sticker = message.kind === 'text' && isStickerText(message.text)
+  const shared = message.kind === 'text' && !sticker ? parseShareLink(message.text) : null
 
   function clearTimer() {
     if (timerRef.current) {
@@ -170,6 +174,11 @@ function MessageBubble({
             )}
 
             {message.text && <p className="msg__text">{message.text}</p>}
+          </div>
+        ) : shared ? (
+          <div className="msg__shared">
+            {shared.remainder && <p className="msg__text">{shared.remainder}</p>}
+            <SharedCard kind={shared.kind} id={shared.id} url={shared.url} />
           </div>
         ) : (
           <p className="msg__text">{message.text}</p>

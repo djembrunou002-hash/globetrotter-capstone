@@ -4,6 +4,26 @@ import { getToken } from './tokenStorage.js'
 const MAX_IMAGE_EDGE = 1600
 const IMAGE_QUALITY = 0.82
 
+export const DOCUMENT_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/zip'
+].join(',')
+
+export const MEDIA_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime'
+].join(',')
+
 export const ACCEPTED_TYPES = [
   'image/jpeg',
   'image/png',

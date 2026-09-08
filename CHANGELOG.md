@@ -743,3 +743,30 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - Disconnecting drops the user from any call they were in and pushes the updated state, so a closed tab does not leave a participant others keep trying to reach.
 - Only STUN servers are configured. Two peers on the same network connect reliably; peers on different networks behind symmetric NAT will often fail until a TURN server is added to `ICE_SERVERS` in `src/hooks/useCall.js`.
 - Mesh topology is appropriate up to roughly four to six participants; beyond that the uplink cost grows quadratically and an SFU would be required.
+
+## 08-09-2026 
+
+### Added
+- Attachment menu with four options behind the paperclip: document, photo or video, destination, and itinerary.
+- Destination and itinerary pickers for the chat. Destinations are multi-select and post one card each; itineraries are single-select.
+- Shared destinations and itineraries render as rich cards inside messages, with the itinerary card carrying a Join button.
+- `GET /itineraries/<id>`: returns the full itinerary with resolved destinations to a member, and a preview only (title, owner, tags, dates, stop count, member count, `joined`) to a non-member, so a card can render without leaking the contents.
+- `POST /itineraries/<id>/join`: appends the caller to `shared_with`. Idempotent, and a no-op success for the owner.
+- Share button on destination cards and on the destination details page, opening a sheet with WhatsApp, copy link, and the native share sheet where the browser supports it.
+- `src/utils/shareLinks.js`: link builders, a parser, and a clipboard helper with an `execCommand` fallback for non-secure contexts.
+- `src/utils/shareCache.js`: cached lookups for shared destinations and itineraries, kept in its own module with a `resetShareCache()` so the cache does not leak between tests.
+- `src/utils/pendingRoute.js`: a session-stored route consumed after authentication.
+- `DOCUMENT_TYPES` and `MEDIA_TYPES` exported from `chatUpload.js` alongside the existing `ACCEPTED_TYPES`.
+
+### Changed
+- A shared destination or itinerary is sent as an ordinary text message containing an app link; the bubble detects the link and renders the card. Sharing from the picker and pasting a copied link therefore produce identical results, with no new message kind and no change to the chat message store.
+- The paperclip opens the attachment menu instead of the file dialog. Document and photo/video click separate hidden inputs rather than one input with a state-driven `accept`, since setting state and clicking in the same handler would open the dialog with the previous filter.
+- An unauthenticated visitor acting on a destination is sent to `/login?next=/destinations/<id>` and returned there after signing in.
+
+### Notes
+- Anyone holding an itinerary id can join it. The existing `/share` endpoint stays owner-initiated; this one is self-service because the point is that people in a chat can join what was posted. Verifying that a joiner actually saw the link would require itinerary-service to ask chat-service about room membership.
+- Registration passes through verify-otp and select-style, so a `?next=` parameter does not survive it. The pending route is therefore also written to `sessionStorage` and consumed at the end of either flow, with login preferring the URL parameter.
+- `takePendingRoute` clears on read and both helpers require a leading slash, so a stale target cannot hijack a later login and a crafted absolute URL cannot turn the login into an open redirect.
+- The share link parser makes the host optional, so a link copied from the deployed site still resolves to a card when pasted while running on localhost.
+- There is no `GET /destinations/<id>`, so destination cards resolve from a single cached list fetch shared by every card on the page rather than adding a backend route.
+- The destination details page was already served with optional authentication, so a visitor arriving from WhatsApp sees the destination immediately and is only asked to sign in when they try to act on it.

@@ -161,6 +161,13 @@
   justify-content: flex-start;
 }
 
+.msg__shared {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
 .msg__ticks {
   display: inline-flex;
   align-items: center;

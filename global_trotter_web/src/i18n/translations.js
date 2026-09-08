@@ -23,6 +23,7 @@ export const translations = {
       share: 'Share',
       remove: 'Remove',
       loading: 'Loading...',
+      search: 'Search',
       clearSearch: 'Clear search',
       language: 'Language',
       or: 'or',
@@ -312,7 +313,17 @@ export const translations = {
       none: 'Not shared with anyone yet.',
       removeAria: 'Remove {{name}}',
       contactRequired: 'Enter an email or a phone number',
-      invalidContact: 'Enter a valid email, or a 9-digit phone number'
+      invalidContact: 'Enter a valid email, or a 9-digit phone number',
+      title: 'Share',
+      whatsapp: 'Share on WhatsApp',
+      copyLink: 'Copy link',
+      copied: 'Link copied',
+      more: 'More options',
+      destinationLabel: 'Destination',
+      itineraryLabel: 'Itinerary',
+      join: 'Join',
+      joining: 'Joining...',
+      joined: 'Joined'
     },
     itineraryDetails: {
       back: 'Back to itineraries',
@@ -719,7 +730,17 @@ export const translations = {
       unmuteFor: 'Unmute for me',
       muteOthers: 'Mute everyone',
       muteOthersHint: 'Silences the others for you only',
-      endCall: 'Leave the call'
+      endCall: 'Leave the call',
+      attachDocument: 'Document',
+      attachMedia: 'Photo or video',
+      attachDestination: 'Destination',
+      attachItinerary: 'Itinerary',
+      pickDestination: 'Share a destination',
+      pickItinerary: 'Share an itinerary',
+      noDestinations: 'No destination found.',
+      noItineraries: 'No itinerary found.',
+      itineraryStops: '{{count}} stops',
+      pickerSelected: '{{count}} selected'
     },
     userSearch: {
       searching: 'Searching...',
@@ -779,6 +800,7 @@ export const translations = {
       share: 'Partager',
       remove: 'Retirer',
       loading: 'Chargement...',
+      search: 'Rechercher',
       clearSearch: 'Effacer la recherche',
       language: 'Langue',
       or: 'ou',
@@ -1068,7 +1090,17 @@ export const translations = {
       none: "Pas encore partagé avec quelqu'un.",
       removeAria: 'Retirer {{name}}',
       contactRequired: 'Indiquez un e-mail ou un numéro de téléphone',
-      invalidContact: 'Saisissez un e-mail valide ou un numéro de téléphone à 9 chiffres'
+      invalidContact: 'Saisissez un e-mail valide ou un numéro de téléphone à 9 chiffres',
+      title: 'Partager',
+      whatsapp: 'Partager sur WhatsApp',
+      copyLink: 'Copier le lien',
+      copied: 'Lien copié',
+      more: "Plus d'options",
+      destinationLabel: 'Destination',
+      itineraryLabel: 'Itinéraire',
+      join: 'Rejoindre',
+      joining: 'Connexion...',
+      joined: 'Rejoint'
     },
     itineraryDetails: {
       back: 'Retour aux itinéraires',
@@ -1475,7 +1507,17 @@ export const translations = {
       unmuteFor: 'Réactiver pour moi',
       muteOthers: 'Couper tout le monde',
       muteOthersHint: 'Les coupe uniquement pour vous',
-      endCall: "Quitter l'appel"
+      endCall: "Quitter l'appel",
+      attachDocument: 'Document',
+      attachMedia: 'Photo ou vidéo',
+      attachDestination: 'Destination',
+      attachItinerary: 'Itinéraire',
+      pickDestination: 'Partager une destination',
+      pickItinerary: 'Partager un itinéraire',
+      noDestinations: 'Aucune destination trouvée.',
+      noItineraries: 'Aucun itinéraire trouvé.',
+      itineraryStops: '{{count}} étapes',
+      pickerSelected: '{{count}} sélectionné(s)'
     },
     userSearch: {
       searching: 'Recherche...',

@@ -1,0 +1,138 @@
+.shared-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 280px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(11, 61, 36, 0.06);
+  cursor: pointer;
+}
+
+.shared-card:hover {
+  background: rgba(11, 61, 36, 0.1);
+}
+
+.shared-card:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 2px;
+}
+
+.shared-card--itinerary {
+  flex-wrap: wrap;
+}
+
+.shared-card__thumb {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-forest);
+}
+
+.shared-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shared-card__thumb--itinerary {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.shared-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.shared-card__kind {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-forest);
+}
+
+.shared-card__name {
+  font-size: 0.88rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shared-card__meta {
+  font-size: 0.74rem;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shared-card__join {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-forest);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.shared-card__join.is-joined,
+.shared-card__join:disabled {
+  background: transparent;
+  border: 1px solid #CFE3D6;
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.shared-card--raw {
+  display: block;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(11, 61, 36, 0.06);
+  color: var(--color-forest);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.shared-card--loading {
+  cursor: default;
+}
+
+.shared-card--loading .shared-card__thumb {
+  background: #EFE7D4;
+}
+
+.shared-card__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shared-card__lines span {
+  display: block;
+  height: 9px;
+  border-radius: 999px;
+  background: #EFE7D4;
+}
+
+.shared-card__lines span:last-child {
+  width: 60%;
+}

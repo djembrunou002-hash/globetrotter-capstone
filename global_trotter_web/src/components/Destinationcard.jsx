@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import StarRating from './Starrating.jsx'
 import AddToItineraryButton from './AddToItineraryButton.jsx'
+import ShareMenu from './ShareMenu.jsx'
 import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.js'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { destinationLink } from '../utils/shareLinks.js'
 import '../styles/DestinationCard.css'
 
 function DestinationCard({
@@ -23,6 +25,7 @@ function DestinationCard({
   const navigate = useNavigate()
   const { t, language } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const image = destination.images && destination.images[0]
   const commentCount = destination.comment_count || 0
   const budgetDisplay = getBudgetDisplay(destination.budget, destination.budget_level, t)
@@ -167,6 +170,21 @@ function DestinationCard({
         <div className="destination-card__actions" onClick={e => e.stopPropagation()}>
           <button
             type="button"
+            className="destination-card__share"
+            onClick={() => setSharing(true)}
+            aria-label={t('share.title')}
+            title={t('share.title')}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
             className="destination-card__location"
             onClick={handleViewLocation}
             title={t('common.viewOnMap')}
@@ -214,6 +232,14 @@ function DestinationCard({
           )}
         </div>
       </div>
+
+      {sharing && (
+        <ShareMenu
+          url={destinationLink(destination.id)}
+          title={destination.name}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </article>
   )
 }

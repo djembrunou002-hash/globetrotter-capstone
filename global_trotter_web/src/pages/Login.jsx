@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { loginUser, loginWithGoogle } from '../services/authService.js'
 import { setToken, setUser } from '../services/tokenStorage.js'
+import { takePendingRoute } from '../utils/pendingRoute.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import AuthLayout from '../components/Authlayout.jsx'
 import PasswordField from '../components/Passwordfield.jsx'
@@ -13,6 +14,18 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const nextPath = searchParams.get('next')
+
+  function landingFor(user) {
+    if (nextPath && nextPath.startsWith('/')) return nextPath
+
+    const pending = takePendingRoute()
+    if (pending) return pending
+
+    return user.role === 'admin' ? '/admin' : '/home'
+  }
   const { t } = useTranslation()
   const [formData, setFormData] = useState({
     email: '',
@@ -66,7 +79,7 @@ function Login() {
       const response = await loginUser(payload)
       setToken(response.token)
       setUser(response.user)
-      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
+      navigate(landingFor(response.user), { replace: true })
     } catch (err) {
       if (err.message === 'Please verify your account first') {
         navigate('/verify-otp', {
@@ -87,7 +100,7 @@ function Login() {
       const response = await loginWithGoogle(credential)
       setToken(response.token)
       setUser(response.user)
-      navigate(response.user.role === 'admin' ? '/admin' : '/home', { replace: true })
+      navigate(landingFor(response.user), { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
