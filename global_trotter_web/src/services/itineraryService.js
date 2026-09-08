@@ -72,3 +72,7 @@ export function getItinerary(itineraryId) {
 export function joinItinerary(itineraryId) {
   return apiRequest(`/itineraries/${itineraryId}/join`, { method: 'POST' })
 }
+
+export function leaveItinerary(itineraryId) {
+  return apiRequest(`/itineraries/${itineraryId}/join`, { method: 'DELETE' })
+}

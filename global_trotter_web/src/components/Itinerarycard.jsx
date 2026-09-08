@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import ShareMenu from './ShareMenu.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { itineraryLink } from '../utils/shareLinks.js'
+import { leaveItinerary } from '../services/itineraryService.js'
 
 function ItineraryCard({
   itinerary,
@@ -12,13 +13,15 @@ function ItineraryCard({
   onToggleSelect,
   onRequestDelete,
   onRequestShare,
-  onRequestEdit
+  onRequestEdit,
+  onLeave
 }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
   const [sharingLink, setSharingLink] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const isOwner = itinerary.is_owner !== false
 
@@ -36,6 +39,21 @@ function ItineraryCard({
   function handleRequestDelete() {
     setMenuOpen(false)
     onRequestDelete(itinerary.id)
+  }
+
+  async function handleLeave(e) {
+    e.stopPropagation()
+    setMenuOpen(false)
+
+    if (leaving) return
+    setLeaving(true)
+
+    try {
+      await leaveItinerary(itinerary.id)
+      if (onLeave) onLeave(itinerary)
+    } finally {
+      setLeaving(false)
+    }
   }
 
   function handleRequestShare() {
@@ -92,7 +110,7 @@ function ItineraryCard({
           </button>
         )}
 
-        {!selectable && isOwner && (
+        {!selectable && (
           <>
             <button
               type="button"
@@ -120,12 +138,26 @@ function ItineraryCard({
                   }}
                 />
                 <div className="itinerary-card__menu" onClick={e => e.stopPropagation()}>
-                  <button type="button" className="itinerary-card__menu-item" onClick={handleRequestEdit}>
-                    {t('itineraryCard.edit')}
-                  </button>
-                  <button type="button" className="itinerary-card__menu-item" onClick={handleRequestShare}>
-                    {t('itineraryCard.share')}
-                  </button>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      className="itinerary-card__menu-item"
+                      onClick={handleRequestEdit}
+                    >
+                      {t('itineraryCard.edit')}
+                    </button>
+                  )}
+
+                  {isOwner && (
+                    <button
+                      type="button"
+                      className="itinerary-card__menu-item"
+                      onClick={handleRequestShare}
+                    >
+                      {t('itineraryCard.share')}
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     className="itinerary-card__menu-item"
@@ -137,9 +169,25 @@ function ItineraryCard({
                   >
                     {t('itineraryCard.shareLink')}
                   </button>
-                  <button type="button" className="itinerary-card__menu-item itinerary-card__menu-item--danger" onClick={handleRequestDelete}>
-                    {t('itineraryCard.delete')}
-                  </button>
+
+                  {isOwner ? (
+                    <button
+                      type="button"
+                      className="itinerary-card__menu-item itinerary-card__menu-item--danger"
+                      onClick={handleRequestDelete}
+                    >
+                      {t('itineraryCard.delete')}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="itinerary-card__menu-item itinerary-card__menu-item--danger"
+                      onClick={handleLeave}
+                      disabled={leaving}
+                    >
+                      {t('itineraryCard.leave')}
+                    </button>
+                  )}
                 </div>
               </>
             )}

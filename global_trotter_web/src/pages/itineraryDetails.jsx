@@ -4,7 +4,8 @@ import {
   getItineraries,
   getItinerary,
   getSharedUsers,
-  joinItinerary
+  joinItinerary,
+  leaveItinerary
 } from '../services/itineraryService.js'
 import {
   getDestinations,
@@ -23,6 +24,7 @@ import Logo from '../components/Logo.jsx'
 import DestinationCard from '../components/Destinationcard.jsx'
 import BottomNav from '../components/Bottomnav.jsx'
 import FloatingBackButton from '../components/FloatingBackButton.jsx'
+import FloatingShareButton from '../components/FloatingShareButton.jsx'
 import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import ReorderItineraryModal from '../components/ReorderItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
@@ -55,6 +57,7 @@ function ItineraryDetails() {
   const [itinerary, setItinerary] = useState(null)
   const [joining, setJoining] = useState(false)
   const [sharingLink, setSharingLink] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [destinations, setDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [visitedIds, setVisitedIds] = useState(() => loadVisitedIds(id))
@@ -224,6 +227,19 @@ function ItineraryDetails() {
     }
   }
 
+  async function handleLeave() {
+    setLeaving(true)
+    setError('')
+
+    try {
+      await leaveItinerary(id)
+      navigate('/itineraries')
+    } catch (err) {
+      setError(err.message)
+      setLeaving(false)
+    }
+  }
+
   const filteredDestinations = itineraryDestinations.filter(destination => {
     const name = (destination.name || '').toLowerCase()
     const area = (destination.area || '').toLowerCase()
@@ -294,9 +310,19 @@ function ItineraryDetails() {
         {!loading && !error && itinerary && itinerary.joined !== false && (
           <>
             {itinerary.is_owner === false && (
-              <p className="itinerary-details__shared-note">
-                {t('itineraryDetails.sharedBy', { name: itinerary.owner_name })}
-              </p>
+              <div className="itinerary-details__shared-row">
+                <p className="itinerary-details__shared-note">
+                  {t('itineraryDetails.sharedBy', { name: itinerary.owner_name })}
+                </p>
+                <button
+                  type="button"
+                  className="itinerary-details__leave"
+                  onClick={handleLeave}
+                  disabled={leaving}
+                >
+                  {leaving ? t('itineraryDetails.leaving') : t('itineraryDetails.leave')}
+                </button>
+              </div>
             )}
 
             {itinerary.is_owner !== false && sharedUsers.length > 0 && (
@@ -443,21 +469,7 @@ function ItineraryDetails() {
         label={t('itineraryDetails.back')}
       />
 
-      <button
-        type="button"
-        className={`floating-share ${headerPassed ? 'is-visible' : ''}`}
-        onClick={() => setSharingLink(true)}
-        aria-label={t('share.title')}
-        title={t('share.title')}
-        tabIndex={headerPassed ? 0 : -1}
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
-        </svg>
-      </button>
+      <FloatingShareButton visible={headerPassed} onClick={() => setSharingLink(true)} />
 
       {sharingLink && itinerary && (
         <ShareMenu

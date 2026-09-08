@@ -214,6 +214,30 @@ def join_itinerary(itinerary_id):
     return jsonify({"itinerary": itinerary, "joined": True}), 200
 
 
+@itineraries_bp.route("/itineraries/<itinerary_id>/join", methods=["DELETE"])
+@jwt_required()
+def leave_itinerary(itinerary_id):
+    user_id = get_jwt_identity()
+
+    data = load_json("itineraries.json")
+    itinerary = next((i for i in data["itineraries"] if i["id"] == itinerary_id), None)
+
+    if not itinerary:
+        return jsonify({"error": "itinerary not found"}), 404
+
+    if itinerary["user_id"] == user_id:
+        return jsonify({"error": "the owner cannot leave their own itinerary"}), 403
+
+    shared_with = itinerary.setdefault("shared_with", [])
+
+    if user_id in shared_with:
+        itinerary["shared_with"] = [u for u in shared_with if u != user_id]
+        itinerary["updated_at"] = datetime.now(timezone.utc).isoformat()
+        save_json("itineraries.json", data)
+
+    return jsonify({"itinerary_id": itinerary_id, "joined": False}), 200
+
+
 @itineraries_bp.route("/itineraries/<itinerary_id>/share", methods=["POST"])
 @jwt_required()
 def share_itinerary(itinerary_id):

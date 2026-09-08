@@ -790,3 +790,22 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - A non-member sees only the title, owner, tags, dates and stop count of an itinerary. The destinations themselves are never sent until they join, which is enforced by the endpoint rather than by the page.
 - Itineraries found in the caller's own list are marked `joined: true` explicitly, so an owner or existing collaborator can never be shown the join gate through a race in the fallback fetch.
 - A CSS `transform` on an ancestor makes `position: fixed` resolve against that element instead of the viewport. That is the root cause of the share menu bug, and the reason any future overlay rendered inside a card should be portalled.
+
+## 08-09-2026 
+
+### Added
+- `DELETE /itineraries/<id>/join`: lets a shared member remove themselves from an itinerary. The mirror of the join route, same path with a different method. Idempotent, writes only when something changed, and refuses the owner with 403 since deleting is the separate action they already have.
+- Leave option in the itinerary card menu and on the itinerary details page next to the "Shared by" note. Leaving from the details page navigates back to the itineraries list, since staying would only show the join gate.
+- `leaveItinerary` in the itinerary client service.
+
+### Changed
+- The itinerary card menu is now available to shared members, not only owners. Entries are gated individually: owners get edit, share-with-friends, share a link and delete; shared members get share a link and leave. The menu can no longer offer an action the backend would refuse.
+- The card's three-dot trigger and its dropdown moved from the right to the left of the card.
+- The floating share button now matches the floating back button exactly: fixed at the top with the same safe-area offset, the same pill and shadow, the same slide-down animation, mirrored to the right. Both detail pages render it conditionally rather than toggling opacity on an always-mounted button.
+- The chat composer is shorter: buttons 42px to 38px, vertical padding 10px to 7px, input padding 11px to 9px, and horizontal padding reduced. The page's reserved bottom space dropped from 150px to 126px to match, which is what was pushing the most recent messages out of view.
+- The message list gained the reclaimed height and its bottom padding was reduced to 6px.
+
+### Notes
+- `ItineraryCard` now takes an `onLeave` callback so the parent list can drop the card after leaving. Without it the leave still succeeds but the card lingers until the next load.
+- Leaving only edits `shared_with`. The itinerary is untouched for everyone else, and the person can rejoin later from the same link.
+- Composer buttons were not reduced below 38px; with the surrounding padding that keeps them near the 44px touch-target guideline.
