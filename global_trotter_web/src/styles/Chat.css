@@ -485,9 +485,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  max-width: 900px;
   width: 100%;
-  margin: 0 auto;
   padding: 6px 10px;
   border-radius: 8px;
   background: #fff;
@@ -519,9 +517,7 @@
 .chat__composer-row {
   display: flex;
   gap: 8px;
-  max-width: 900px;
   width: 100%;
-  margin: 0 auto;
 }
 
 .chat__composer-row input {
@@ -630,9 +626,16 @@
   }
 
   .chat__composer {
-    position: static;
+    position: relative;
     flex-shrink: 0;
     max-width: none;
+    margin-top: auto;
+  }
+
+  .chat__thread > .planet-loader,
+  .chat__thread > .chat__gate {
+    flex: 1;
+    min-height: 0;
   }
 
   .chat__back {
@@ -931,4 +934,17 @@
   .call-toast__ring {
     animation: none;
   }
+}
+
+.chat__thread > .planet-loader {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat__composer {
+  margin-top: auto;
 }

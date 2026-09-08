@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { getItineraries, getSharedUsers } from '../services/itineraryService.js'
+import {
+  getItineraries,
+  getItinerary,
+  getSharedUsers,
+  joinItinerary
+} from '../services/itineraryService.js'
 import {
   getDestinations,
   getFavorites,
@@ -10,6 +15,8 @@ import {
 } from '../services/destinationService.js'
 import { getToken } from '../services/tokenStorage.js'
 import PlanetLoader from '../components/PlanetLoader.jsx'
+import ShareMenu from '../components/ShareMenu.jsx'
+import { itineraryLink } from '../utils/shareLinks.js'
 import { useTranslation } from '../hooks/useTranslation.js'
 import useHeaderPassed from '../hooks/useHeaderPassed.js'
 import Logo from '../components/Logo.jsx'
@@ -19,6 +26,7 @@ import FloatingBackButton from '../components/FloatingBackButton.jsx'
 import ShareItineraryModal from '../components/ShareItineraryModal.jsx'
 import ReorderItineraryModal from '../components/ReorderItineraryModal.jsx'
 import '../styles/ItineraryDetails.css'
+import '../styles/ShareUI.css'
 
 function formatDate(dateString, locale) {
   if (!dateString) return ''
@@ -45,6 +53,8 @@ function ItineraryDetails() {
   const headerPassed = useHeaderPassed(headerRef)
 
   const [itinerary, setItinerary] = useState(null)
+  const [joining, setJoining] = useState(false)
+  const [sharingLink, setSharingLink] = useState(false)
   const [destinations, setDestinations] = useState([])
   const [favoriteIds, setFavoriteIds] = useState(new Set())
   const [visitedIds, setVisitedIds] = useState(() => loadVisitedIds(id))
@@ -79,7 +89,13 @@ function ItineraryDetails() {
         ])
 
         const found = itinerariesResponse.itineraries.find(item => item.id === id)
-        setItinerary(found || null)
+
+        if (found) {
+          setItinerary({ ...found, joined: true })
+        } else {
+          const single = await getItinerary(id)
+          setItinerary(single.itinerary || null)
+        }
         setDestinations(destinationsResponse.destinations)
         setFavoriteIds(new Set(favoritesResponse.favorites.map(d => d.id)))
       } catch (err) {
@@ -193,6 +209,21 @@ function ItineraryDetails() {
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const availableTypes = [...new Set(itineraryDestinations.map(destination => destination.type).filter(Boolean))]
 
+  async function handleJoin() {
+    setJoining(true)
+    setError('')
+
+    try {
+      await joinItinerary(id)
+      const refreshed = await getItinerary(id)
+      setItinerary(refreshed.itinerary || null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setJoining(false)
+    }
+  }
+
   const filteredDestinations = itineraryDestinations.filter(destination => {
     const name = (destination.name || '').toLowerCase()
     const area = (destination.area || '').toLowerCase()
@@ -210,6 +241,21 @@ function ItineraryDetails() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </Link>
+        <button
+          type="button"
+          className="itinerary-details__share"
+          onClick={() => setSharingLink(true)}
+          aria-label={t('share.title')}
+          title={t('share.title')}
+        >
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+        </button>
+
         <span className="page-header__accessory">
           <Logo theme="dark" />
         </span>
@@ -223,7 +269,29 @@ function ItineraryDetails() {
           <p className="itinerary-details__status">{t('itineraryDetails.notFound')}</p>
         )}
 
-        {!loading && !error && itinerary && (
+        {!loading && !error && itinerary && itinerary.joined === false && (
+          <section className="itinerary-join">
+            <span className="itinerary-join__badge">{t('share.itineraryLabel')}</span>
+            <h1 className="itinerary-join__title">{itinerary.title}</h1>
+            <p className="itinerary-join__meta">
+              {t('itineraryDetails.sharedBy', { name: itinerary.owner_name })}
+            </p>
+            <p className="itinerary-join__meta">
+              {t('chat.itineraryStops', { count: itinerary.destination_count || 0 })}
+            </p>
+            <p className="itinerary-join__hint">{t('itineraryDetails.joinHint')}</p>
+            <button
+              type="button"
+              className="itinerary-join__button"
+              onClick={handleJoin}
+              disabled={joining}
+            >
+              {joining ? t('share.joining') : t('share.join')}
+            </button>
+          </section>
+        )}
+
+        {!loading && !error && itinerary && itinerary.joined !== false && (
           <>
             {itinerary.is_owner === false && (
               <p className="itinerary-details__shared-note">
@@ -374,6 +442,30 @@ function ItineraryDetails() {
         to="/itineraries"
         label={t('itineraryDetails.back')}
       />
+
+      <button
+        type="button"
+        className={`floating-share ${headerPassed ? 'is-visible' : ''}`}
+        onClick={() => setSharingLink(true)}
+        aria-label={t('share.title')}
+        title={t('share.title')}
+        tabIndex={headerPassed ? 0 : -1}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+        </svg>
+      </button>
+
+      {sharingLink && itinerary && (
+        <ShareMenu
+          url={itineraryLink(id)}
+          title={itinerary.title}
+          onClose={() => setSharingLink(false)}
+        />
+      )}
 
       <BottomNav />
     </div>

@@ -258,6 +258,7 @@ export const translations = {
       options: 'Itinerary options',
       edit: 'Edit itinerary',
       share: 'Share itinerary',
+      shareLink: 'Share a link',
       delete: 'Delete itinerary',
       sharedBy: 'Shared by {{name}}'
     },
@@ -330,6 +331,7 @@ export const translations = {
       loading: 'Loading itinerary...',
       notFound: 'Itinerary not found.',
       sharedBy: 'Shared by {{name}}',
+      joinHint: 'Join this itinerary to see every stop and follow the plan.',
       sharedWith: 'Shared with {{names}}',
       showItinerary: 'Show itinerary',
       searchPlaceholder: 'Search this itinerary by name or area',
@@ -1035,6 +1037,7 @@ export const translations = {
       options: "Options de l'itinéraire",
       edit: "Modifier l'itinéraire",
       share: "Partager l'itinéraire",
+      shareLink: 'Partager un lien',
       delete: "Supprimer l'itinéraire",
       sharedBy: 'Partagé par {{name}}'
     },
@@ -1107,6 +1110,7 @@ export const translations = {
       loading: "Chargement de l'itinéraire...",
       notFound: 'Itinéraire introuvable.',
       sharedBy: 'Partagé par {{name}}',
+      joinHint: "Rejoignez cet itinéraire pour voir toutes les étapes et suivre le plan.",
       sharedWith: 'Partagé avec {{names}}',
       showItinerary: "Afficher l'itinéraire",
       searchPlaceholder: 'Rechercher dans cet itinéraire par nom ou quartier',

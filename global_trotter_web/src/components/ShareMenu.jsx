@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from '../hooks/useTranslation.js'
 import { copyText, whatsappLink } from '../utils/shareLinks.js'
 import '../styles/ShareMenu.css'
@@ -39,7 +40,7 @@ function ShareMenu({ url, title, onClose }) {
       .catch(() => {})
   }
 
-  return (
+  return createPortal(
     <div className="share__backdrop" onClick={onClose}>
       <div
         className="share"
@@ -103,7 +104,8 @@ function ShareMenu({ url, title, onClose }) {
 
         <p className={`share__link ${failed ? 'is-visible' : ''}`}>{url}</p>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

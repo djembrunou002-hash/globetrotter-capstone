@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ShareMenu from './ShareMenu.jsx'
 import { useTranslation } from '../hooks/useTranslation.js'
+import { itineraryLink } from '../utils/shareLinks.js'
 
 function ItineraryCard({
   itinerary,
@@ -16,6 +18,7 @@ function ItineraryCard({
   const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
+  const [sharingLink, setSharingLink] = useState(false)
 
   const isOwner = itinerary.is_owner !== false
 
@@ -123,6 +126,17 @@ function ItineraryCard({
                   <button type="button" className="itinerary-card__menu-item" onClick={handleRequestShare}>
                     {t('itineraryCard.share')}
                   </button>
+                  <button
+                    type="button"
+                    className="itinerary-card__menu-item"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setMenuOpen(false)
+                      setSharingLink(true)
+                    }}
+                  >
+                    {t('itineraryCard.shareLink')}
+                  </button>
                   <button type="button" className="itinerary-card__menu-item itinerary-card__menu-item--danger" onClick={handleRequestDelete}>
                     {t('itineraryCard.delete')}
                   </button>
@@ -142,6 +156,14 @@ function ItineraryCard({
           <h3 className="itinerary-card__title">{itinerary.title}</h3>
         </div>
       </div>
+
+      {sharingLink && (
+        <ShareMenu
+          url={itineraryLink(itinerary.id)}
+          title={itinerary.title}
+          onClose={() => setSharingLink(false)}
+        />
+      )}
     </article>
   )
 }

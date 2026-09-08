@@ -770,3 +770,23 @@ Phase 2 deployed to an Ubuntu VPS at **https://globaltrotter.duckdns.org**, shar
 - The share link parser makes the host optional, so a link copied from the deployed site still resolves to a card when pasted while running on localhost.
 - There is no `GET /destinations/<id>`, so destination cards resolve from a single cached list fetch shared by every card on the page rather than adding a backend route.
 - The destination details page was already served with optional authentication, so a visitor arriving from WhatsApp sees the destination immediately and is only asked to sign in when they try to act on it.
+
+
+
+### Added
+- The itinerary details page is now reachable by people who are not members. When the id is not in the caller's own list the page falls back to `GET /itineraries/<id>`, which returns a preview, and renders a join card with the title, owner, stop count and a Join button. Joining refetches and swaps the full page in without a navigation.
+- Share a link option in the itinerary card menu, alongside the existing share-with-friends action. The two are kept separate because they do different things: one grants access, the other copies a link.
+- Share button in the itinerary details header, opening the same WhatsApp and copy-link sheet as destinations.
+- Floating share button on both the destination and itinerary details pages, appearing once the header scrolls out of view, mirroring the floating back button.
+- `src/styles/ShareUI.css` holding the share buttons, the floating share button and the itinerary join card, imported by the three pages that use them.
+
+### Changed
+- `ShareMenu` renders through a portal into `document.body`. It was previously mounted inside the destination card, where the card's hover transform re-anchored the fixed overlay and made it jump; the portal also stops clicks inside the menu bubbling up to the card and navigating away.
+- The chat composer spans the full width of the thread pane. `max-width: 900px; margin: 0 auto` was removed from the composer row and the reply context, which had been holding them in a centred column narrower than the pane.
+- The composer is pinned to the bottom of the thread with `margin-top: auto`, and the loader now fills the space above it. Previously the loading state rendered a `PlanetLoader` with no flex sizing, so nothing filled the column and the composer floated upward until messages arrived.
+- The attachment menu is anchored above the paperclip (`right: 58px`) rather than at the far left of the composer.
+
+### Notes
+- A non-member sees only the title, owner, tags, dates and stop count of an itinerary. The destinations themselves are never sent until they join, which is enforced by the endpoint rather than by the page.
+- Itineraries found in the caller's own list are marked `joined: true` explicitly, so an owner or existing collaborator can never be shown the join gate through a race in the fallback fetch.
+- A CSS `transform` on an ancestor makes `position: fixed` resolve against that element instead of the viewport. That is the root cause of the share menu bug, and the reason any future overlay rendered inside a card should be portalled.

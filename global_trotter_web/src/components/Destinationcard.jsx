@@ -7,6 +7,7 @@ import { getBudgetDisplay, getHoursDisplay } from '../utils/destinationDisplay.j
 import { useTranslation } from '../hooks/useTranslation.js'
 import { destinationLink } from '../utils/shareLinks.js'
 import '../styles/DestinationCard.css'
+import '../styles/ShareUI.css'
 
 function DestinationCard({
   destination,

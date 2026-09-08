@@ -1,7 +1,8 @@
 .attach-menu {
   position: absolute;
-  left: clamp(16px, 4vw, 32px);
-  bottom: calc(100% + 8px);
+  right: 58px;
+  left: auto;
+  bottom: calc(100% + 10px);
   z-index: 26;
   display: flex;
   flex-direction: column;
